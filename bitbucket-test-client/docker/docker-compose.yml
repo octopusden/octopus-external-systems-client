@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  bitbucket:
+    image: ${DOCKER_REGISTRY}/atlassian/bitbucket-server:7.4.2-ubuntu-jdk11
+    depends_on:
+      - postgres
+    ports:
+      - 7999:7999
+      - 7990:7990
+    environment:
+      SETUP_DISPLAYNAME: Bitbucket
+      SETUP_BASEURL: http://localhost:7990
+      SETUP_LICENSE: ${BITBUCKET_LICENSE}
+      SETUP_SYSADMIN_USERNAME: admin
+      SETUP_SYSADMIN_PASSWORD: admin
+      SETUP_SYSADMIN_DISPLAYNAME: Dev Instance Admin
+      SETUP_SYSADMIN_EMAILADDRESS: admin@domain.corp
+      JDBC_DRIVER: org.postgresql.Driver
+      JDBC_USER: bitbucket
+      JDBC_PASSWORD: bitbucket
+      JDBC_URL: jdbc:postgresql://bitbucket-db:5432/bitbucket
+
+  postgres:
+    image: ${DOCKER_REGISTRY}/postgres:12-alpine
+    container_name: bitbucket-db
+    environment:
+      POSTGRES_USER: bitbucket
+      POSTGRES_PASSWORD: bitbucket
+      POSTGRES_DB: bitbucket
