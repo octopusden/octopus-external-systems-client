@@ -2,20 +2,6 @@ import com.avast.gradle.dockercompose.ComposeExtension
 
 plugins {
     id("com.avast.gradle.docker-compose") version "0.16.9"
-    `maven-publish`
-}
-
-publishing {
-    repositories {
-        maven {
-
-        }
-    }
-    publications {
-        create<MavenPublication>("maven") {
-            from(components["java"])
-        }
-    }
 }
 
 java {

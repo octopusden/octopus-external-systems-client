@@ -1,10 +1,11 @@
 pluginManagement {
-    val releaseManagementVersion = extra["release-management.version"] as String
+    val releaseManagementVersion = extra["octopus-release-management.version"] as String
     val kotlinVersion: String = extra["kotlin.version"] as String
 
     plugins {
         id("org.octopusden.release-management") version (releaseManagementVersion)
         id("org.jetbrains.kotlin.jvm") version (kotlinVersion)
+        id("io.github.gradle-nexus.publish-plugin") version("1.1.0") apply(false)
     }
 }
 
