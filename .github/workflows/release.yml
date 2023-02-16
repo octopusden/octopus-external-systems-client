@@ -38,8 +38,8 @@ jobs:
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
           BUILD_VERSION: ${{ steps.version.outputs.version }}
       - name: Create Release
-        uses: marvinpinto/action-automatic-releases@master
+        uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
-          automatic_release_tag: ${{ steps.version.outputs.version }}
+          automatic_release_tag: ${{ github.event.client_payload.build_version }}
