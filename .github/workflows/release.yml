@@ -9,6 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: Prod
     steps:
+      - name: Input parameters
+        run: |
+          echo "Commit: ${{ github.event.client_payload.commit }}"
+          echo "Project version: ${{ github.event.client_payload.project_version }}"
       - uses: actions/checkout@v3
         name: Checkout(switching to commit)
         with:
@@ -21,25 +25,19 @@ jobs:
           cache: 'gradle'
       - name: Validate Gradle wrapper
         uses: gradle/wrapper-validation-action@v1
-      - uses: octopusden/octopus-base/.github/actions/get-version@main
-        name: Get version
-        id: version
-        with:
-          tag-value: ${{ github.event.client_payload.build_version }}
-          exit-if-empty: true
       - name: Build
-        run: ./gradlew build -PbuildVersion=${{ steps.version.outputs.version }} -x test
+        run: ./gradlew build -PbuildVersion=${{ github.event.client_payload.project_version }} -x test
       - name: Publish
-        run: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -PbuildVersion=${{ steps.version.outputs.version }}
+        run: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -PbuildVersion=${{ github.event.client_payload.project_version }}
         env:
           MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
-          BUILD_VERSION: ${{ steps.version.outputs.version }}
+          BUILD_VERSION: ${{ github.event.client_payload.project_version }}
       - name: Create Release
         uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: false
-          automatic_release_tag: ${{ github.event.client_payload.build_version }}
+          automatic_release_tag: v${{ github.event.client_payload.project_version }}
