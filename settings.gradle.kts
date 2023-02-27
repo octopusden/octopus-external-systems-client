@@ -9,7 +9,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "bitbucket-client"
+rootProject.name = "octopus-external-systems-clients"
 
 include("bitbucket-test-client")
 include("bitbucket-client")
