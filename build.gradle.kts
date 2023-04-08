@@ -22,7 +22,7 @@ nexusPublishing {
 }
 
 allprojects {
-    group = "org.octopusden.infrastructure"
+    group = "org.octopusden.octopus.octopus-external-systems-clients"
     version = "1.0-SNAPSHOT"
 }
 
@@ -72,7 +72,11 @@ subprojects {
         val signingKey: String? by project
         val signingPassword: String? by project
         useInMemoryPgpKeys(signingKey, signingPassword)
-        sign(publishing.publications["maven"])
+        signingKey?.let {
+            signingPassword?.let {
+                sign(publishing.publications["maven"])
+            }
+        }
     }
 
     idea.module {
