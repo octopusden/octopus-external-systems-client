@@ -5,7 +5,7 @@ java {
 }
 
 dependencies {
-    api(platform("io.github.openfeign:feign-bom:12.1"))
+    api(platform("io.github.openfeign:feign-bom:12.2"))
     api("io.github.openfeign:feign-httpclient")
     api("io.github.openfeign:feign-jackson")
     api("io.github.openfeign:feign-slf4j")
