@@ -11,7 +11,9 @@ import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
+import org.octopusden.octopus.infrastructure.jira.dto.CreateIssueFields
 import org.octopusden.octopus.infrastructure.jira.dto.Issue
+import org.octopusden.octopus.infrastructure.jira.dto.UpdateIssueFields
 
 class JiraClassicClient(
     apiParametersProvider: ClientParametersProvider,
@@ -29,9 +31,9 @@ class JiraClassicClient(
         getMapper()
     )
 
-    override fun createIssue(issue: Issue) = client.createIssue(issue)
+    override fun createIssue(issue: Issue<CreateIssueFields>) = client.createIssue(issue)
 
-    override fun updateIssue(issueKey: String, issue: Issue) = client.updateIssue(issueKey, issue)
+    override fun updateIssue(issueKey: String, issue: Issue<UpdateIssueFields>) = client.updateIssue(issueKey, issue)
 
     override fun getAssignable(issueKey: String, username: String?) = client.getAssignable(issueKey, username)
 
