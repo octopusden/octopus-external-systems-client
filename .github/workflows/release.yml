@@ -1,43 +1,11 @@
-name: Release
+name: Gradle Release
 
-on:
-  repository_dispatch:
-    types: [ release ]
+on: workflow_dispatch
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    environment: Prod
-    steps:
-      - name: Input parameters
-        run: |
-          echo "Commit: ${{ github.event.client_payload.commit }}"
-          echo "Project version: ${{ github.event.client_payload.project_version }}"
-      - uses: actions/checkout@v3
-        name: Checkout(switching to commit)
-        with:
-          ref: ${{ github.event.client_payload.commit }}
-      - name: Set up JDK 11
-        uses: actions/setup-java@v3
-        with:
-          java-version: '11'
-          distribution: 'adopt'
-          cache: 'gradle'
-      - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@v1
-      - name: Build
-        run: ./gradlew build -PbuildVersion=${{ github.event.client_payload.project_version }} -x test
-      - name: Publish
-        run: ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -PbuildVersion=${{ github.event.client_payload.project_version }}
-        env:
-          MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-          MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
-          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
-          BUILD_VERSION: ${{ github.event.client_payload.project_version }}
-      - name: Create Release
-        uses: marvinpinto/action-automatic-releases@latest
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: false
-          automatic_release_tag: v${{ github.event.client_payload.project_version }}
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-release.yml@v2.0
+    with:
+      flow-type: hybrid
+      java-version: '11'
+    secrets: inherit
