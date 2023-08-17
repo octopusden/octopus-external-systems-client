@@ -24,8 +24,8 @@ configure<ComposeExtension> {
 dockerCompose.isRequiredBy(tasks["test"])
 
 dependencies {
+    api(project(":test-client-commons"))
     implementation(project(":bitbucket-client"))
-    implementation("org.eclipse.jgit:org.eclipse.jgit:5.10.0.202012080955-r")
 
     testImplementation("org.junit.jupiter:junit-jupiter-engine:${project.properties["junit-jupiter.version"]}")
     testImplementation("org.junit.jupiter:junit-jupiter-params:${project.properties["junit-jupiter.version"]}")

@@ -11,8 +11,8 @@ pluginManagement {
 
 rootProject.name = "octopus-external-systems-clients"
 
-include("bitbucket-test-client")
+include("client-commons")
+include("test-client-commons")
 include("bitbucket-client")
 include("sonarqube-client")
-include("client-commons")
 include("jira-client")

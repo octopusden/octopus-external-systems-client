@@ -5,7 +5,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
-import org.octopusden.octopus.infastructure.bitbucket.test.dto.NewChangeSet
+import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketBasicCredentialProvider
 import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketClassicClient
 import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketClientParametersProvider
