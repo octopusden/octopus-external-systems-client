@@ -1,12 +1,6 @@
-plugins {
-    id("java")
-}
-
-group = "org.octopusden.octopus.octopus-external-systems-clients"
-version = "1.0-SNAPSHOT"
-
-repositories {
-    mavenCentral()
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
 dependencies {

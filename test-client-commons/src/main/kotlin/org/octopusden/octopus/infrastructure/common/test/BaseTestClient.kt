@@ -12,7 +12,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 
-abstract class AbstractTestClient(username: String, password: String) : TestClient {
+abstract class BaseTestClient(username: String, password: String) : TestClient {
 
     private val repositories = mutableMapOf<String, Git>()
     private val jgitCredentialsProvider = UsernamePasswordCredentialsProvider(username, password)
@@ -67,7 +67,7 @@ abstract class AbstractTestClient(username: String, password: String) : TestClie
     }
 
 
-    fun tag(vcsUrl: String, commitId: String, tag: String) {
+    override fun tag(vcsUrl: String, commitId: String, tag: String) {
         val git = repositories[vcsUrl]
             ?: throw IllegalArgumentException("Repository $vcsUrl does not exist, can not tag")
 
@@ -83,7 +83,7 @@ abstract class AbstractTestClient(username: String, password: String) : TestClie
             .call()
     }
 
-    fun clearData() {
+    override fun clearData() {
         repositories.entries
             .forEach { (vcsUrl, git) ->
                 getLog().info("Clear data: $vcsUrl ")

@@ -27,9 +27,7 @@ dependencies {
     api(project(":test-client-commons"))
     implementation(project(":bitbucket-client"))
 
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:${project.properties["junit-jupiter.version"]}")
-    testImplementation("org.junit.jupiter:junit-jupiter-params:${project.properties["junit-jupiter.version"]}")
-
+    testImplementation(project(":test-client-test-commons"))
     testImplementation("ch.qos.logback:logback-core:1.2.3")
     testImplementation("ch.qos.logback:logback-classic:1.2.3")
     testImplementation("org.slf4j:slf4j-api:1.7.30")

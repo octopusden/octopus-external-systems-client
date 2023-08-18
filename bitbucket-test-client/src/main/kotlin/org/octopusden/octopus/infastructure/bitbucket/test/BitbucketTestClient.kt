@@ -9,7 +9,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreat
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
 import org.octopusden.octopus.infrastructure.bitbucket.client.getProjects
-import org.octopusden.octopus.infrastructure.common.test.AbstractTestClient
+import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -19,7 +19,7 @@ class BitbucketTestClient(
     val bitbucketHost: String,
     username: String,
     password: String
-) : AbstractTestClient(username, password) {
+) : BaseTestClient(username, password) {
 
     private val client: BitbucketClient = BitbucketClassicClient(object : BitbucketClientParametersProvider {
         override fun getApiUrl() = "http://$bitbucketHost"

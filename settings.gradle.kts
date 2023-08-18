@@ -13,6 +13,8 @@ rootProject.name = "octopus-external-systems-clients"
 
 include("client-commons")
 include("test-client-commons")
+include("test-client-test-commons")
 include("bitbucket-client")
 include("sonarqube-client")
 include("jira-client")
+include("bitbucket-test-client")
