@@ -48,7 +48,7 @@ class BitbucketTestClient(
         return ProjectRepo(projectRepoArray[0], projectRepoArray[1])
     }
 
-    override fun createProjectIfNotExist(project: String) {
+    private fun createProjectIfNotExist(project: String) {
         try {
             client.getProject(project)
         } catch (e: NotFoundException) {
@@ -57,6 +57,7 @@ class BitbucketTestClient(
     }
 
     override fun createRepository(projectRepo: ProjectRepo) {
+        createProjectIfNotExist(projectRepo.project)
         client.createRepository(projectRepo.project, BitbucketCreateRepository(projectRepo.repository))
     }
 

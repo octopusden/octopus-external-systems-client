@@ -21,7 +21,6 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
     protected abstract fun checkActive()
     protected abstract fun convertSshToHttp(vcsUrl: String): String
     protected abstract fun parseUrl(url: String): ProjectRepo
-    protected abstract fun createProjectIfNotExist(project: String)
     protected abstract fun createRepository(projectRepo: ProjectRepo)
     protected abstract fun deleteRepository(projectRepo: ProjectRepo)
 
@@ -103,12 +102,9 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         return repositories.computeIfAbsent(vcsUrl) { url ->
             getLog().info("Repository $vcsUrl is not prepared, prepare")
             val projectRepo = parseUrl(url)
-            createProjectIfNotExist(projectRepo.project)
-            getLog().debug("Create Bitbucket Repository: $projectRepo")
-
             createRepository(projectRepo)
 
-            val repositoryDir = Files.createTempDirectory("BitbucketTestClient_")
+            val repositoryDir = Files.createTempDirectory("TestClient_")
             getLog().debug("Clone empty repository to $repositoryDir")
 
             Git.cloneRepository()

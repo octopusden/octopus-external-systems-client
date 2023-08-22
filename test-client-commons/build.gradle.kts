@@ -5,5 +5,5 @@ java {
 
 dependencies {
     api(project(":client-commons"))
-    implementation("org.eclipse.jgit:org.eclipse.jgit:6.6.0.202305301015-r")
+    implementation("org.eclipse.jgit:org.eclipse.jgit:5.13.2.202306221912-r")
 }
