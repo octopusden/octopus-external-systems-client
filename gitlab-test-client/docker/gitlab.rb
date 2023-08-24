@@ -995,11 +995,11 @@ gitlab_rails['db_port'] = 5432
 # gitlab_workhorse['proxy_headers_timeout'] = "1m0s"
 
 ##! limit number of concurrent API requests, defaults to 0 which is unlimited
-# gitlab_workhorse['api_limit'] = 0
+gitlab_workhorse['api_limit'] = 0
 
 ##! limit number of API requests allowed to be queued, defaults to 0 which
 ##! disables queuing
-# gitlab_workhorse['api_queue_limit'] = 0
+gitlab_workhorse['api_queue_limit'] = 0
 
 ##! duration after which we timeout requests if they sit too long in the queue
 # gitlab_workhorse['api_queue_duration'] = "30s"
@@ -1772,7 +1772,7 @@ postgresql['enable'] = false
 
 ##! Tune the maximum number of concurrent connections GitLab Pages will handle.
 ##! Default to 0 for unlimited connections.
-# gitlab_pages['max_connections'] = 0
+gitlab_pages['max_connections'] = 0
 
 ##! Configure the maximum length of URIs accepted by GitLab Pages
 ##! By default is limited for security reasons. Set 0 for unlimited
@@ -1895,13 +1895,13 @@ postgresql['enable'] = false
 ##! Rate limits as described in https://docs.gitlab.com/ee/administration/pages/#rate-limits
 
 ##! Rate limit HTTP requests per second from a single IP, 0 means is disabled
-# gitlab_pages['rate_limit_source_ip'] = 50.0
+gitlab_pages['rate_limit_source_ip'] = 0
 ##! Rate limit HTTP requests from a single IP, maximum burst allowed per second
-# gitlab_pages['rate_limit_source_ip_burst'] = 600
+gitlab_pages['rate_limit_source_ip_burst'] = 10000
 ##! Rate limit HTTP requests per second to a single domain, 0 means is disabled
-# gitlab_pages['rate_limit_domain'] = 0
+gitlab_pages['rate_limit_domain'] = 0
 ##! Rate limit HTTP requests to a single domain, maximum burst allowed per second
-# gitlab_pages['rate_limit_domain_burst'] = 10000
+gitlab_pages['rate_limit_domain_burst'] = 10000
 
 ##! Rate limit new TLS connections per second from a single IP, 0 means is disabled
 # gitlab_pages['rate_limit_tls_source_ip'] = 50.0

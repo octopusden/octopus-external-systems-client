@@ -10,4 +10,5 @@ dependencies {
     api("ch.qos.logback:logback-core:1.2.3")
     api("ch.qos.logback:logback-classic:1.2.3")
     api("org.slf4j:slf4j-api:1.7.30")
+    api("org.apache.commons:commons-lang3:3.1")
 }

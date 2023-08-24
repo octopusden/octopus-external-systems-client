@@ -12,19 +12,12 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.getCommits
 import org.octopusden.octopus.infrastructure.bitbucket.client.getTags
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 
-const val HOST = "localhost:7990"
-const val USER = "admin"
-const val PASSWORD = "admin"
-
-const val PROJECT = "test-project"
-const val REPOSITORY = "test-repository"
-
-const val VCS_URL = "ssh://git@$HOST/$PROJECT/$REPOSITORY.git"
-
-const val TAG = "test_tag"
+private const val HOST = "localhost:7990"
+private const val USER = "admin"
+private const val PASSWORD = "admin"
 
 class BitbucketTestClientTest : BaseTestClientTest(
-    BitbucketTestClient(HOST, USER, PASSWORD), VCS_URL, PROJECT, REPOSITORY, TAG
+    BitbucketTestClient(HOST, USER, PASSWORD), "ssh://git@$HOST/%s/%s.git", "test_tag"
 ) {
 
     private val client = BitbucketClassicClient(object : BitbucketClientParametersProvider {

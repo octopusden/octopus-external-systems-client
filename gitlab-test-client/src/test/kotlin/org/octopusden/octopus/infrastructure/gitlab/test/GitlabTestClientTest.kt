@@ -6,19 +6,12 @@ import org.gitlab4j.api.models.MergeRequest
 import org.gitlab4j.api.models.Tag
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 
-const val HOST = "localhost:8990"
-const val USER = "root"
-const val PASSWORD = "VomkaEa6PD1OIgY7dQVbPUuO8wi9RMCaZw/i9yPXcI0="
-
-const val PROJECT = "test-project"
-const val REPOSITORY = "test-repository"
-
-const val VCS_URL = "ssh://git@$HOST:$PROJECT/$REPOSITORY.git"
-
-const val TAG = "test_tag"
+private const val HOST = "localhost:8990"
+private const val USER = "root"
+private const val PASSWORD = "VomkaEa6PD1OIgY7dQVbPUuO8wi9RMCaZw/i9yPXcI0="
 
 class GitlabtTestClientTest : BaseTestClientTest(
-    GitlabTestClient("http://$HOST", USER, PASSWORD), VCS_URL, PROJECT, REPOSITORY, TAG
+    GitlabTestClient("http://$HOST", USER, PASSWORD), "ssh://git@$HOST:%s/%s.git", "test_tag"
 ) {
 
     private val client = GitLabApi.oauth2Login("http://$HOST", USER, PASSWORD)

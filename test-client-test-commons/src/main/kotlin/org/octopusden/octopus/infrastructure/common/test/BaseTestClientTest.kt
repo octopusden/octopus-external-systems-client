@@ -1,7 +1,9 @@
 package org.octopusden.octopus.infrastructure.common.test
 
+import org.apache.commons.lang3.RandomStringUtils
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
@@ -9,7 +11,7 @@ import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseTestClientTest(
-    val testClient: TestClient, val vcsUrl: String, val project: String, val repository: String, val tag: String
+    private val testClient: TestClient, private val vcsFormatter: String, private val tag: String
 ) {
 
     abstract fun getTags(project: String, repository: String): Collection<TestTag>
@@ -23,8 +25,19 @@ abstract class BaseTestClientTest(
         description: String
     ): TestPullRequest
 
-    @AfterEach
+    private lateinit var project: String
+    private lateinit var repository: String
+    private lateinit var vcsUrl: String
+
+    @BeforeEach
     fun beforeEachTestClientTest() {
+        project = RandomStringUtils.randomAlphabetic(10)
+        repository = RandomStringUtils.randomAlphabetic(10)
+        vcsUrl = vcsFormatter.format(project, repository)
+    }
+
+    @AfterEach
+    fun afterEachTestClientTest() {
         testClient.clearData()
     }
 

@@ -6,7 +6,6 @@ import org.gitlab4j.api.models.Group
 import org.gitlab4j.api.models.GroupParams
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.slf4j.LoggerFactory
-import java.util.concurrent.TimeUnit
 
 class GitlabTestClient(val url: String, username: String, password: String) : BaseTestClient(username, password) {
     private val client = GitLabApi.oauth2Login(url, username, password)
@@ -32,7 +31,6 @@ class GitlabTestClient(val url: String, username: String, password: String) : Ba
         groupParams.withPath(project)
         groupParams.withName(project)
         return client.groupApi.getGroups(project).firstOrNull { g -> g.path == project }
-            ?.also { TimeUnit.SECONDS.sleep(2) }
             ?: client.groupApi.createGroup(groupParams)
     }
 
