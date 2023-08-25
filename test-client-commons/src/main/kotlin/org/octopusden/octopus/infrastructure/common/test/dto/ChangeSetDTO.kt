@@ -1,4 +1,4 @@
-package org.octopusden.octopus.infastructure.bitbucket.test.dto
+package org.octopusden.octopus.infrastructure.common.test.dto
 
 import java.util.*
 

@@ -15,7 +15,6 @@ configure<ComposeExtension> {
     captureContainersOutputToFiles.set(buildDir.resolve("docker_logs"))
     environment.putAll(
         mapOf(
-            "BITBUCKET_LICENSE" to project.properties["bitbucket.license"],
             "DOCKER_REGISTRY" to project.properties["docker.registry"]
         )
     )
@@ -25,6 +24,6 @@ dockerCompose.isRequiredBy(tasks["test"])
 
 dependencies {
     api(project(":test-client-commons"))
-    implementation(project(":bitbucket-client"))
+    implementation("org.gitlab4j:gitlab4j-api:5.3.0")
     testImplementation(project(":test-client-test-commons"))
 }
