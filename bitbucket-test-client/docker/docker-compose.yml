@@ -2,7 +2,7 @@ version: '3'
 
 services:
   bitbucket:
-    image: ${DOCKER_REGISTRY}/atlassian/bitbucket-server:7.4.2-ubuntu-jdk11
+    image: ${DOCKER_REGISTRY}/atlassian/bitbucket-server:8.6.1-jdk11
     depends_on:
       - postgres
     ports:
