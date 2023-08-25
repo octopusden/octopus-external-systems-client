@@ -17,7 +17,7 @@ private const val USER = "admin"
 private const val PASSWORD = "admin"
 
 class BitbucketTestClientTest : BaseTestClientTest(
-    BitbucketTestClient(HOST, USER, PASSWORD), "ssh://git@$HOST/%s/%s.git", "test_tag"
+    BitbucketTestClient(HOST, USER, PASSWORD), "ssh://git@$HOST/%s/%s.git"
 ) {
 
     private val client = BitbucketClassicClient(object : BitbucketClientParametersProvider {

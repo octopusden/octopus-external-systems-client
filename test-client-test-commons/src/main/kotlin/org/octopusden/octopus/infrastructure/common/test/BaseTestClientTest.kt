@@ -9,9 +9,13 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 
+
+private const val TAG = "test_tag"
+private const val project = "test_project"
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseTestClientTest(
-    private val testClient: TestClient, private val vcsFormatter: String, private val tag: String
+    private val testClient: TestClient, private val vcsFormatter: String
 ) {
 
     abstract fun getTags(project: String, repository: String): Collection<TestTag>
@@ -25,13 +29,11 @@ abstract class BaseTestClientTest(
         description: String
     ): TestPullRequest
 
-    private lateinit var project: String
     private lateinit var repository: String
     private lateinit var vcsUrl: String
 
     @BeforeEach
     fun beforeEachTestClientTest() {
-        project = RandomStringUtils.randomAlphabetic(10)
         repository = RandomStringUtils.randomAlphabetic(10)
         vcsUrl = vcsFormatter.format(project, repository)
     }
@@ -106,19 +108,19 @@ abstract class BaseTestClientTest(
     @Test
     fun testTag() {
         val expectedId = testClient.commit(NewChangeSet("test tag commit", vcsUrl, "master")).id
-        testClient.tag(vcsUrl, expectedId, tag)
-        Assertions.assertEquals(tag, getTags(project, repository).first().displayId)
+        testClient.tag(vcsUrl, expectedId, TAG)
+        Assertions.assertEquals(TAG, getTags(project, repository).first().displayId)
         Assertions.assertEquals(expectedId, getTags(project, repository).first().commitId)
     }
 
     @Test
     fun testTagException() {
         assertThrows<IllegalArgumentException> {
-            testClient.tag(vcsUrl, "", tag)
+            testClient.tag(vcsUrl, "", TAG)
         }
         testClient.commit(NewChangeSet("message", vcsUrl, "develop")).id
         assertThrows<IllegalArgumentException> {
-            testClient.tag(vcsUrl, "left", tag)
+            testClient.tag(vcsUrl, "left", TAG)
         }
     }
 
