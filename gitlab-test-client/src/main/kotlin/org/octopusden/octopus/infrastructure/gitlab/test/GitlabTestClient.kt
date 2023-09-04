@@ -6,6 +6,8 @@ import org.gitlab4j.api.models.Group
 import org.gitlab4j.api.models.GroupParams
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.slf4j.LoggerFactory
+import java.util.Date
+import java.util.concurrent.TimeUnit
 
 class GitlabTestClient(val url: String, username: String, password: String) : BaseTestClient(username, password) {
     private val client = GitLabApi.oauth2Login(url, username, password)
@@ -30,21 +32,84 @@ class GitlabTestClient(val url: String, username: String, password: String) : Ba
         val groupParams = GroupParams()
         groupParams.withPath(project)
         groupParams.withName(project)
-        return client.groupApi.getGroups(project).firstOrNull { g -> g.path == project }
-            ?: client.groupApi.createGroup(groupParams)
+        return retryableExecution {
+            client.groupApi.getGroups(project).firstOrNull { g -> g.path == project }
+                ?: client.groupApi.createGroup(groupParams)
+        }
     }
 
     override fun createRepository(projectRepo: ProjectRepo) {
+        if (existRepository(projectRepo)) {
+            log.error("Repository ${projectRepo.path} exists (previous test(s) probably crashed)")
+            deleteRepository(projectRepo)
+        }
+
         val group = createProjectIfNotExist(projectRepo.project)
-        try {
+        retryableExecution {
             client.projectApi.createProject(group.id, projectRepo.repository)
-        } catch (e: GitLabApiException) {
-            throw IllegalArgumentException(e.message, e)
         }
     }
 
     override fun deleteRepository(projectRepo: ProjectRepo) {
-        client.projectApi.deleteProject("${projectRepo.project}/${projectRepo.repository}")
+        log.info("Delete ${projectRepo.path}")
+        if (existRepository(projectRepo)) {
+            try {
+                val projectId = moveProjectForDelete(projectRepo)
+                retryableExecution { client.projectApi.deleteProject(projectId) }
+            } catch (e: GitLabApiException) {
+                log.error(e.message)
+            }
+        }
+    }
+
+    private fun moveProjectForDelete(projectRepo: ProjectRepo): Long {
+        val project = retryableExecution { client.projectApi.getProject(projectRepo.path) }
+
+        val time = Date().time
+        project.name = "${project.name}-$time"
+        project.path = "${project.path}-$time"
+        project.withDefaultBranch(null)
+
+        retryableExecution { client.projectApi.updateProject(project) }
+
+        while (existRepository(projectRepo)) {
+            log.warn("Wait when ${projectRepo.path} will be moved for delete")
+            TimeUnit.SECONDS.sleep(1)
+        }
+
+        return project.id
+    }
+
+    private fun existRepository(projectRepo: ProjectRepo): Boolean {
+        return try {
+            retryableExecution {
+                client.projectApi.getProject(projectRepo.path) != null
+            }
+        } catch (e: GitLabApiException) {
+            false
+        }
+    }
+
+    private fun <T> retryableExecution(
+        attemptLimit: Int = 3,
+        attemptIntervalSec: Long = 3,
+        skipRetryOnCode: Int = 404,
+        func: () -> T
+    ): T {
+        lateinit var latestException: Exception
+        for (attempt in 1..attemptLimit) {
+            try {
+                return func()
+            } catch (e: GitLabApiException) {
+                if (e.httpStatus == skipRetryOnCode) {
+                    throw e
+                }
+                getLog().warn("${e.message}, attempt=$attempt:$attemptLimit, retry in $attemptIntervalSec sec")
+                latestException = e
+                TimeUnit.SECONDS.sleep(attemptIntervalSec)
+            }
+        }
+        throw latestException
     }
 
     companion object {

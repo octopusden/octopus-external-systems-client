@@ -24,6 +24,6 @@ dockerCompose.isRequiredBy(tasks["test"])
 
 dependencies {
     api(project(":test-client-commons"))
-    implementation("org.gitlab4j:gitlab4j-api:5.3.0")
+    implementation("org.gitlab4j:gitlab4j-api:6.0.0-rc.2")
     testImplementation(project(":test-client-test-commons"))
 }
