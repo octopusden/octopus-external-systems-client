@@ -2,6 +2,7 @@ package org.octopusden.octopus.infrastructure.common.test
 
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.errors.RefNotFoundException
+import org.eclipse.jgit.api.errors.TransportException
 import org.eclipse.jgit.lib.ConfigConstants.CONFIG_BRANCH_SECTION
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.octopusden.octopus.infrastructure.common.test.dto.ChangeSet
@@ -43,17 +44,23 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             .resolve("${UUID.randomUUID()}.${"commit"}")
             .toFile()
             .createNewFile()
-        git.add()
-            .addFilepattern(".")
-            .call()
+        retryableExecution {
+            git.add()
+                .addFilepattern(".")
+                .call()
+        }
 
-        val commit = git.commit()
-            .setMessage(message)
-            .call()
+        val commit = retryableExecution {
+            git.commit()
+                .setMessage(message)
+                .call()
+        }
 
-        git.push()
-            .setCredentialsProvider(jgitCredentialsProvider)
-            .call()
+        retryableExecution {
+            git.push()
+                .setCredentialsProvider(jgitCredentialsProvider)
+                .call()
+        }
 
         return ChangeSet(
             commit.id.name,
@@ -72,14 +79,18 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
 
         gitCheckout(git, commitId)
 
-        git.tag()
-            .setName(tag)
-            .call()
+        retryableExecution {
+            git.tag()
+                .setName(tag)
+                .call()
+        }
 
-        git.push()
-            .setCredentialsProvider(jgitCredentialsProvider)
-            .setPushTags()
-            .call()
+        retryableExecution {
+            git.push()
+                .setCredentialsProvider(jgitCredentialsProvider)
+                .setPushTags()
+                .call()
+        }
     }
 
     override fun clearData() {
@@ -107,13 +118,15 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             val repositoryDir = Files.createTempDirectory("TestClient_")
             getLog().debug("Clone empty repository to $repositoryDir")
 
-            Git.cloneRepository()
-                .setDirectory(repositoryDir.toFile())
-                .setURI(
-                    convertSshToHttp(vcsUrl)
-                )
-                .setCredentialsProvider(jgitCredentialsProvider)
-                .call()
+            retryableExecution {
+                Git.cloneRepository()
+                    .setDirectory(repositoryDir.toFile())
+                    .setURI(
+                        convertSshToHttp(vcsUrl)
+                    )
+                    .setCredentialsProvider(jgitCredentialsProvider)
+                    .call()
+            }
         }
     }
 
@@ -131,9 +144,11 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             config.setString(CONFIG_BRANCH_SECTION, "master", "remote", "origin")
             config.setString(CONFIG_BRANCH_SECTION, "master", "merge", "refs/heads/master")
             config.save()
-            git.commit()
-                .setMessage("initial commit")
-                .call()
+            retryableExecution {
+                git.commit()
+                    .setMessage("initial commit")
+                    .call()
+            }
         }
 
         if (branches.any { it.name == "refs/heads/$branch" } || branch == "master") {
@@ -146,9 +161,11 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             parent?.let { parentValue ->
                 gitCheckout(git, parentValue)
             }
-            git.branchCreate()
-                .setName(branch)
-                .call()
+            retryableExecution {
+                git.branchCreate()
+                    .setName(branch)
+                    .call()
+            }
         }
 
         getLog().debug("Checkout $branch")
@@ -158,9 +175,11 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
 
     private fun gitCheckout(git: Git, commitId: String) {
         try {
-            git.checkout()
-                .setName(commitId)
-                .call()
+            retryableExecution {
+                git.checkout()
+                    .setName(commitId)
+                    .call()
+            }
         } catch (e: RefNotFoundException) {
             throw IllegalArgumentException("Target commit '$commitId' not found")
         }
@@ -178,5 +197,22 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         }
     }
 
-    protected data class ProjectRepo(val project: String, val repository: String)
+    private fun <T> retryableExecution(attemptLimit: Int = 3, attemptIntervalSec: Long = 3, func: () -> T): T {
+        lateinit var latestException: Exception
+        for (attempt in 1..attemptLimit) {
+            try {
+                return func()
+            } catch (e: TransportException) {
+                getLog().warn("${e.message}, attempt=$attempt:$attemptLimit, retry in $attemptIntervalSec sec")
+                latestException = e
+                TimeUnit.SECONDS.sleep(attemptIntervalSec)
+            }
+        }
+        throw latestException
+    }
+
+    protected data class ProjectRepo(val project: String, val repository: String) {
+        val path: String
+            get() = "$project/$repository"
+    }
 }
