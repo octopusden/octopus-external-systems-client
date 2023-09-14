@@ -87,7 +87,7 @@ interface GiteaClient {
         @Param("organization") organization: String,
         @Param("repository") repository: String,
         @QueryMap requestParams: Map<String, Any>,
-    ): Collection<GiteaBranch>
+    ): Collection<GiteaBranch>?
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/reviewers")
     fun getDefaultReviewers(
@@ -111,11 +111,11 @@ fun GiteaClient.getOrganizations(): List<GiteaOrganization> {
 fun GiteaClient.getRepositories(): List<GiteaRepository> =
     execute({ parameters: Map<String, Any> -> getRepositories(parameters) })
 
-fun GiteaClient.getRepositories(projectKey: String): List<GiteaRepository> =
-    execute({ parameters: Map<String, Any> -> getRepositories(projectKey, parameters) })
+fun GiteaClient.getRepositories(organization: String): List<GiteaRepository> =
+    execute({ parameters: Map<String, Any> -> getRepositories(organization, parameters) })
 
 fun GiteaClient.getCommits(
-    projectKey: String,
+    organization: String,
     repository: String,
     sinceDate: Date?,
     until: String?
@@ -129,43 +129,42 @@ fun GiteaClient.getCommits(
         ?: { true }
 
     return execute(
-        { parameters: Map<String, Any> -> getCommits(projectKey, repository, parameters + limitParameters) },
+        { parameters: Map<String, Any> -> getCommits(organization, repository, parameters + limitParameters) },
         filter
     )
 }
 
 fun GiteaClient.getTags(
-    projectKey: String,
+    organization: String,
     repository: String
-): List<GiteaTag> = execute({ parameters: Map<String, Any> -> getTags(projectKey, repository, parameters) })
+): Collection<GiteaTag> = execute({ parameters: Map<String, Any> -> getTags(organization, repository, parameters) })
 
 fun GiteaClient.getBranches(
-    projectKey: String,
+    organization: String,
     repository: String
-): List<GiteaBranch> = execute({ parameters: Map<String, Any> -> getBranches(projectKey, repository, parameters) })
+): List<GiteaBranch> = execute({ parameters: Map<String, Any> -> getBranches(organization, repository, parameters) ?: emptyList() })
 
 fun GiteaClient.createPullRequestWithDefaultReviewers(
-    projectKey: String,
+    organization: String,
     repository: String,
     sourceBranch: String,
     targetBranch: String,
     title: String,
     description: String
 ): GiteaPullRequest {
-    val branches = getBranches(projectKey, repository)
+    val branches = getBranches(organization, repository)
         .map { branch -> branch.name }
-
 
     fun checkBranch(type: String, branchName: String) {
         if (!branches.contains(branchName)) {
-            throw NotFoundException("$type branch '$branchName' not found in '$projectKey:$repository'")
+            throw NotFoundException("$type branch '$branchName' not found in '$organization:$repository'")
         }
     }
 
     checkBranch("Source", sourceBranch)
     checkBranch("Target", targetBranch)
 
-    val defaultReviewers = getDefaultReviewers(projectKey, repository)
+    val defaultReviewers = getDefaultReviewers(organization, repository)
         .map { u -> u.username }
         .toMutableSet()
 
@@ -174,7 +173,7 @@ fun GiteaClient.createPullRequestWithDefaultReviewers(
 
 
     return createPullRequest(
-        projectKey,
+        organization,
         repository,
         GiteaCreatePullRequest(title, description, sourceBranch, targetBranch, defaultReviewers, assignee)
     )

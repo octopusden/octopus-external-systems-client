@@ -43,6 +43,7 @@ tasks["composeUp"].doLast {
 
 dependencies {
     api(project(":test-client-commons"))
+    implementation(project(":gitea-client"))
     testImplementation(project(":test-client-test-commons"))
 }
 

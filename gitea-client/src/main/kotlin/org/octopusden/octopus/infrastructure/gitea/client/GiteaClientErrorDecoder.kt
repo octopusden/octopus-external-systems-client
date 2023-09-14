@@ -14,10 +14,9 @@ class GiteaClientErrorDecoder(private val objectMapper: ObjectMapper) : ErrorDec
                 body.asInputStream()
                     .use { inputStream -> objectMapper.readValue(inputStream, GiteaExceptionResponse::class.java) }
             }
-        when (response.status()) {
-            HttpStatus.SC_NOT_FOUND -> throw NotFoundException(errorResponse.message)
-
-            else -> throw IllegalStateException(errorResponse.message)
+        return when (response.status()) {
+            HttpStatus.SC_NOT_FOUND -> NotFoundException(errorResponse.message)
+            else -> IllegalStateException(errorResponse.message)
         }
     }
 }
