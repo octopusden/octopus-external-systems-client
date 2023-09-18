@@ -102,7 +102,7 @@ class GiteaClassicClient(
                 .decoder(JacksonDecoder(objectMapper))
                 .errorDecoder(GiteaClientErrorDecoder(objectMapper))
                 .encoder(JacksonEncoder(objectMapper))
-                .decoder(JacksonDecoder(objectMapper))
+                .decoder(GiteaClientDecoder(objectMapper))
                 .requestInterceptor(interceptor)
                 .logger(Slf4jLogger(GiteaClient::class.java))
                 .logLevel(Logger.Level.FULL)
