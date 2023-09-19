@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
+import java.util.concurrent.TimeUnit
 
 
 private const val TAG = "test_tag"
@@ -122,6 +123,18 @@ abstract class BaseTestClientTest(
         testClient.commit(NewChangeSet("initial commit", vcsUrl, mainBranch))
         val featureBranch = "feature"
         testClient.commit(NewChangeSet("feature commit", vcsUrl, featureBranch))
+
+        var success = false
+        var attempt = 0
+        do {
+            try {
+                attempt++
+                success = getCommits(PROJECT, REPOSITORY, featureBranch).size == 2
+            } catch (_: IllegalStateException) {
+                TimeUnit.SECONDS.sleep(1)
+            }
+        } while (!success && attempt < 10)
+
         val pullRequest = createPullRequestWithDefaultReviewers(
             PROJECT,
             REPOSITORY,
