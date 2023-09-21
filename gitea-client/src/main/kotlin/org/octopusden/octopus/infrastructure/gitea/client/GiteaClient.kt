@@ -22,7 +22,7 @@ import java.util.Date
 
 const val ORG_PATH = "api/v1/orgs"
 const val REPO_PATH = "api/v1/repos"
-const val ENTITY_LIMIT = 1000
+const val ENTITY_LIMIT = 50
 
 interface GiteaClient {
     @RequestLine("GET $ORG_PATH")
@@ -122,12 +122,17 @@ fun GiteaClient.getCommits(
     sinceDate: Date?,
     until: String?
 ): Collection<GiteaCommit> {
-    val limitParameters = mutableMapOf<String, Any>()
+    val limitParameters = mutableMapOf<String, Any>(
+        "limit" to ENTITY_LIMIT,
+        "stat" to false,
+        "verification" to false,
+        "files" to false
+    )
     until?.let { untilValue ->
         limitParameters["sha"] = untilValue
     }
 
-    val filter = sinceDate?.let { fromDateValue -> { c: GiteaCommit -> c.commit.author.date > fromDateValue } }
+    val filter = sinceDate?.let { fromDateValue -> { c: GiteaCommit -> c.commit.author.date >= fromDateValue } }
         ?: { true }
 
     return execute(
@@ -189,7 +194,7 @@ private fun <T : BaseGiteaEntity> execute(
 ): Collection<T> {
     var pageStart = 1
     val entities = mutableListOf<T>()
-    val staticParameters = mutableMapOf<String, Any>("limit" to ENTITY_LIMIT)
+    val staticParameters = mutableMapOf<String, Any>()
     do {
         staticParameters["page"] = pageStart
         val giteaResponse = function.invoke(staticParameters)
@@ -203,6 +208,6 @@ private fun <T : BaseGiteaEntity> execute(
             this
         }
         pageStart++
-    } while (giteaResponse.hasMore ?: run { giteaResponse.values.size == ENTITY_LIMIT } && inFilter)
+    } while ((giteaResponse.hasMore ?: (giteaResponse.values.isNotEmpty())) && inFilter)
     return entities.toList()
 }
