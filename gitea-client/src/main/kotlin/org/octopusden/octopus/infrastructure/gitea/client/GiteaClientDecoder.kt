@@ -19,7 +19,7 @@ class GiteaClientDecoder(val mapper: ObjectMapper) : JacksonDecoder(mapper) {
             val collection = super.decode(
                 response,
                 CollectionType(parameterizedType!!.actualTypeArguments)
-            ) as Collection<BaseGiteaEntity>
+            ) as? Collection<BaseGiteaEntity> ?: emptyList()
 
             val hasMore = response.headers()["X-HasMore"]
                 ?.firstOrNull()
