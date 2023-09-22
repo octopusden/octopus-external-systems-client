@@ -208,6 +208,6 @@ private fun <T : BaseGiteaEntity> execute(
             this
         }
         pageStart++
-    } while ((giteaResponse.hasMore ?: (giteaResponse.values.isNotEmpty())) && inFilter)
+    } while ((giteaResponse.hasMore ?: (currentPartEntities.isNotEmpty())) && inFilter)
     return entities.toList()
 }
