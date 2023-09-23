@@ -69,7 +69,7 @@ interface GiteaClient {
         @QueryMap requestParams: Map<String, Any>
     ): GiteaEntityList<GiteaCommit>
 
-    @RequestLine("GET $REPO_PATH/{organization}/{repository}/git/commits/{sha}")
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}/git/commits/{sha}", decodeSlash = false)
     @Throws(NotFoundException::class)
     fun getCommit(
         @Param("organization") organization: String,

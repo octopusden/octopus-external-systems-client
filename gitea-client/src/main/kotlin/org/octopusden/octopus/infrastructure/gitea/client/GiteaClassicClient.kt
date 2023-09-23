@@ -98,8 +98,6 @@ class GiteaClassicClient(
         ): GiteaClient =
             Feign.builder()
                 .client(ApacheHttpClient())
-                .encoder(JacksonEncoder(objectMapper))
-                .decoder(JacksonDecoder(objectMapper))
                 .errorDecoder(GiteaClientErrorDecoder(objectMapper))
                 .encoder(JacksonEncoder(objectMapper))
                 .decoder(GiteaClientDecoder(objectMapper))
