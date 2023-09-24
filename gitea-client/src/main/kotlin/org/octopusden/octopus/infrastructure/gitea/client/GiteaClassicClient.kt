@@ -7,7 +7,6 @@ import feign.Feign
 import feign.Logger
 import feign.RequestInterceptor
 import feign.httpclient.ApacheHttpClient
-import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -98,8 +97,6 @@ class GiteaClassicClient(
         ): GiteaClient =
             Feign.builder()
                 .client(ApacheHttpClient())
-                .encoder(JacksonEncoder(objectMapper))
-                .decoder(JacksonDecoder(objectMapper))
                 .errorDecoder(GiteaClientErrorDecoder(objectMapper))
                 .encoder(JacksonEncoder(objectMapper))
                 .decoder(GiteaClientDecoder(objectMapper))
