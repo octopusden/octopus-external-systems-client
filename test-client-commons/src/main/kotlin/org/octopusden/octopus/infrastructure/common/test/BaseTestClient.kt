@@ -24,9 +24,9 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
     protected abstract fun parseUrl(url: String): ProjectRepo
     protected abstract fun createRepository(projectRepo: ProjectRepo)
     protected abstract fun deleteRepository(projectRepo: ProjectRepo)
+    protected abstract fun checkCommit(projectRepo: ProjectRepo, sha: String)
 
     override fun commit(newChangeSet: NewChangeSet, parent: String?): ChangeSet {
-        waitActive()
         getLog().info("Add commit: $newChangeSet, parent: ${parent ?: ""}")
         val branch = newChangeSet.branch
         val repositoryUrl = newChangeSet.repository
@@ -62,8 +62,12 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
                 .call()
         }
 
+        val sha = commit.id.name
+
+        wait(waitMessage = "Wait commit='$sha' is accessible") { checkCommit(parseUrl(newChangeSet.repository), sha) }
+
         return ChangeSet(
-            commit.id.name,
+            sha,
             message,
             repositoryUrl,
             branch,
@@ -185,19 +189,19 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         }
     }
 
-    private fun waitActive(retries: Int = 10, pingIntervalSec: Long = 3) {
+    private fun wait(retries: Int = 20, pingIntervalMsec: Long = 500, waitMessage: String, checkFunc: () -> Unit) {
         for (i in 1..retries) {
             try {
-                checkActive()
+                checkFunc()
                 break
-            } catch (ignore: Exception) {
-                getLog().warn("Wait VCS is active, retries remained: ${retries - i}")
-                TimeUnit.SECONDS.sleep(pingIntervalSec)
+            } catch (_: Exception) {
+                getLog().warn("$waitMessage, retries remained: ${retries - i}")
+                TimeUnit.MILLISECONDS.sleep(pingIntervalMsec)
             }
         }
     }
 
-    private fun <T> retryableExecution(attemptLimit: Int = 3, attemptIntervalSec: Long = 3, func: () -> T): T {
+    private fun <T> retryableExecution(attemptLimit: Int = 10, attemptIntervalSec: Long = 1, func: () -> T): T {
         lateinit var latestException: Exception
         for (attempt in 1..attemptLimit) {
             try {

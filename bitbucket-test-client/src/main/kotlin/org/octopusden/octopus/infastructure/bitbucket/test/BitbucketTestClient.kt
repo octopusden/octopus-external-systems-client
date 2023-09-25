@@ -8,6 +8,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketCredentia
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
+import org.octopusden.octopus.infrastructure.bitbucket.client.getCommits
 import org.octopusden.octopus.infrastructure.bitbucket.client.getProjects
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.slf4j.Logger
@@ -63,6 +64,10 @@ class BitbucketTestClient(
 
     override fun deleteRepository(projectRepo: ProjectRepo) {
         client.deleteRepository(projectRepo.project, projectRepo.repository)
+    }
+
+    override fun checkCommit(projectRepo: ProjectRepo, sha: String) {
+        client.getCommits(projectRepo.project, projectRepo.repository, null, null, sha)
     }
 
     companion object {

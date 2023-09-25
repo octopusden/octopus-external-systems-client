@@ -8,6 +8,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.GiteaClassicClient
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
+import org.octopusden.octopus.infrastructure.gitea.client.getCommits
 import org.octopusden.octopus.infrastructure.gitea.client.getOrganizations
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -44,6 +45,10 @@ class GiteaTestClient(val url: String, val username: String, val password: Strin
 
     override fun deleteRepository(projectRepo: ProjectRepo) =
         client.deleteRepository(projectRepo.project, projectRepo.repository)
+
+    override fun checkCommit(projectRepo: ProjectRepo, sha: String) {
+        client.getCommits(projectRepo.project, projectRepo.repository, null, sha)
+    }
 
     private fun createOrganizationIfNotExist(organization: String) {
         try {
