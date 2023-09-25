@@ -62,6 +62,10 @@ class GitlabTestClient(val url: String, username: String, password: String) : Ba
         }
     }
 
+    override fun checkCommit(projectRepo: ProjectRepo, sha: String) {
+        client.commitsApi.getCommits(projectRepo.path, sha, null, null)
+    }
+
     private fun moveProjectForDelete(projectRepo: ProjectRepo): Long {
         val project = retryableExecution { client.projectApi.getProject(projectRepo.path) }
 
