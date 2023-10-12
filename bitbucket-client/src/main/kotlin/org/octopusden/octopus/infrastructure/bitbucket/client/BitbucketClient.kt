@@ -89,7 +89,7 @@ interface BitbucketClient {
     fun getCommit(
         @Param("projectKey") projectKey: String,
         @Param("repository") repository: String,
-        @Param("id") id: String
+        @Param("id", expander = BitbucketCommitIdValidator::class) id: String
     ): BitbucketCommit
 
     @RequestLine("GET $JIRA_ISSUES_PATH/{issueKey}/commits")
