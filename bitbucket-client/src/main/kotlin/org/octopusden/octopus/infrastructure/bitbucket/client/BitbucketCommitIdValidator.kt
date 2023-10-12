@@ -4,13 +4,13 @@ import feign.Param.Expander
 
 class BitbucketCommitIdValidator : Expander {
     override fun expand(value: Any?) =
-        if (value is String && commitIdRegex matches value) {
+        if (value is String && COMMIT_ID_REGEX matches value) {
             value
         } else {
             throw IllegalArgumentException("'$value' is not valid BitBucket commit id")
         }
 
     companion object {
-        private val commitIdRegex = "[0-9a-fA-F]+".toRegex()
+        private val COMMIT_ID_REGEX = "[0-9a-fA-F]+".toRegex()
     }
 }
