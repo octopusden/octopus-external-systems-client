@@ -11,6 +11,6 @@ class BitbucketCommitIdValidator : Expander {
         }
 
     companion object {
-        val commitIdRegex = "[0-9a-fA-F]+".toRegex()
+        private val commitIdRegex = "[0-9a-fA-F]+".toRegex()
     }
 }
