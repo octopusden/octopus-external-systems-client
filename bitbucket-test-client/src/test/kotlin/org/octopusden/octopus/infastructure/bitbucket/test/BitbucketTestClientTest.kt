@@ -1,5 +1,7 @@
 package org.octopusden.octopus.infastructure.bitbucket.test
 
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketBasicCredentialProvider
 import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketClassicClient
 import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketClientParametersProvider
@@ -46,6 +48,13 @@ class BitbucketTestClientTest : BaseTestClientTest(
         title,
         description
     ).toTestPullRequest()
+
+    @Test
+    fun testGetCommitInvalidId() {
+        Assertions.assertThrowsExactly(IllegalArgumentException::class.java) {
+            client.getCommit("projectKey", "repository", "bug/fix")
+        }
+    }
 
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)
     private fun BitbucketCommit.toTestCommit() = TestCommit(id, message)
