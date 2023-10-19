@@ -106,7 +106,7 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         val git = repositories[vcsUrl]
             ?: throw IllegalArgumentException("Repository $vcsUrl does not exist, can not export")
         val projectRepo = parseUrl(vcsUrl)
-        getLog().debug("Export VCS repository: '$projectRepo'")
+        getLog().info("Export VCS repository: '$projectRepo'")
         val repository = git.repository.directory
         ZipOutputStream(zip.outputStream()).use { zipOutputStream ->
             repository.walkTopDown().forEach { file ->
@@ -131,7 +131,8 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             throw IllegalArgumentException("Repository $vcsUrl exists already, can not import")
         }
         val projectRepo = parseUrl(vcsUrl)
-        getLog().debug("Import VCS repository: '$projectRepo'")
+        getLog().info("Import VCS repository: '$projectRepo'")
+        createRepository(projectRepo)
         val repositoryDir = Files.createTempDirectory("TestClient_")
         val repository = repositoryDir.resolve(".git").also { Files.createDirectory(it) }
         ZipInputStream(zip.inputStream()).use { zipInputStream ->
@@ -148,7 +149,6 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             }
         }
         val git = Git.open(repositoryDir.toFile())
-        createRepository(projectRepo)
         git.remoteList().call().forEach {
             git.remoteRemove()
                 .setRemoteName(it.name)
@@ -165,6 +165,8 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
                 .setPushTags()
                 .call()
         }
+        val sha = git.log().call().first { it.fullMessage == INITIAL_COMMIT_MESSAGE }.id.name
+        wait(waitMessage = "Wait commit='$sha' is accessible") { checkCommit(projectRepo, sha) }
         repositories[vcsUrl] = git
     }
 
@@ -220,7 +222,7 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             config.save()
             retryableExecution {
                 git.commit()
-                    .setMessage("initial commit")
+                    .setMessage(INITIAL_COMMIT_MESSAGE)
                     .call()
             }
         }
@@ -292,5 +294,6 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
 
     companion object {
         const val DEFAULT_BRANCH = "master"
+        const val INITIAL_COMMIT_MESSAGE = "initial commit"
     }
 }
