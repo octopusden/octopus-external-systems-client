@@ -1,16 +1,21 @@
 package org.octopusden.octopus.infrastructure.common.test
 
+import java.io.File
+import java.nio.file.Files
+import java.util.UUID
+import java.util.concurrent.TimeUnit
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.errors.RefNotFoundException
 import org.eclipse.jgit.api.errors.TransportException
 import org.eclipse.jgit.lib.ConfigConstants.CONFIG_BRANCH_SECTION
+import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.octopusden.octopus.infrastructure.common.test.dto.ChangeSet
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.slf4j.Logger
-import java.nio.file.Files
-import java.util.UUID
-import java.util.concurrent.TimeUnit
 
 
 abstract class BaseTestClient(username: String, password: String) : TestClient {
@@ -97,6 +102,72 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         }
     }
 
+    override fun exportRepository(vcsUrl: String, zip: File) {
+        val git = repositories[vcsUrl]
+            ?: throw IllegalArgumentException("Repository $vcsUrl does not exist, can not export")
+        val projectRepo = parseUrl(vcsUrl)
+        getLog().debug("Export VCS repository: '$projectRepo'")
+        val repository = git.repository.directory
+        ZipOutputStream(zip.outputStream()).use { zipOutputStream ->
+            repository.walkTopDown().forEach { file ->
+                if (file != repository) {
+                    zipOutputStream.putNextEntry(
+                        ZipEntry(
+                            repository.toPath().relativize(file.toPath()).toString() +
+                                    if (file.isDirectory) "/" else ""
+                        )
+                    )
+                    if (file.isFile) {
+                        file.inputStream().use { it.copyTo(zipOutputStream) }
+                    }
+                    zipOutputStream.closeEntry()
+                }
+            }
+        }
+    }
+
+    override fun importRepository(vcsUrl: String, zip: File) {
+        if (repositories.contains(vcsUrl)) {
+            throw IllegalArgumentException("Repository $vcsUrl exists already, can not import")
+        }
+        val projectRepo = parseUrl(vcsUrl)
+        getLog().debug("Import VCS repository: '$projectRepo'")
+        val repositoryDir = Files.createTempDirectory("TestClient_")
+        val repository = repositoryDir.resolve(".git").also { Files.createDirectory(it) }
+        ZipInputStream(zip.inputStream()).use { zipInputStream ->
+            var entry = zipInputStream.nextEntry
+            while (entry != null) {
+                if (entry.isDirectory) {
+                    Files.createDirectory(repository.resolve(entry.name.trimEnd('/')))
+                } else {
+                    repository.resolve(entry.name).toFile().outputStream().use {
+                        zipInputStream.copyTo(it)
+                    }
+                }
+                entry = zipInputStream.nextEntry
+            }
+        }
+        val git = Git.open(repositoryDir.toFile())
+        createRepository(projectRepo)
+        git.remoteList().call().forEach {
+            git.remoteRemove()
+                .setRemoteName(it.name)
+                .call()
+        }
+        git.remoteAdd()
+            .setName("origin")
+            .setUri(URIish(convertSshToHttp(vcsUrl)))
+            .call()
+        retryableExecution {
+            git.push()
+                .setCredentialsProvider(jgitCredentialsProvider)
+                .setPushAll()
+                .setPushTags()
+                .call()
+        }
+        repositories[vcsUrl] = git
+    }
+
     override fun clearData() {
         repositories.entries
             .forEach { (vcsUrl, git) ->
@@ -105,7 +176,6 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
                 git.repository
                     .directory
                     .deleteRecursively()
-
                 val projectRepo = parseUrl(vcsUrl)
                 getLog().debug("Delete VCS repository: '$projectRepo'")
                 deleteRepository(projectRepo)
@@ -140,13 +210,13 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         val branches = git.branchList().call()
 
         if (branches.isEmpty()) {
-            getLog().debug("Empty repository, prepare 'master'")
+            getLog().debug("Empty repository, prepare '$DEFAULT_BRANCH'")
             parent?.let { parentValue ->
                 throw IllegalArgumentException("Empty repository, parent must be unspecified, but is: '$parentValue'")
             }
             val config = git.repository.config
-            config.setString(CONFIG_BRANCH_SECTION, "master", "remote", "origin")
-            config.setString(CONFIG_BRANCH_SECTION, "master", "merge", "refs/heads/master")
+            config.setString(CONFIG_BRANCH_SECTION, DEFAULT_BRANCH, "remote", "origin")
+            config.setString(CONFIG_BRANCH_SECTION, DEFAULT_BRANCH, "merge", "refs/heads/$DEFAULT_BRANCH")
             config.save()
             retryableExecution {
                 git.commit()
@@ -155,13 +225,13 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             }
         }
 
-        if (branches.any { it.name == "refs/heads/$branch" } || branch == "master") {
+        if (branches.any { it.name == "refs/heads/$branch" } || branch == DEFAULT_BRANCH) {
             getLog().debug("Branch '$branch' exists")
             parent?.let { _ ->
                 throw IllegalArgumentException("Use parent only for branch creation, $branch exists")
             }
         } else {
-            getLog().debug("Create branch '$branch', parent '${parent ?: "master:head"}'")
+            getLog().debug("Create branch '$branch', parent '${parent ?: "$DEFAULT_BRANCH:head"}'")
             parent?.let { parentValue ->
                 gitCheckout(git, parentValue)
             }
@@ -218,5 +288,9 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
     protected data class ProjectRepo(val project: String, val repository: String) {
         val path: String
             get() = "$project/$repository"
+    }
+
+    companion object {
+        const val DEFAULT_BRANCH = "master"
     }
 }
