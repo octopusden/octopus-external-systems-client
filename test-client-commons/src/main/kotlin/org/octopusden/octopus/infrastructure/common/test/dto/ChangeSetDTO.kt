@@ -1,20 +1,17 @@
 package org.octopusden.octopus.infrastructure.common.test.dto
 
-import java.util.*
+import java.util.Date
 
-open class NewChangeSet(
+data class NewChangeSet(
     val message: String,
     val repository: String,
-    val branch: String,
-) {
-    override fun toString(): String {
-        return "NewChangeSet(message='$message', repository='$repository', branch='$branch')"
-    }
-}
+    val branch: String
+)
 
-class ChangeSet(val id: String, message: String, repository: String, branch: String, val author: String, val authorDate: Date) :
-    NewChangeSet(message, repository, branch) {
-    override fun toString(): String {
-        return "ChangeSet(id='$id', author=$author, authorDate=$authorDate, message='$message', repository='$repository', branch='$branch') ${super.toString()}"
-    }
-}
+data class ChangeSet(
+    val id: String,
+    val message: String,
+    val repository: String,
+    val author: String,
+    val authorDate: Date
+)
