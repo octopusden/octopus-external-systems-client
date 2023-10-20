@@ -196,6 +196,32 @@ abstract class BaseTestClientTest(
         Assertions.assertEquals(tagCommitId, getTags(PROJECT, REPOSITORY).first().commitId)
     }
 
+    @Test
+    fun testGetCommits() {
+        testClient.commit(NewChangeSet("${BaseTestClient.DEFAULT_BRANCH} commit", vcsUrl, BaseTestClient.DEFAULT_BRANCH))
+        testClient.commit(NewChangeSet("$FEATURE_BRANCH commit", vcsUrl, FEATURE_BRANCH), BaseTestClient.DEFAULT_BRANCH)
+        testClient.commit(NewChangeSet("$DEVELOP_BRANCH commit", vcsUrl, DEVELOP_BRANCH), BaseTestClient.DEFAULT_BRANCH)
+        val defaultBranchCommits = getCommits(PROJECT, REPOSITORY, BaseTestClient.DEFAULT_BRANCH).sortedBy { it.commitId }
+        val featureBranchCommits = getCommits(PROJECT, REPOSITORY, FEATURE_BRANCH).sortedBy { it.commitId }
+        val developBranchCommits = getCommits(PROJECT, REPOSITORY, DEVELOP_BRANCH).sortedBy { it.commitId }
+        Assertions.assertIterableEquals(
+            defaultBranchCommits,
+            testClient.getCommits(vcsUrl, BaseTestClient.DEFAULT_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
+        )
+        Assertions.assertIterableEquals(
+            featureBranchCommits,
+            testClient.getCommits(vcsUrl, FEATURE_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
+        )
+        Assertions.assertIterableEquals(
+            developBranchCommits,
+            testClient.getCommits(vcsUrl, DEVELOP_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
+        )
+        Assertions.assertIterableEquals(
+            (defaultBranchCommits + featureBranchCommits + developBranchCommits).toSet().sortedBy { it.commitId },
+            testClient.getCommits(vcsUrl).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
+        )
+    }
+
     private fun checkCommits(branch: String, expected: List<String>) {
         Assertions.assertIterableEquals(
             expected,

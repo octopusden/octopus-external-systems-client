@@ -32,89 +32,56 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
     protected abstract fun checkCommit(projectRepo: ProjectRepo, sha: String)
 
     override fun commit(newChangeSet: NewChangeSet, parent: String?): ChangeSet {
-        getLog().info("Add commit: $newChangeSet, parent: ${parent ?: ""}")
+        getLog().info("Add commit $newChangeSet${parent?.let { ", parent '$it'" } ?: ""}")
         val branch = newChangeSet.branch
-        val repositoryUrl = newChangeSet.repository
+        val vcsUrl = newChangeSet.repository
         val message = newChangeSet.message
-
-        val git = checkout(repositoryUrl, branch, parent)
-
-        getLog().debug("Add file to repository directory, commit, push")
-        val repository = git.repository
-
-        repository
-            .directory
-            .toPath()
-            .parent
-            .resolve("${UUID.randomUUID()}.${"commit"}")
-            .toFile()
-            .createNewFile()
+        val git = checkout(vcsUrl, branch, parent)
+        git.repository.directory.toPath().parent.resolve("${UUID.randomUUID()}.${"commit"}").toFile().createNewFile()
         retryableExecution {
-            git.add()
-                .addFilepattern(".")
-                .call()
+            git.add().addFilepattern(".").call()
         }
-
         val commit = retryableExecution {
-            git.commit()
-                .setMessage(message)
-                .call()
+            git.commit().setMessage(message).call()
         }
-
         retryableExecution {
-            git.push()
-                .setCredentialsProvider(jgitCredentialsProvider)
-                .call()
+            git.push().setCredentialsProvider(jgitCredentialsProvider).call()
         }
-
-        val sha = commit.id.name
-
-        wait(waitMessage = "Wait commit='$sha' is accessible") { checkCommit(parseUrl(newChangeSet.repository), sha) }
-
+        wait(waitMessage = "Wait commit='${commit.id.name}' is accessible") {
+            checkCommit(parseUrl(newChangeSet.repository), commit.id.name)
+        }
         return ChangeSet(
-            sha,
-            message,
-            repositoryUrl,
-            branch,
-            commit.authorIdent.name,
-            commit.authorIdent.`when`
+            commit.id.name, commit.fullMessage, vcsUrl, commit.authorIdent.name, commit.authorIdent.`when`
         )
     }
 
 
     override fun tag(vcsUrl: String, commitId: String, tag: String) {
-        val git = repositories[vcsUrl]
-            ?: throw IllegalArgumentException("Repository $vcsUrl does not exist, can not tag")
-
+        val git =
+            repositories[vcsUrl] ?: throw IllegalArgumentException("Repository '$vcsUrl' does not exist, can not tag")
+        val projectRepo = parseUrl(vcsUrl)
+        getLog().info("Tag commit '$commitId' from $projectRepo as '$tag'")
         gitCheckout(git, commitId)
-
         retryableExecution {
-            git.tag()
-                .setName(tag)
-                .call()
+            git.tag().setName(tag).call()
         }
-
         retryableExecution {
-            git.push()
-                .setCredentialsProvider(jgitCredentialsProvider)
-                .setPushTags()
-                .call()
+            git.push().setCredentialsProvider(jgitCredentialsProvider).setPushTags().call()
         }
     }
 
     override fun exportRepository(vcsUrl: String, zip: File) {
         val git = repositories[vcsUrl]
-            ?: throw IllegalArgumentException("Repository $vcsUrl does not exist, can not export")
+            ?: throw IllegalArgumentException("Repository '$vcsUrl' does not exist, can not export")
         val projectRepo = parseUrl(vcsUrl)
-        getLog().info("Export VCS repository: '$projectRepo'")
+        getLog().info("Export $projectRepo")
         val repository = git.repository.directory
         ZipOutputStream(zip.outputStream()).use { zipOutputStream ->
             repository.walkTopDown().forEach { file ->
                 if (file != repository) {
                     zipOutputStream.putNextEntry(
                         ZipEntry(
-                            repository.toPath().relativize(file.toPath()).toString() +
-                                    if (file.isDirectory) "/" else ""
+                            repository.toPath().relativize(file.toPath()).toString() + if (file.isDirectory) "/" else ""
                         )
                     )
                     if (file.isFile) {
@@ -128,10 +95,10 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
 
     override fun importRepository(vcsUrl: String, zip: File) {
         if (repositories.contains(vcsUrl)) {
-            throw IllegalArgumentException("Repository $vcsUrl exists already, can not import")
+            throw IllegalArgumentException("Repository '$vcsUrl' exists already, can not import")
         }
         val projectRepo = parseUrl(vcsUrl)
-        getLog().info("Import VCS repository: '$projectRepo'")
+        getLog().info("Import $projectRepo")
         createRepository(projectRepo)
         val repositoryDir = Files.createTempDirectory("TestClient_")
         val repository = repositoryDir.resolve(".git").also { Files.createDirectory(it) }
@@ -150,38 +117,48 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         }
         val git = Git.open(repositoryDir.toFile())
         git.remoteList().call().forEach {
-            git.remoteRemove()
-                .setRemoteName(it.name)
-                .call()
+            git.remoteRemove().setRemoteName(it.name).call()
         }
-        git.remoteAdd()
-            .setName("origin")
-            .setUri(URIish(convertSshToHttp(vcsUrl)))
-            .call()
+        git.remoteAdd().setName("origin").setUri(URIish(convertSshToHttp(vcsUrl))).call()
         retryableExecution {
-            git.push()
-                .setCredentialsProvider(jgitCredentialsProvider)
-                .setPushAll()
-                .setPushTags()
-                .call()
+            git.push().setCredentialsProvider(jgitCredentialsProvider).setPushAll().setPushTags().call()
         }
-        val sha = git.log().call().first { it.fullMessage == INITIAL_COMMIT_MESSAGE }.id.name
-        wait(waitMessage = "Wait commit='$sha' is accessible") { checkCommit(projectRepo, sha) }
+        val commitId = git.log().call().first {
+            it.fullMessage == INITIAL_COMMIT_MESSAGE
+        }.id.name
+        wait(waitMessage = "Wait commit '$commitId' is accessible") {
+            checkCommit(projectRepo, commitId)
+        }
         repositories[vcsUrl] = git
     }
 
-    override fun clearData() {
-        repositories.entries
-            .forEach { (vcsUrl, git) ->
-                getLog().info("Clear data: $vcsUrl ")
-                getLog().debug("Delete git directory: ${git.repository.directory}")
-                git.repository
-                    .directory
-                    .deleteRecursively()
-                val projectRepo = parseUrl(vcsUrl)
-                getLog().debug("Delete VCS repository: '$projectRepo'")
-                deleteRepository(projectRepo)
+    override fun getCommits(vcsUrl: String, branch: String?): List<ChangeSet> {
+        val git = repositories[vcsUrl]
+            ?: throw IllegalArgumentException("Repository '$vcsUrl' does not exist, can not get commits")
+        val projectRepo = parseUrl(vcsUrl)
+        getLog().info("Get commits from '$projectRepo'${branch?.let { ", branch '$it'" } ?: ""}")
+        return git.log().run {
+            if (branch.isNullOrBlank()) {
+                this.all()
+            } else {
+                this.add(git.repository.resolve(branch))
             }
+        }.call().map {
+            ChangeSet(
+                it.id.name, it.fullMessage, vcsUrl, it.authorIdent.name, it.authorIdent.`when`
+            )
+        }
+    }
+
+    override fun clearData() {
+        repositories.entries.forEach { (vcsUrl, git) ->
+            getLog().info("Clear data: $vcsUrl ")
+            getLog().debug("Delete git directory: ${git.repository.directory}")
+            git.repository.directory.deleteRecursively()
+            val projectRepo = parseUrl(vcsUrl)
+            getLog().debug("Delete VCS repository: '$projectRepo'")
+            deleteRepository(projectRepo)
+        }
         repositories.clear()
     }
 
@@ -195,13 +172,9 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             getLog().debug("Clone empty repository to $repositoryDir")
 
             retryableExecution {
-                Git.cloneRepository()
-                    .setDirectory(repositoryDir.toFile())
-                    .setURI(
-                        convertSshToHttp(vcsUrl)
-                    )
-                    .setCredentialsProvider(jgitCredentialsProvider)
-                    .call()
+                Git.cloneRepository().setDirectory(repositoryDir.toFile()).setURI(
+                    convertSshToHttp(vcsUrl)
+                ).setCredentialsProvider(jgitCredentialsProvider).call()
             }
         }
     }
@@ -210,7 +183,6 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         getLog().debug("Checkout $vcsUrl:$branch:${parent ?: ""}")
         val git = getOrCreateRepo(vcsUrl)
         val branches = git.branchList().call()
-
         if (branches.isEmpty()) {
             getLog().debug("Empty repository, prepare '$DEFAULT_BRANCH'")
             parent?.let { parentValue ->
@@ -221,12 +193,9 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             config.setString(CONFIG_BRANCH_SECTION, DEFAULT_BRANCH, "merge", "refs/heads/$DEFAULT_BRANCH")
             config.save()
             retryableExecution {
-                git.commit()
-                    .setMessage(INITIAL_COMMIT_MESSAGE)
-                    .call()
+                git.commit().setMessage(INITIAL_COMMIT_MESSAGE).call()
             }
         }
-
         if (branches.any { it.name == "refs/heads/$branch" } || branch == DEFAULT_BRANCH) {
             getLog().debug("Branch '$branch' exists")
             parent?.let { _ ->
@@ -238,12 +207,9 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
                 gitCheckout(git, parentValue)
             }
             retryableExecution {
-                git.branchCreate()
-                    .setName(branch)
-                    .call()
+                git.branchCreate().setName(branch).call()
             }
         }
-
         getLog().debug("Checkout $branch")
         gitCheckout(git, branch)
         return git
@@ -252,9 +218,7 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
     private fun gitCheckout(git: Git, commitId: String) {
         try {
             retryableExecution {
-                git.checkout()
-                    .setName(commitId)
-                    .call()
+                git.checkout().setName(commitId).call()
             }
         } catch (e: RefNotFoundException) {
             throw IllegalArgumentException("Target commit '$commitId' not found")
