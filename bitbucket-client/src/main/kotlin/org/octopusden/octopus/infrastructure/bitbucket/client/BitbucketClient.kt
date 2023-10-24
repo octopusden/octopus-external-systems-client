@@ -143,17 +143,26 @@ fun BitbucketClient.getCommits(
     repository: String,
     until: String,
     since: String
-) = execute({ parameters: Map<String, Any> ->
-    getCommits(
-        projectKey, repository, parameters + mapOf("until" to until, "since" to since)
-    )
-})
+): List<BitbucketCommit> {
+    val toId = getCommit(projectKey, repository, until).id
+    val fromId = getCommit(projectKey, repository, since).id
+    return if (toId == fromId) {
+        emptyList()
+    } else {
+        execute({ parameters: Map<String, Any> ->
+            getCommits(
+                projectKey, repository, parameters + mapOf("until" to toId, "since" to fromId)
+            )
+        }).also { commits ->
+            if (!commits.any { commit -> commit.parents.any { it.id == fromId } }) {
+                throw NotFoundException("Cannot find commit '$fromId' in commit graph for commit '$toId'")
+            }
+        }
+    }
+}
 
 fun BitbucketClient.getCommits(
-    projectKey: String,
-    repository: String,
-    until: String,
-    sinceDate: Date? = null
+    projectKey: String, repository: String, until: String, sinceDate: Date? = null
 ) = execute({ parameters: Map<String, Any> ->
     getCommits(
         projectKey, repository, parameters + mapOf("until" to until)

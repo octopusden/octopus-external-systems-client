@@ -141,7 +141,7 @@ fun GiteaClient.getCommits(
     if (fromSha == toSha) {
         return emptyList()
     }
-    val staticParameters = mapOf(
+    val parameters = mapOf(
         "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false, "sha" to toSha
     )
     val entities = mutableListOf<GiteaCommit>()
@@ -151,7 +151,7 @@ fun GiteaClient.getCommits(
     val excludedCommits = mutableSetOf<String>()
     do {
         page++
-        val giteaResponse = getCommits(organization, repository, mapOf("page" to page) + staticParameters)
+        val giteaResponse = getCommits(organization, repository, parameters + mapOf("page" to page))
         val includedCommits = mutableListOf<GiteaCommit>()
         for (commit in giteaResponse.values) {
             if (commit.sha == fromSha) {
@@ -166,13 +166,13 @@ fun GiteaClient.getCommits(
         }
         entities.addAll(includedCommits)
         orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
-            commit.parents.find { parentCommit: GiteaShortCommit ->
+            commit.parents.any { parentCommit: GiteaShortCommit ->
                 !excludedCommits.contains(parentCommit.sha)
-            } != null
+            }
         }
     } while ((giteaResponse.hasMore ?: (giteaResponse.values.isNotEmpty())) && orphanedCommits.isNotEmpty())
     if (!sinceCommitFound) {
-        throw IllegalArgumentException("Cannot find commit '$fromSha' in commit graph for commit '$toSha'")
+        throw NotFoundException("Cannot find commit '$fromSha' in commit graph for commit '$toSha'")
     }
     return entities
 }
