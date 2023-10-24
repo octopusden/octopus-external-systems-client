@@ -67,7 +67,7 @@ class BitbucketTestClient(
     }
 
     override fun checkCommit(projectRepo: ProjectRepo, sha: String) {
-        client.getCommits(projectRepo.project, projectRepo.repository, null, null, sha)
+        client.getCommits(projectRepo.project, projectRepo.repository, sha)
     }
 
     companion object {

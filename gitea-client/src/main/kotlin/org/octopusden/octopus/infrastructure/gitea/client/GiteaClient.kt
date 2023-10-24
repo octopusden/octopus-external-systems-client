@@ -4,6 +4,7 @@ import feign.Headers
 import feign.Param
 import feign.QueryMap
 import feign.RequestLine
+import java.util.Date
 import org.octopusden.octopus.infrastructure.gitea.client.dto.BaseGiteaEntity
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaBranch
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
@@ -14,10 +15,10 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaShortCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaUser
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
-import java.util.Date
 
 
 const val ORG_PATH = "api/v1/orgs"
@@ -119,26 +120,61 @@ fun GiteaClient.getRepositories(organization: String): Collection<GiteaRepositor
 fun GiteaClient.getCommits(
     organization: String,
     repository: String,
-    sinceDate: Date?,
-    until: String?
-): Collection<GiteaCommit> {
-    val limitParameters = mutableMapOf<String, Any>(
-        "limit" to ENTITY_LIMIT,
-        "stat" to false,
-        "verification" to false,
-        "files" to false
+    until: String,
+    sinceDate: Date? = null
+) = execute({ parameters: Map<String, Any> ->
+    getCommits(
+        organization, repository, parameters + mapOf(
+            "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false, "sha" to until
+        )
     )
-    until?.let { untilValue ->
-        limitParameters["sha"] = untilValue
+}, { commit: GiteaCommit -> sinceDate == null || commit.commit.author.date > sinceDate })
+
+fun GiteaClient.getCommits(
+    organization: String,
+    repository: String,
+    until: String,
+    since: String
+): List<GiteaCommit> {
+    val toSha = getCommit(organization, repository, until).sha
+    val fromSha = getCommit(organization, repository, since).sha
+    if (fromSha == toSha) {
+        return emptyList()
     }
-
-    val filter = sinceDate?.let { fromDateValue -> { c: GiteaCommit -> c.commit.author.date >= fromDateValue } }
-        ?: { true }
-
-    return execute(
-        { parameters: Map<String, Any> -> getCommits(organization, repository, parameters + limitParameters) },
-        filter
+    val staticParameters = mapOf(
+        "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false, "sha" to toSha
     )
+    val entities = mutableListOf<GiteaCommit>()
+    var page = 0
+    var sinceCommitFound = false
+    var orphanedCommits = listOf<GiteaCommit>()
+    val excludedCommits = mutableSetOf<String>()
+    do {
+        page++
+        val giteaResponse = getCommits(organization, repository, mapOf("page" to page) + staticParameters)
+        val includedCommits = mutableListOf<GiteaCommit>()
+        for (commit in giteaResponse.values) {
+            if (commit.sha == fromSha) {
+                sinceCommitFound = true
+                excludedCommits.add(commit.sha)
+            }
+            if (excludedCommits.contains(commit.sha)) {
+                excludedCommits.addAll(commit.parents.map { it.sha })
+            } else {
+                includedCommits.add(commit)
+            }
+        }
+        entities.addAll(includedCommits)
+        orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
+            commit.parents.find { parentCommit: GiteaShortCommit ->
+                !excludedCommits.contains(parentCommit.sha)
+            } != null
+        }
+    } while ((giteaResponse.hasMore ?: (giteaResponse.values.isNotEmpty())) && orphanedCommits.isNotEmpty())
+    if (!sinceCommitFound) {
+        throw IllegalArgumentException("Cannot find commit '$fromSha' in commit graph for commit '$toSha'")
+    }
+    return entities
 }
 
 fun GiteaClient.getTags(
@@ -191,7 +227,7 @@ fun GiteaClient.createPullRequestWithDefaultReviewers(
 private fun <T : BaseGiteaEntity> execute(
     function: (Map<String, Any>) -> GiteaEntityList<T>,
     filter: (element: T) -> Boolean = { true }
-): Collection<T> {
+): MutableList<T> {
     var pageStart = 1
     val entities = mutableListOf<T>()
     val staticParameters = mutableMapOf<String, Any>()
@@ -209,5 +245,5 @@ private fun <T : BaseGiteaEntity> execute(
         }
         pageStart++
     } while ((giteaResponse.hasMore ?: (currentPartEntities.isNotEmpty())) && inFilter)
-    return entities.toList()
+    return entities
 }

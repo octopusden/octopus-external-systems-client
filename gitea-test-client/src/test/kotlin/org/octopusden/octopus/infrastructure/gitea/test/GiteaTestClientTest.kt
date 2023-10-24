@@ -25,11 +25,11 @@ class GiteaTestClientTest :
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
     })
 
-    override fun getTags(project: String, repository: String): Collection<TestTag> =
+    override fun getTags(project: String, repository: String) =
         client.getTags(project, repository).map { t -> t.toTestTag() }
 
-    override fun getCommits(project: String, repository: String, branch: String): Collection<TestCommit> =
-        client.getCommits(project, repository, null, branch).map { c -> c.toTestCommit() }
+    override fun getCommits(project: String, repository: String, branch: String) =
+        client.getCommits(project, repository, branch).map { c -> c.toTestCommit() }
 
     override fun createPullRequestWithDefaultReviewers(
         project: String,
@@ -38,8 +38,7 @@ class GiteaTestClientTest :
         targetBranch: String,
         title: String,
         description: String
-    ): TestPullRequest =
-        client.createPullRequestWithDefaultReviewers(
+    ) = client.createPullRequestWithDefaultReviewers(
             project,
             repository,
             sourceBranch,
