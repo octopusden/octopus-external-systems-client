@@ -4,7 +4,7 @@ import feign.Headers
 import feign.Param
 import feign.QueryMap
 import feign.RequestLine
-import java.util.*
+import java.util.Date
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BaseBitbucketEntity
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketAuthor
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
