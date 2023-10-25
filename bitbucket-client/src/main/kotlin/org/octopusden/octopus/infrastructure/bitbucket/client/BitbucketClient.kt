@@ -155,7 +155,7 @@ fun BitbucketClient.getCommits(
             )
         }).also { commits ->
             if (!commits.any { commit -> commit.parents.any { it.id == fromId } }) {
-                throw NotFoundException("Cannot find commit '$fromId' in commit graph for commit '$toId'")
+                throw NotFoundException("Cannot find commit '$fromId' in commit graph for commit '$toId' in '$projectKey:$repository'")
             }
         }
     }

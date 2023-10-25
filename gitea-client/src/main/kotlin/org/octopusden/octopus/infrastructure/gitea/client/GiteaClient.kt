@@ -172,7 +172,7 @@ fun GiteaClient.getCommits(
         }
     } while ((giteaResponse.hasMore ?: (giteaResponse.values.isNotEmpty())) && orphanedCommits.isNotEmpty())
     if (!sinceCommitFound) {
-        throw NotFoundException("Cannot find commit '$fromSha' in commit graph for commit '$toSha'")
+        throw NotFoundException("Cannot find commit '$fromSha' in commit graph for commit '$toSha' in '$organization:$repository'")
     }
     return entities
 }
