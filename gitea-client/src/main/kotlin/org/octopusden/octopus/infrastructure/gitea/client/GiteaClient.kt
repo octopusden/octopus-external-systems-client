@@ -19,7 +19,10 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaShortCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaUser
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
+private val _log: Logger = LoggerFactory.getLogger(GiteaClient::class.java)
 
 const val ORG_PATH = "api/v1/orgs"
 const val REPO_PATH = "api/v1/repos"
@@ -144,7 +147,7 @@ fun GiteaClient.getCommits(
     val parameters = mapOf(
         "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false, "sha" to toSha
     )
-    val entities = mutableListOf<GiteaCommit>()
+    val commits = mutableMapOf<String, GiteaCommit>()
     var page = 0
     var sinceCommitFound = false
     var orphanedCommits = listOf<GiteaCommit>()
@@ -164,17 +167,19 @@ fun GiteaClient.getCommits(
                 includedCommits.add(commit)
             }
         }
-        entities.addAll(includedCommits)
+        commits.putAll(includedCommits.associateBy { it.sha })
         orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
             commit.parents.any { parentCommit: GiteaShortCommit ->
-                !excludedCommits.contains(parentCommit.sha)
+                !excludedCommits.contains(parentCommit.sha) &&
+                        !commits.containsKey(parentCommit.sha)
             }
         }
     } while ((giteaResponse.hasMore ?: (giteaResponse.values.isNotEmpty())) && orphanedCommits.isNotEmpty())
+    _log.debug("Pages retrieved: $page")
     if (!sinceCommitFound) {
         throw NotFoundException("Cannot find commit '$fromSha' in commit graph for commit '$toSha' in '$organization:$repository'")
     }
-    return entities
+    return commits.map { it.value }
 }
 
 fun GiteaClient.getTags(
@@ -228,12 +233,12 @@ private fun <T : BaseGiteaEntity> execute(
     function: (Map<String, Any>) -> GiteaEntityList<T>,
     filter: (element: T) -> Boolean = { true }
 ): MutableList<T> {
-    var pageStart = 1
+    var page = 1
     val entities = mutableListOf<T>()
-    val staticParameters = mutableMapOf<String, Any>()
+    val parameters = mutableMapOf<String, Any>()
     do {
-        staticParameters["page"] = pageStart
-        val giteaResponse = function.invoke(staticParameters)
+        parameters["page"] = page
+        val giteaResponse = function.invoke(parameters)
         val currentPartEntities = giteaResponse.values
         val inFilter: Boolean = with(currentPartEntities.all(filter)) {
             entities += if (this) {
@@ -243,7 +248,8 @@ private fun <T : BaseGiteaEntity> execute(
             }
             this
         }
-        pageStart++
+        page++
     } while ((giteaResponse.hasMore ?: (currentPartEntities.isNotEmpty())) && inFilter)
+    _log.debug("Pages retrieved: $page")
     return entities
 }

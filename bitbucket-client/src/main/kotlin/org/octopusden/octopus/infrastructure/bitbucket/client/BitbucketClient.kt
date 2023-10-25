@@ -23,6 +23,10 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.DefaultReviewersQuery
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+private val _log: Logger = LoggerFactory.getLogger(BitbucketClient::class.java)
 
 const val PROJECT_PATH = "rest/api/1.0/projects"
 const val REPO_PATH = "rest/api/1.0/repos"
@@ -223,12 +227,14 @@ private fun <T : BaseBitbucketEntity<*>> execute(
     function: (Map<String, Any>) -> BitbucketEntityList<T>,
     filter: (element: T) -> Boolean = { true }
 ): List<T> {
+    var page = 0
     var pageStart = 0
     val entities = mutableListOf<T>()
-    val staticParameters = mutableMapOf<String, Any>("limit" to ENTITY_LIMIT)
+    val parameters = mutableMapOf<String, Any>("limit" to ENTITY_LIMIT)
     do {
-        staticParameters["start"] = pageStart
-        val currentPartEntities = function.invoke(staticParameters)
+        page++
+        parameters["start"] = pageStart
+        val currentPartEntities = function.invoke(parameters)
         val inFilter: Boolean = with(currentPartEntities.values.all(filter)) {
             entities += if (this) {
                 currentPartEntities.values
@@ -239,5 +245,6 @@ private fun <T : BaseBitbucketEntity<*>> execute(
         }
         pageStart = currentPartEntities.nextPageStart ?: pageStart
     } while (!currentPartEntities.isLastPage && inFilter)
+    _log.debug("Pages retrieved: $page")
     return entities
 }
