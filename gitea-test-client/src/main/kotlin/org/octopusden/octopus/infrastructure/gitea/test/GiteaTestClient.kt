@@ -47,7 +47,7 @@ class GiteaTestClient(val url: String, val username: String, val password: Strin
         client.deleteRepository(projectRepo.project, projectRepo.repository)
 
     override fun checkCommit(projectRepo: ProjectRepo, sha: String) {
-        client.getCommits(projectRepo.project, projectRepo.repository, null, sha)
+        client.getCommits(projectRepo.project, projectRepo.repository, sha)
     }
 
     private fun createOrganizationIfNotExist(organization: String) {

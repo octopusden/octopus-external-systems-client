@@ -4,6 +4,7 @@ import feign.Headers
 import feign.Param
 import feign.QueryMap
 import feign.RequestLine
+import java.util.Date
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BaseBitbucketEntity
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketAuthor
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
@@ -22,7 +23,10 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.DefaultReviewersQuery
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
-import java.util.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+private val _log: Logger = LoggerFactory.getLogger(BitbucketClient::class.java)
 
 const val PROJECT_PATH = "rest/api/1.0/projects"
 const val REPO_PATH = "rest/api/1.0/repos"
@@ -141,27 +145,35 @@ fun BitbucketClient.getRepositories(projectKey: String): List<BitbucketRepositor
 fun BitbucketClient.getCommits(
     projectKey: String,
     repository: String,
-    since: String?,
-    sinceDate: Date?,
-    until: String?
+    until: String,
+    since: String
 ): List<BitbucketCommit> {
-    val limitParameters = mutableMapOf<String, Any>()
-    since?.let { sinceValue ->
-        limitParameters["since"] = sinceValue
+    val toId = getCommit(projectKey, repository, until).id
+    val fromId = getCommit(projectKey, repository, since).id
+    return if (toId == fromId) {
+        emptyList()
+    } else {
+        execute({ parameters: Map<String, Any> ->
+            getCommits(
+                projectKey, repository, parameters + mapOf("until" to toId, "since" to fromId)
+            )
+        }).also { commits ->
+            if (!commits.any { commit -> commit.parents.any { it.id == fromId } }) {
+                throw NotFoundException("Cannot find commit '$fromId' in commit graph for commit '$toId' in '$projectKey:$repository'")
+            }
+        }
     }
-    until?.let { untilValue ->
-        limitParameters["until"] = untilValue
-    }
-
-    val filter = since?.let { _ -> { true } }
-        ?: sinceDate?.let { fromDateValue -> { c: BitbucketCommit -> c.authorTimestamp > fromDateValue } }
-        ?: { true }
-
-    return execute(
-        { parameters: Map<String, Any> -> getCommits(projectKey, repository, parameters + limitParameters) },
-        filter
-    )
 }
+
+fun BitbucketClient.getCommits(
+    projectKey: String, repository: String, until: String, sinceDate: Date? = null
+) = execute({ parameters: Map<String, Any> ->
+    getCommits(
+        projectKey, repository, parameters + mapOf("until" to until)
+    )
+}, { commit: BitbucketCommit ->
+    sinceDate == null || commit.authorTimestamp > sinceDate
+})
 
 fun BitbucketClient.getCommits(issueKey: String): List<BitbucketJiraCommit> =
     execute({ parameters: Map<String, Any> -> getCommits(issueKey, parameters) })
@@ -214,13 +226,15 @@ fun BitbucketClient.createPullRequestWithDefaultReviewers(
 private fun <T : BaseBitbucketEntity<*>> execute(
     function: (Map<String, Any>) -> BitbucketEntityList<T>,
     filter: (element: T) -> Boolean = { true }
-): MutableList<T> {
+): List<T> {
+    var page = 0
     var pageStart = 0
     val entities = mutableListOf<T>()
-    val staticParameters = mutableMapOf<String, Any>("limit" to ENTITY_LIMIT)
+    val parameters = mutableMapOf<String, Any>("limit" to ENTITY_LIMIT)
     do {
-        staticParameters["start"] = pageStart
-        val currentPartEntities = function.invoke(staticParameters)
+        page++
+        parameters["start"] = pageStart
+        val currentPartEntities = function.invoke(parameters)
         val inFilter: Boolean = with(currentPartEntities.values.all(filter)) {
             entities += if (this) {
                 currentPartEntities.values
@@ -231,5 +245,6 @@ private fun <T : BaseBitbucketEntity<*>> execute(
         }
         pageStart = currentPartEntities.nextPageStart ?: pageStart
     } while (!currentPartEntities.isLastPage && inFilter)
+    _log.debug("Pages retrieved: $page")
     return entities
 }

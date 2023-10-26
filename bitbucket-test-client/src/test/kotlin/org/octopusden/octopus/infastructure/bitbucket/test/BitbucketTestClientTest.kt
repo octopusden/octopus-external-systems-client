@@ -31,7 +31,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
         client.getTags(project, repository).map { t -> t.toTestTag() }
 
     override fun getCommits(project: String, repository: String, branch: String) =
-        client.getCommits(project, repository, null, null, branch).map { c -> c.toTestCommit() }
+        client.getCommits(project, repository, branch).map { c -> c.toTestCommit() }
 
     override fun createPullRequestWithDefaultReviewers(
         project: String,
@@ -40,7 +40,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
         targetBranch: String,
         title: String,
         description: String
-    ): TestPullRequest = client.createPullRequestWithDefaultReviewers(
+    ) = client.createPullRequestWithDefaultReviewers(
         project,
         repository,
         sourceBranch,

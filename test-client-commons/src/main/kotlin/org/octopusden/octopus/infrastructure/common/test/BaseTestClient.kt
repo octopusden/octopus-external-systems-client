@@ -123,9 +123,7 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         retryableExecution {
             git.push().setCredentialsProvider(jgitCredentialsProvider).setPushAll().setPushTags().call()
         }
-        val commitId = git.log().call().first {
-            it.fullMessage == INITIAL_COMMIT_MESSAGE
-        }.id.name
+        val commitId = git.log().call().first().id.name
         wait(waitMessage = "Wait commit '$commitId' is accessible") {
             checkCommit(projectRepo, commitId)
         }
