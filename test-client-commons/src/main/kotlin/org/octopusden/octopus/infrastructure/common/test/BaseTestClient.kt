@@ -57,8 +57,8 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
 
 
     override fun tag(vcsUrl: String, commitId: String, tag: String) {
-        val git =
-            repositories[vcsUrl] ?: throw IllegalArgumentException("Repository '$vcsUrl' does not exist, can not tag")
+        val git = repositories[vcsUrl.lowercase()]
+            ?: throw IllegalArgumentException("Repository '$vcsUrl' does not exist, can not tag")
         val projectRepo = parseUrl(vcsUrl)
         getLog().info("Tag commit '$commitId' from $projectRepo as '$tag'")
         gitCheckout(git, commitId)
@@ -71,7 +71,7 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
     }
 
     override fun exportRepository(vcsUrl: String, zip: File) {
-        val git = repositories[vcsUrl]
+        val git = repositories[vcsUrl.lowercase()]
             ?: throw IllegalArgumentException("Repository '$vcsUrl' does not exist, can not export")
         val projectRepo = parseUrl(vcsUrl)
         getLog().info("Export $projectRepo")
@@ -94,7 +94,7 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
     }
 
     override fun importRepository(vcsUrl: String, zip: File) {
-        if (repositories.contains(vcsUrl)) {
+        if (repositories.contains(vcsUrl.lowercase())) {
             throw IllegalArgumentException("Repository '$vcsUrl' exists already, can not import")
         }
         val projectRepo = parseUrl(vcsUrl)
@@ -127,11 +127,11 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         wait(waitMessage = "Wait commit '$commitId' is accessible") {
             checkCommit(projectRepo, commitId)
         }
-        repositories[vcsUrl] = git
+        repositories[vcsUrl.lowercase()] = git
     }
 
     override fun getCommits(vcsUrl: String, branch: String?): List<ChangeSet> {
-        val git = repositories[vcsUrl]
+        val git = repositories[vcsUrl.lowercase()]
             ?: throw IllegalArgumentException("Repository '$vcsUrl' does not exist, can not get commits")
         val projectRepo = parseUrl(vcsUrl)
         getLog().info("Get commits from '$projectRepo'${branch?.let { ", branch '$it'" } ?: ""}")
@@ -161,7 +161,7 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
     }
 
     private fun getOrCreateRepo(vcsUrl: String): Git {
-        return repositories.computeIfAbsent(vcsUrl) { url ->
+        return repositories.computeIfAbsent(vcsUrl.lowercase()) { url ->
             getLog().info("Repository $vcsUrl is not prepared, prepare")
             val projectRepo = parseUrl(url)
             createRepository(projectRepo)
