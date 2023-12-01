@@ -228,7 +228,7 @@ abstract class BaseTestClient(username: String,
         }
     }
 
-    private fun wait(retries: Int = 20, pingIntervalMsec: Long = 500, raiseOnException: Boolean = false, waitMessage: String, checkFunc: () -> Unit) {
+    private fun wait(retries: Int, pingIntervalMsec: Long, raiseOnException: Boolean, waitMessage: String, checkFunc: () -> Unit) {
          var exception: Exception? = null
         for (i in 1..retries) {
             try {
@@ -241,7 +241,7 @@ abstract class BaseTestClient(username: String,
             }
         }
         if (exception != null && raiseOnException) {
-            throw IllegalStateException("Wait failed", exception)
+            throw IllegalStateException("Waiting for ${retries * pingIntervalMsec / 1000} sec was unsuccessful", exception)
         }
     }
 
