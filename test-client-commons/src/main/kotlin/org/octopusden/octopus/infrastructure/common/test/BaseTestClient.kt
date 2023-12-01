@@ -22,7 +22,8 @@ abstract class BaseTestClient(username: String,
                               password: String,
                               private val commitRetries: Int,
                               private val commitPingIntervalMsec: Long,
-                              private val commitRaiseException: Boolean
+                              private val commitRaiseException: Boolean,
+                              private val commitExceptionMessage: String?
     ) : TestClient {
 
     private val repositories = mutableMapOf<String, Git>()
@@ -52,7 +53,11 @@ abstract class BaseTestClient(username: String,
         retryableExecution {
             git.push().setCredentialsProvider(jgitCredentialsProvider).call()
         }
-        wait(waitMessage = "Wait commit='${commit.id.name}' is accessible", pingIntervalMsec = commitPingIntervalMsec, retries = commitRetries, raiseOnException = commitRaiseException) {
+        wait(waitMessage = "Wait commit='${commit.id.name}' is accessible",
+            pingIntervalMsec = commitPingIntervalMsec,
+            retries = commitRetries,
+            raiseOnException = commitRaiseException,
+            failMessage = commitExceptionMessage) {
             checkCommit(parseUrl(newChangeSet.repository), commit.id.name)
         }
         return ChangeSet(
@@ -129,7 +134,11 @@ abstract class BaseTestClient(username: String,
             git.push().setCredentialsProvider(jgitCredentialsProvider).setPushAll().setPushTags().call()
         }
         val commitId = git.log().call().first().id.name
-        wait(waitMessage = "Wait commit '$commitId' is accessible", pingIntervalMsec = commitPingIntervalMsec, retries = commitRetries, raiseOnException = commitRaiseException) {
+        wait(waitMessage = "Wait commit '$commitId' is accessible",
+            pingIntervalMsec = commitPingIntervalMsec,
+            retries = commitRetries,
+            raiseOnException = commitRaiseException,
+            failMessage = commitExceptionMessage) {
             checkCommit(projectRepo, commitId)
         }
         repositories[vcsUrl.lowercase()] = git
@@ -228,7 +237,7 @@ abstract class BaseTestClient(username: String,
         }
     }
 
-    private fun wait(retries: Int, pingIntervalMsec: Long, raiseOnException: Boolean, waitMessage: String, checkFunc: () -> Unit) {
+    private fun wait(retries: Int, pingIntervalMsec: Long, raiseOnException: Boolean, waitMessage: String, failMessage: String?, checkFunc: () -> Unit) {
          var exception: Exception? = null
         for (i in 1..retries) {
             try {
@@ -241,7 +250,7 @@ abstract class BaseTestClient(username: String,
             }
         }
         if (exception != null && raiseOnException) {
-            throw IllegalStateException("Waiting for ${retries * pingIntervalMsec / 1000} sec was unsuccessful", exception)
+            throw IllegalStateException(failMessage ?: "Waiting for ${retries * pingIntervalMsec / 1000} sec was unsuccessful", exception)
         }
     }
 

@@ -22,8 +22,9 @@ class BitbucketTestClient(
     password: String,
     commitRetries: Int = 20,
     commitPingIntervalMsec: Long = 500,
-    commitRaiseException: Boolean = true
-) : BaseTestClient(username, password, commitRetries, commitPingIntervalMsec, commitRaiseException) {
+    commitRaiseException: Boolean = true,
+    commitExceptionMessage: String? = null
+) : BaseTestClient(username, password, commitRetries, commitPingIntervalMsec, commitRaiseException, commitExceptionMessage) {
 
     private val client: BitbucketClient = BitbucketClassicClient(object : BitbucketClientParametersProvider {
         override fun getApiUrl() = "http://$bitbucketHost"

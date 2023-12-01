@@ -13,9 +13,14 @@ import org.octopusden.octopus.infrastructure.gitea.client.getOrganizations
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class GiteaTestClient(val url: String, val username: String, val password: String, commitRetries: Int = 20,
-                      commitPingIntervalMsec: Long = 500, commitRaiseException: Boolean = true) :
-    BaseTestClient(username, password, commitRetries, commitPingIntervalMsec, commitRaiseException) {
+class GiteaTestClient(val url: String,
+                      val username: String,
+                      val password: String,
+                      commitRetries: Int = 20,
+                      commitPingIntervalMsec: Long = 500,
+                      commitRaiseException: Boolean = true,
+                      commitExceptionMessage: String? = null) :
+    BaseTestClient(username, password, commitRetries, commitPingIntervalMsec, commitRaiseException, commitExceptionMessage) {
 
     private val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = url
