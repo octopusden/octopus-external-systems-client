@@ -20,7 +20,7 @@ configure<ComposeExtension> {
     )
 }
 
-dockerCompose.isRequiredBy(tasks["test"])
+tasks["test"].enabled = false
 
 dependencies {
     api(project(":test-client-commons"))

@@ -52,7 +52,7 @@ abstract class BaseTestClient(username: String,
         retryableExecution {
             git.push().setCredentialsProvider(jgitCredentialsProvider).call()
         }
-        wait(waitMessage = "Wait commit='${commit.id.name}' is accessible") {
+        wait(waitMessage = "Wait commit='${commit.id.name}' is accessible", pingIntervalMsec = commitPingIntervalMsec, retries = commitRetries, raiseOnException = commitRaiseException) {
             checkCommit(parseUrl(newChangeSet.repository), commit.id.name)
         }
         return ChangeSet(
