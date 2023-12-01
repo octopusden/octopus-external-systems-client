@@ -18,7 +18,12 @@ import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.slf4j.Logger
 
 
-abstract class BaseTestClient(username: String, password: String) : TestClient {
+abstract class BaseTestClient(username: String,
+                              password: String,
+                              private val commitRetries: Int,
+                              private val commitPingIntervalMsec: Long,
+                              private val commitRaiseException: Boolean
+    ) : TestClient {
 
     private val repositories = mutableMapOf<String, Git>()
     private val jgitCredentialsProvider = UsernamePasswordCredentialsProvider(username, password)
@@ -124,7 +129,7 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             git.push().setCredentialsProvider(jgitCredentialsProvider).setPushAll().setPushTags().call()
         }
         val commitId = git.log().call().first().id.name
-        wait(waitMessage = "Wait commit '$commitId' is accessible") {
+        wait(waitMessage = "Wait commit '$commitId' is accessible", pingIntervalMsec = commitPingIntervalMsec, retries = commitRetries, raiseOnException = commitRaiseException) {
             checkCommit(projectRepo, commitId)
         }
         repositories[vcsUrl.lowercase()] = git
@@ -223,15 +228,20 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         }
     }
 
-    private fun wait(retries: Int = 20, pingIntervalMsec: Long = 500, waitMessage: String, checkFunc: () -> Unit) {
+    private fun wait(retries: Int = 20, pingIntervalMsec: Long = 500, raiseOnException: Boolean = false, waitMessage: String, checkFunc: () -> Unit) {
+         var exception: Exception? = null
         for (i in 1..retries) {
             try {
                 checkFunc()
-                break
-            } catch (_: Exception) {
+                return
+            } catch (e: Exception) {
+                exception = e
                 getLog().warn("$waitMessage, retries remained: ${retries - i}")
                 TimeUnit.MILLISECONDS.sleep(pingIntervalMsec)
             }
+        }
+        if (exception != null && raiseOnException) {
+            throw IllegalStateException("Wait failed", exception)
         }
     }
 
