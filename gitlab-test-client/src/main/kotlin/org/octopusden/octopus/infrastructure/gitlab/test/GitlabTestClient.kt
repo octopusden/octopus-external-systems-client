@@ -16,14 +16,12 @@ class GitlabTestClient(
     commitRetries: Int = 20,
     commitPingIntervalMsec: Long = 500,
     commitRaiseException: Boolean = true,
-    commitExceptionMessage: String? = null
 ) : BaseTestClient(
     username,
     password,
     commitRetries,
     commitPingIntervalMsec,
     commitRaiseException,
-    commitExceptionMessage
 ) {
     private val client = GitLabApi.oauth2Login(url, username, password)
     override fun getLog() = log

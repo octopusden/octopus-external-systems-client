@@ -22,8 +22,7 @@ abstract class BaseTestClient(username: String,
                               password: String,
                               private val commitRetries: Int,
                               private val commitPingIntervalMsec: Long,
-                              private val commitRaiseException: Boolean,
-                              private val commitExceptionMessage: String?
+                              private val commitRaiseException: Boolean
     ) : TestClient {
 
     private val repositories = mutableMapOf<String, Git>()
@@ -37,7 +36,7 @@ abstract class BaseTestClient(username: String,
     protected abstract fun deleteRepository(projectRepo: ProjectRepo)
     protected abstract fun checkCommit(projectRepo: ProjectRepo, sha: String)
 
-    override fun commit(newChangeSet: NewChangeSet, parent: String?): ChangeSet {
+    override fun commit(newChangeSet: NewChangeSet, parent: String?, commitExceptionMessage: String?): ChangeSet {
         getLog().info("Add commit $newChangeSet${parent?.let { ", parent '$it'" } ?: ""}")
         val branch = newChangeSet.branch
         val vcsUrl = newChangeSet.repository
@@ -103,7 +102,7 @@ abstract class BaseTestClient(username: String,
         }
     }
 
-    override fun importRepository(vcsUrl: String, zip: File) {
+    override fun importRepository(vcsUrl: String, zip: File, commitExceptionMessage: String?) {
         if (repositories.contains(vcsUrl.lowercase())) {
             throw IllegalArgumentException("Repository '$vcsUrl' exists already, can not import")
         }
