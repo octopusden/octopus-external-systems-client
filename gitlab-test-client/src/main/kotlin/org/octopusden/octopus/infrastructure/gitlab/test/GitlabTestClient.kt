@@ -9,7 +9,20 @@ import org.slf4j.LoggerFactory
 import java.util.Date
 import java.util.concurrent.TimeUnit
 
-class GitlabTestClient(val url: String, username: String, password: String) : BaseTestClient(username, password) {
+class GitlabTestClient(
+    val url: String,
+    username: String,
+    password: String,
+    commitRetries: Int = 20,
+    commitPingIntervalMsec: Long = 500,
+    commitRaiseException: Boolean = true,
+) : BaseTestClient(
+    username,
+    password,
+    commitRetries,
+    commitPingIntervalMsec,
+    commitRaiseException,
+) {
     private val client = GitLabApi.oauth2Login(url, username, password)
     override fun getLog() = log
 

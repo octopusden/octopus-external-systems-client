@@ -18,7 +18,12 @@ import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.slf4j.Logger
 
 
-abstract class BaseTestClient(username: String, password: String) : TestClient {
+abstract class BaseTestClient(username: String,
+                              password: String,
+                              private val commitRetries: Int,
+                              private val commitPingIntervalMsec: Long,
+                              private val commitRaiseException: Boolean
+    ) : TestClient {
 
     private val repositories = mutableMapOf<String, Git>()
     private val jgitCredentialsProvider = UsernamePasswordCredentialsProvider(username, password)
@@ -47,7 +52,11 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         retryableExecution {
             git.push().setCredentialsProvider(jgitCredentialsProvider).call()
         }
-        wait(waitMessage = "Wait commit='${commit.id.name}' is accessible") {
+        wait(waitMessage = "Wait commit='${commit.id.name}' is accessible",
+            pingIntervalMsec = commitPingIntervalMsec,
+            retries = commitRetries,
+            raiseOnException = commitRaiseException,
+            failMessage = "Git Server Issue. Commit '${commit.id.name}' is not reflected in repository '$vcsUrl' within the %d seconds") {
             checkCommit(parseUrl(newChangeSet.repository), commit.id.name)
         }
         return ChangeSet(
@@ -124,7 +133,11 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
             git.push().setCredentialsProvider(jgitCredentialsProvider).setPushAll().setPushTags().call()
         }
         val commitId = git.log().call().first().id.name
-        wait(waitMessage = "Wait commit '$commitId' is accessible") {
+        wait(waitMessage = "Wait commit '$commitId' is accessible",
+            pingIntervalMsec = commitPingIntervalMsec,
+            retries = commitRetries,
+            raiseOnException = commitRaiseException,
+            failMessage = "Git Server Issue. Commit '$commitId' is not reflected in repository '$vcsUrl' within the %d seconds") {
             checkCommit(projectRepo, commitId)
         }
         repositories[vcsUrl.lowercase()] = git
@@ -223,15 +236,38 @@ abstract class BaseTestClient(username: String, password: String) : TestClient {
         }
     }
 
-    private fun wait(retries: Int = 20, pingIntervalMsec: Long = 500, waitMessage: String, checkFunc: () -> Unit) {
+    /**
+     * @param retries number of retries
+     * @param pingIntervalMsec interval between retries
+     * @param raiseOnException if true, exception will be raised after retries
+     * @param waitMessage message to log before each retry
+     * @param failMessage message to log after all retries(%d will be replaced with elapsed time)
+     */
+    private fun wait(
+        retries: Int,
+        pingIntervalMsec: Long,
+        raiseOnException: Boolean,
+        waitMessage: String,
+        failMessage: String?,
+        checkFunc: () -> Unit
+    ) {
+        var exception: Exception? = null
+        val start = System.currentTimeMillis()
         for (i in 1..retries) {
             try {
                 checkFunc()
-                break
-            } catch (_: Exception) {
+                return
+            } catch (e: Exception) {
+                exception = e
                 getLog().warn("$waitMessage, retries remained: ${retries - i}")
                 TimeUnit.MILLISECONDS.sleep(pingIntervalMsec)
             }
+        }
+        if (exception != null && raiseOnException) {
+            val elapsed = (System.currentTimeMillis() - start) / 1000
+            val msg = if (failMessage != null)
+                failMessage.format(elapsed) else "Waiting for ${elapsed} sec was unsuccessful"
+            throw IllegalStateException(msg, exception)
         }
     }
 

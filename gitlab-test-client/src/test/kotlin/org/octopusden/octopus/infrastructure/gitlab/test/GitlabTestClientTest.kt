@@ -10,7 +10,7 @@ private const val HOST = "localhost:8990"
 private const val USER = "root"
 private const val PASSWORD = "VomkaEa6PD1OIgY7dQVbPUuO8wi9RMCaZw/i9yPXcI0="
 
-class GitlabtTestClientTest : BaseTestClientTest(
+class GitlabTestClientTest : BaseTestClientTest(
     GitlabTestClient("http://$HOST", USER, PASSWORD), "ssh://git@$HOST:%s/%s.git"
 ) {
 

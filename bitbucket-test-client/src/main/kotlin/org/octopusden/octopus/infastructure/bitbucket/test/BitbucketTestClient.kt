@@ -19,8 +19,11 @@ import java.net.URI
 class BitbucketTestClient(
     val bitbucketHost: String,
     username: String,
-    password: String
-) : BaseTestClient(username, password) {
+    password: String,
+    commitRetries: Int = 20,
+    commitPingIntervalMsec: Long = 500,
+    commitRaiseException: Boolean = true,
+) : BaseTestClient(username, password, commitRetries, commitPingIntervalMsec, commitRaiseException) {
 
     private val client: BitbucketClient = BitbucketClassicClient(object : BitbucketClientParametersProvider {
         override fun getApiUrl() = "http://$bitbucketHost"
