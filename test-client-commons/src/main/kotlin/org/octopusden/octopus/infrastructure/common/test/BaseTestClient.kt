@@ -56,7 +56,7 @@ abstract class BaseTestClient(username: String,
             pingIntervalMsec = commitPingIntervalMsec,
             retries = commitRetries,
             raiseOnException = commitRaiseException,
-            failMessage = "Commit '${commit.id.name}' is not accessible") {
+            failMessage = "Commit: '${commit.id.name}', branch: '${branch}', repository: '${vcsUrl}' is not accessible") {
             checkCommit(parseUrl(newChangeSet.repository), commit.id.name)
         }
         return ChangeSet(
@@ -137,7 +137,7 @@ abstract class BaseTestClient(username: String,
             pingIntervalMsec = commitPingIntervalMsec,
             retries = commitRetries,
             raiseOnException = commitRaiseException,
-            failMessage = "Commit '$commitId' is not accessible") {
+            failMessage = "Commit: '$commitId', repository: '$vcsUrl' is not accessible") {
             checkCommit(projectRepo, commitId)
         }
         repositories[vcsUrl.lowercase()] = git
