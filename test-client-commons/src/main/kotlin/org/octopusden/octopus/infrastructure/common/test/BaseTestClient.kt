@@ -56,7 +56,7 @@ abstract class BaseTestClient(username: String,
             pingIntervalMsec = commitPingIntervalMsec,
             retries = commitRetries,
             raiseOnException = commitRaiseException,
-            failMessage = "Commit: '${commit.id.name}', branch: '${branch}', repository: '${vcsUrl}' is not accessible") {
+            failMessage = "Git Server Issue. Commit '${commit.id.name}' is not reflected in repository '$vcsUrl' within the %d seconds") {
             checkCommit(parseUrl(newChangeSet.repository), commit.id.name)
         }
         return ChangeSet(
@@ -137,7 +137,7 @@ abstract class BaseTestClient(username: String,
             pingIntervalMsec = commitPingIntervalMsec,
             retries = commitRetries,
             raiseOnException = commitRaiseException,
-            failMessage = "Commit: '$commitId', repository: '$vcsUrl' is not accessible") {
+            failMessage = "Git Server Issue. Commit '$commitId' is not reflected in repository '$vcsUrl' within the %d seconds") {
             checkCommit(projectRepo, commitId)
         }
         repositories[vcsUrl.lowercase()] = git
@@ -236,8 +236,23 @@ abstract class BaseTestClient(username: String,
         }
     }
 
-    private fun wait(retries: Int, pingIntervalMsec: Long, raiseOnException: Boolean, waitMessage: String, failMessage: String?, checkFunc: () -> Unit) {
-         var exception: Exception? = null
+    /**
+     * @param retries number of retries
+     * @param pingIntervalMsec interval between retries
+     * @param raiseOnException if true, exception will be raised after retries
+     * @param waitMessage message to log before each retry
+     * @param failMessage message to log after all retries(%d will be replaced with elapsed time)
+     */
+    private fun wait(
+        retries: Int,
+        pingIntervalMsec: Long,
+        raiseOnException: Boolean,
+        waitMessage: String,
+        failMessage: String?,
+        checkFunc: () -> Unit
+    ) {
+        var exception: Exception? = null
+        val start = System.currentTimeMillis()
         for (i in 1..retries) {
             try {
                 checkFunc()
@@ -249,7 +264,10 @@ abstract class BaseTestClient(username: String,
             }
         }
         if (exception != null && raiseOnException) {
-            throw IllegalStateException(failMessage ?: "Waiting for ${retries * pingIntervalMsec / 1000} sec was unsuccessful", exception)
+            val elapsed = (System.currentTimeMillis() - start) / 1000
+            val msg = if (failMessage != null)
+                failMessage.format(elapsed) else "Waiting for ${elapsed} sec was unsuccessful"
+            throw IllegalStateException(msg, exception)
         }
     }
 
