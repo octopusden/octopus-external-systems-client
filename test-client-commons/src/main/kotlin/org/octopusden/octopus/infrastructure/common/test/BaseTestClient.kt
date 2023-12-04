@@ -36,7 +36,7 @@ abstract class BaseTestClient(username: String,
     protected abstract fun deleteRepository(projectRepo: ProjectRepo)
     protected abstract fun checkCommit(projectRepo: ProjectRepo, sha: String)
 
-    override fun commit(newChangeSet: NewChangeSet, parent: String?, commitExceptionMessage: String?): ChangeSet {
+    override fun commit(newChangeSet: NewChangeSet, parent: String?): ChangeSet {
         getLog().info("Add commit $newChangeSet${parent?.let { ", parent '$it'" } ?: ""}")
         val branch = newChangeSet.branch
         val vcsUrl = newChangeSet.repository
@@ -56,7 +56,7 @@ abstract class BaseTestClient(username: String,
             pingIntervalMsec = commitPingIntervalMsec,
             retries = commitRetries,
             raiseOnException = commitRaiseException,
-            failMessage = commitExceptionMessage) {
+            failMessage = "Commit '${commit.id.name}' is not accessible") {
             checkCommit(parseUrl(newChangeSet.repository), commit.id.name)
         }
         return ChangeSet(
@@ -102,7 +102,7 @@ abstract class BaseTestClient(username: String,
         }
     }
 
-    override fun importRepository(vcsUrl: String, zip: File, commitExceptionMessage: String?) {
+    override fun importRepository(vcsUrl: String, zip: File) {
         if (repositories.contains(vcsUrl.lowercase())) {
             throw IllegalArgumentException("Repository '$vcsUrl' exists already, can not import")
         }
@@ -137,7 +137,7 @@ abstract class BaseTestClient(username: String,
             pingIntervalMsec = commitPingIntervalMsec,
             retries = commitRetries,
             raiseOnException = commitRaiseException,
-            failMessage = commitExceptionMessage) {
+            failMessage = "Commit '$commitId' is not accessible") {
             checkCommit(projectRepo, commitId)
         }
         repositories[vcsUrl.lowercase()] = git
