@@ -1,106 +1,82 @@
 package org.octopusden.octopus.infrastructure.gitlab.test
 
-import org.gitlab4j.api.GitLabApi
-import org.gitlab4j.api.GitLabApiException
-import org.gitlab4j.api.models.Group
-import org.gitlab4j.api.models.GroupParams
-import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
-import org.slf4j.LoggerFactory
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import org.gitlab4j.api.GitLabApi
+import org.gitlab4j.api.GitLabApiException
+import org.gitlab4j.api.models.GroupParams
+import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class GitlabTestClient(
-    val url: String,
+    url: String,
     username: String,
     password: String,
     commitRetries: Int = 20,
-    commitPingIntervalMsec: Long = 500,
+    commitPingInterval: Long = 500,
     commitRaiseException: Boolean = true,
-) : BaseTestClient(
-    username,
-    password,
-    commitRetries,
-    commitPingIntervalMsec,
-    commitRaiseException,
-) {
+) : BaseTestClient(url, username, password, commitRetries, commitPingInterval, commitRaiseException) {
     private val client = GitLabApi.oauth2Login(url, username, password)
-    override fun getLog() = log
+
+    override val urlRegex = "(?:ssh://)?git@$host:((?:[^/]+/)+)([^/]+).git".toRegex()
+
+    override fun Repository.getHttpUrl() = "http://$host/${this.path}.git"
+
+    override fun getLog(): Logger = log
 
     override fun checkActive() {
         client.version
     }
 
-    override fun convertSshToHttp(vcsUrl: String): String = "$url/${vcsUrl.substring(vcsUrl.lastIndexOf(":") + 1)}"
-
-    override fun parseUrl(url: String): ProjectRepo {
-        val projectRepoArray = url.substring(url.lastIndexOf(":") + 1, url.indexOf(".git"))
-            .split("/")
-        if (projectRepoArray.size != 2) {
-            throw IllegalArgumentException("Repository '$url' is not a Gitlab repo, current url: '${this.url}'")
+    override fun createRepository(repository: Repository) {
+        log.debug("[$host] create repository '$repository'")
+        if (existRepository(repository)) {
+            log.error("[$host] repository '$repository' exists already (previous test(s) probably crashed)")
+            deleteRepository(repository)
         }
-        return ProjectRepo(projectRepoArray[0], projectRepoArray[1])
-    }
-
-    private fun createProjectIfNotExist(project: String): Group {
         val groupParams = GroupParams()
-        groupParams.withPath(project)
-        groupParams.withName(project)
-        return retryableExecution {
-            client.groupApi.getGroups(project).firstOrNull { g -> g.path == project }
+        groupParams.withPath(repository.group)
+        groupParams.withName(repository.group)
+        val group = retryableExecution {
+            client.groupApi.getGroups(repository.group).firstOrNull { g -> g.path == repository.group }
                 ?: client.groupApi.createGroup(groupParams)
         }
-    }
-
-    override fun createRepository(projectRepo: ProjectRepo) {
-        if (existRepository(projectRepo)) {
-            log.error("Repository ${projectRepo.path} exists (previous test(s) probably crashed)")
-            deleteRepository(projectRepo)
-        }
-
-        val group = createProjectIfNotExist(projectRepo.project)
         retryableExecution {
-            client.projectApi.createProject(group.id, projectRepo.repository)
+            client.projectApi.createProject(group.id, repository.name)
         }
     }
 
-    override fun deleteRepository(projectRepo: ProjectRepo) {
-        log.info("Delete ${projectRepo.path}")
-        if (existRepository(projectRepo)) {
+    override fun deleteRepository(repository: Repository) {
+        log.debug("[$host] delete repository '$repository'")
+        if (existRepository(repository)) {
             try {
-                val projectId = moveProjectForDelete(projectRepo)
-                retryableExecution { client.projectApi.deleteProject(projectId) }
+                val project = retryableExecution { client.projectApi.getProject(repository.path) }
+                val time = Date().time
+                project.name = "${project.name}-$time"
+                project.path = "${project.path}-$time"
+                project.withDefaultBranch(null)
+                retryableExecution { client.projectApi.updateProject(project) }
+                while (existRepository(repository)) {
+                    log.warn("[$host] wait till repository '$repository' is moved for deleted")
+                    TimeUnit.SECONDS.sleep(1)
+                }
+                retryableExecution { client.projectApi.deleteProject(project.id) }
             } catch (e: GitLabApiException) {
                 log.error(e.message)
             }
         }
     }
 
-    override fun checkCommit(projectRepo: ProjectRepo, sha: String) {
-        client.commitsApi.getCommits(projectRepo.path, sha, null, null)
+    override fun checkCommit(repository: Repository, sha: String) {
+        log.debug("[$host] check commit '$sha' in repository '$repository'")
+        client.commitsApi.getCommits(repository.path, sha, null, null)
     }
 
-    private fun moveProjectForDelete(projectRepo: ProjectRepo): Long {
-        val project = retryableExecution { client.projectApi.getProject(projectRepo.path) }
-
-        val time = Date().time
-        project.name = "${project.name}-$time"
-        project.path = "${project.path}-$time"
-        project.withDefaultBranch(null)
-
-        retryableExecution { client.projectApi.updateProject(project) }
-
-        while (existRepository(projectRepo)) {
-            log.warn("Wait when ${projectRepo.path} will be moved for delete")
-            TimeUnit.SECONDS.sleep(1)
-        }
-
-        return project.id
-    }
-
-    private fun existRepository(projectRepo: ProjectRepo): Boolean {
+    private fun existRepository(repository: Repository): Boolean {
         return try {
             retryableExecution {
-                client.projectApi.getProject(projectRepo.path) != null
+                client.projectApi.getProject(repository.path) != null
             }
         } catch (e: GitLabApiException) {
             false
@@ -108,10 +84,7 @@ class GitlabTestClient(
     }
 
     private fun <T> retryableExecution(
-        attemptLimit: Int = 3,
-        attemptIntervalSec: Long = 3,
-        skipRetryOnCode: Int = 404,
-        func: () -> T
+        attemptLimit: Int = 3, attemptIntervalSec: Long = 3, skipRetryOnCode: Int = 404, func: () -> T
     ): T {
         lateinit var latestException: Exception
         for (attempt in 1..attemptLimit) {

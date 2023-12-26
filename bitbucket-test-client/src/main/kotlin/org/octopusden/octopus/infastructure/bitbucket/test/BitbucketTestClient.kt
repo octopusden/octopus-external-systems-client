@@ -13,22 +13,24 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.getProjects
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.net.URI
 
 
 class BitbucketTestClient(
-    val bitbucketHost: String,
+    url: String,
     username: String,
     password: String,
     commitRetries: Int = 20,
     commitPingIntervalMsec: Long = 500,
     commitRaiseException: Boolean = true,
-) : BaseTestClient(username, password, commitRetries, commitPingIntervalMsec, commitRaiseException) {
-
+) : BaseTestClient(url, username, password, commitRetries, commitPingIntervalMsec, commitRaiseException) {
     private val client: BitbucketClient = BitbucketClassicClient(object : BitbucketClientParametersProvider {
-        override fun getApiUrl() = "http://$bitbucketHost"
+        override fun getApiUrl() = url
         override fun getAuth(): BitbucketCredentialProvider = BitbucketBasicCredentialProvider(username, password)
     })
+
+    override val urlRegex = "(?:ssh://)?git@$host[:/]([^:/]+)/([^:/]+).git".toRegex()
+
+    override fun Repository.getHttpUrl() = "http://$host/scm/${this.path}.git"
 
     override fun getLog(): Logger = log
 
@@ -36,41 +38,24 @@ class BitbucketTestClient(
         client.getProjects()
     }
 
-    override fun convertSshToHttp(vcsUrl: String): String {
-        val uri = URI.create(vcsUrl)
-        return "http://$bitbucketHost/scm${uri.path}"
-    }
-
-    override fun parseUrl(url: String): ProjectRepo {
-        val uri = URI.create(url)
-        val path = uri.path
-        val projectRepoArray = path.substring(1, path.indexOf(".git"))
-            .split("/")
-        if (projectRepoArray.size != 2) {
-            throw IllegalArgumentException("Repository '$url' is not a Bitbucket repo, current host: '$bitbucketHost'")
-        }
-        return ProjectRepo(projectRepoArray[0], projectRepoArray[1])
-    }
-
-    private fun createProjectIfNotExist(project: String) {
+    override fun createRepository(repository: Repository) {
+        log.debug("[$host] create repository '$repository'")
         try {
-            client.getProject(project)
+            client.getProject(repository.group)
         } catch (e: NotFoundException) {
-            client.createProject(BitbucketCreateProject(project, project))
+            client.createProject(BitbucketCreateProject(repository.group, repository.group))
         }
+        client.createRepository(repository.group, BitbucketCreateRepository(repository.name))
     }
 
-    override fun createRepository(projectRepo: ProjectRepo) {
-        createProjectIfNotExist(projectRepo.project)
-        client.createRepository(projectRepo.project, BitbucketCreateRepository(projectRepo.repository))
+    override fun deleteRepository(repository: Repository) {
+        log.debug("[$host] delete repository '$repository'")
+        client.deleteRepository(repository.group, repository.name)
     }
 
-    override fun deleteRepository(projectRepo: ProjectRepo) {
-        client.deleteRepository(projectRepo.project, projectRepo.repository)
-    }
-
-    override fun checkCommit(projectRepo: ProjectRepo, sha: String) {
-        client.getCommits(projectRepo.project, projectRepo.repository, sha)
+    override fun checkCommit(repository: Repository, sha: String) {
+        log.debug("[$host] check commit '$sha' in repository '$repository'")
+        client.getCommits(repository.group, repository.name, sha)
     }
 
     companion object {

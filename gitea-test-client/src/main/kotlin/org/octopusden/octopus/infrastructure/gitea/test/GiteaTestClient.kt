@@ -13,19 +13,22 @@ import org.octopusden.octopus.infrastructure.gitea.client.getOrganizations
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class GiteaTestClient(val url: String,
-                      val username: String,
-                      val password: String,
-                      commitRetries: Int = 20,
-                      commitPingIntervalMsec: Long = 500,
-                      commitRaiseException: Boolean = true,
-                      ) :
-    BaseTestClient(username, password, commitRetries, commitPingIntervalMsec, commitRaiseException) {
-
+class GiteaTestClient(
+    url: String,
+    username: String,
+    password: String,
+    commitRetries: Int = 20,
+    commitPingInterval: Long = 500,
+    commitRaiseException: Boolean = true,
+) : BaseTestClient(url, username, password, commitRetries, commitPingInterval, commitRaiseException) {
     private val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = url
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(username, password)
     })
+
+    override val urlRegex = "(?:ssh://)?git@$host[:/]([^:/]+)/([^:/]+).git".toRegex()
+
+    override fun Repository.getHttpUrl() = "http://$host/${this.path}.git"
 
     override fun getLog(): Logger = log
 
@@ -33,35 +36,24 @@ class GiteaTestClient(val url: String,
         client.getOrganizations()
     }
 
-    override fun convertSshToHttp(vcsUrl: String): String = "$url/${vcsUrl.substring(vcsUrl.lastIndexOf(":") + 1)}"
-
-    override fun parseUrl(url: String): ProjectRepo {
-        val projectRepoArray = url.substring(url.lastIndexOf(":") + 1, url.indexOf(".git"))
-            .split("/")
-        if (projectRepoArray.size != 2) {
-            throw IllegalArgumentException("Repository '$url' is not a Gitlab repo, current url: '${this.url}'")
-        }
-        return ProjectRepo(projectRepoArray[0], projectRepoArray[1])
-    }
-
-    override fun createRepository(projectRepo: ProjectRepo) {
-        createOrganizationIfNotExist(projectRepo.project)
-        client.createRepository(projectRepo.project, GiteaCreateRepository(projectRepo.repository))
-    }
-
-    override fun deleteRepository(projectRepo: ProjectRepo) =
-        client.deleteRepository(projectRepo.project, projectRepo.repository)
-
-    override fun checkCommit(projectRepo: ProjectRepo, sha: String) {
-        client.getCommits(projectRepo.project, projectRepo.repository, sha)
-    }
-
-    private fun createOrganizationIfNotExist(organization: String) {
+    override fun createRepository(repository: Repository) {
+        log.debug("[$host] create repository '$repository'")
         try {
-            client.getOrganization(organization)
+            client.getOrganization(repository.group)
         } catch (e: NotFoundException) {
-            client.createOrganization(GiteaCreateOrganization(organization))
+            client.createOrganization(GiteaCreateOrganization(repository.group))
         }
+        client.createRepository(repository.group, GiteaCreateRepository(repository.name))
+    }
+
+    override fun deleteRepository(repository: Repository) {
+        log.debug("[$host] delete repository '$repository'")
+        client.deleteRepository(repository.group, repository.name)
+    }
+
+    override fun checkCommit(repository: Repository, sha: String) {
+        log.debug("[$host] check commit '$sha' in repository '$repository'")
+        client.getCommits(repository.group, repository.name, sha)
     }
 
     companion object {
