@@ -13,14 +13,14 @@ class GitlabTestClient(
     url: String,
     username: String,
     password: String,
-    vcsUrlHost: String? = null,
+    externalHost: String? = null,
     commitRetries: Int = 20,
     commitPingInterval: Long = 500,
     commitRaiseException: Boolean = true,
-) : BaseTestClient(url, username, password, vcsUrlHost, commitRetries, commitPingInterval, commitRaiseException) {
+) : BaseTestClient(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException) {
     private val client = GitLabApi.oauth2Login(apiUrl, username, password)
 
-    override val vcsUrlRegex = "(?:ssh://)?git@${this.vcsUrlHost}:((?:[^/]+/)+)([^/]+).git".toRegex()
+    override val vcsUrlRegex = "(?:ssh://)?git@$vcsUrlHost:((?:[^/]+/)+)([^/]+).git".toRegex()
 
     override fun Repository.getUrl() = "$apiUrl/${this.path}.git"
 

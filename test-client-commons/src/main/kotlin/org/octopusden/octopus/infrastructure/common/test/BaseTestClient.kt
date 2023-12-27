@@ -21,7 +21,7 @@ abstract class BaseTestClient(
     url: String,
     username: String,
     password: String,
-    host: String?,
+    externalHost: String?,
     private val commitRetries: Int,
     private val commitPingInterval: Long,
     private val commitRaiseException: Boolean
@@ -29,7 +29,7 @@ abstract class BaseTestClient(
     private val repositories = mutableMapOf<Repository, Git>()
     private val jgitCredentialsProvider = UsernamePasswordCredentialsProvider(username, password)
     protected val apiUrl = url.trimEnd('/')
-    protected val vcsUrlHost = host?.lowercase() ?: apiUrl.lowercase().replace("^(https|http)://".toRegex(), "")
+    protected val vcsUrlHost = externalHost?.lowercase() ?: apiUrl.lowercase().replace("^(https|http)://".toRegex(), "")
     protected abstract val vcsUrlRegex: Regex
 
     private fun parseUrl(vcsUrl: String) = vcsUrlRegex.find(vcsUrl.lowercase())?.let { result ->

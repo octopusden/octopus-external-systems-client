@@ -17,11 +17,11 @@ class GiteaTestClient(
     url: String,
     username: String,
     password: String,
-    host: String? = null,
+    externalHost: String? = null,
     commitRetries: Int = 20,
     commitPingInterval: Long = 500,
     commitRaiseException: Boolean = true,
-) : BaseTestClient(url, username, password, host, commitRetries, commitPingInterval, commitRaiseException) {
+) : BaseTestClient(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException) {
     private val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = apiUrl
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(username, password)

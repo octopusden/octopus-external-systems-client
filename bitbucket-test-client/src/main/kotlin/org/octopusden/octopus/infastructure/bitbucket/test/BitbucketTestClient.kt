@@ -18,11 +18,11 @@ class BitbucketTestClient(
     url: String,
     username: String,
     password: String,
-    host: String? = null,
+    externalHost: String? = null,
     commitRetries: Int = 20,
     commitPingInterval: Long = 500,
     commitRaiseException: Boolean = true,
-) : BaseTestClient(url, username, password, host, commitRetries, commitPingInterval, commitRaiseException) {
+) : BaseTestClient(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException) {
     private val client: BitbucketClient = BitbucketClassicClient(object : BitbucketClientParametersProvider {
         override fun getApiUrl() = apiUrl
         override fun getAuth(): BitbucketCredentialProvider = BitbucketBasicCredentialProvider(username, password)
