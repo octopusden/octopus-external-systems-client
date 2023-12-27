@@ -10,6 +10,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.createPullRequestW
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
+import org.octopusden.octopus.infrastructure.bitbucket.client.exception.InvalidCommitIdException
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommits
 import org.octopusden.octopus.infrastructure.bitbucket.client.getTags
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
@@ -19,7 +20,7 @@ private const val USER = "admin"
 private const val PASSWORD = "admin"
 
 class BitbucketTestClientTest : BaseTestClientTest(
-    BitbucketTestClient(HOST, USER, PASSWORD), "ssh://git@$HOST/%s/%s.git"
+    BitbucketTestClient("http://$HOST", USER, PASSWORD), "ssh://git@$HOST/%s/%s.git"
 ) {
 
     private val client = BitbucketClassicClient(object : BitbucketClientParametersProvider {
@@ -51,7 +52,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
 
     @Test
     fun testGetCommitInvalidId() {
-        Assertions.assertThrowsExactly(IllegalArgumentException::class.java) {
+        Assertions.assertThrowsExactly(InvalidCommitIdException::class.java) {
             client.getCommit("projectKey", "repository", "bug/fix")
         }
     }
