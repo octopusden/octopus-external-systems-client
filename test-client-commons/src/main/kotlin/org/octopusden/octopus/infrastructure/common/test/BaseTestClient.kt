@@ -17,25 +17,26 @@ import org.octopusden.octopus.infrastructure.common.test.dto.ChangeSet
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.slf4j.Logger
 
-
 abstract class BaseTestClient(
     url: String,
     username: String,
     password: String,
+    host: String?,
     private val commitRetries: Int,
     private val commitPingInterval: Long,
     private val commitRaiseException: Boolean
 ) : TestClient {
     private val repositories = mutableMapOf<Repository, Git>()
     private val jgitCredentialsProvider = UsernamePasswordCredentialsProvider(username, password)
-    protected val host = url.lowercase().replace("^(https|http)://".toRegex(), "").trimEnd('/', ':')
-    protected abstract val urlRegex: Regex
+    protected val apiUrl = url.trimEnd('/')
+    protected val vcsUrlHost = host?.lowercase() ?: apiUrl.lowercase().replace("^(https|http)://".toRegex(), "")
+    protected abstract val vcsUrlRegex: Regex
 
-    private fun parseUrl(vcsUrl: String) = urlRegex.find(vcsUrl.lowercase())?.let { result ->
+    private fun parseUrl(vcsUrl: String) = vcsUrlRegex.find(vcsUrl.lowercase())?.let { result ->
         result.destructured.let { Repository(it.component1().trimEnd('/'), it.component2()) }
-    } ?: throw IllegalArgumentException("VCS URL '$vcsUrl' is not supported by ${javaClass.simpleName}($host)")
+    } ?: throw IllegalArgumentException("VCS URL '$vcsUrl' is not supported by ${javaClass.simpleName}($vcsUrlHost)")
 
-    protected abstract fun Repository.getHttpUrl(): String
+    protected abstract fun Repository.getUrl(): String
     protected abstract fun getLog(): Logger
     protected abstract fun checkActive()
     protected abstract fun createRepository(repository: Repository)
@@ -45,7 +46,7 @@ abstract class BaseTestClient(
     override fun commit(newChangeSet: NewChangeSet, parent: String?): ChangeSet {
         val repository = parseUrl(newChangeSet.repository)
         getLog().info(
-            "[$host] commit into repository '$repository' branch '${newChangeSet.branch}'" + if (parent != null) " (parent '$parent')" else ""
+            "[$vcsUrlHost] commit into repository '$repository' branch '${newChangeSet.branch}'" + if (parent != null) " (parent '$parent')" else ""
         )
         val git = checkout(repository, newChangeSet.branch, parent)
         git.repository.directory.toPath().parent.resolve("${UUID.randomUUID()}.${"commit"}").toFile().createNewFile()
@@ -59,11 +60,11 @@ abstract class BaseTestClient(
             git.push().setCredentialsProvider(jgitCredentialsProvider).call()
         }
         wait(
-            waitMessage = "[$host] wait commit '${commit.id.name}' is accessible in repository '$repository'",
+            waitMessage = "[$vcsUrlHost] wait commit '${commit.id.name}' is accessible in repository '$repository'",
             pingInterval = commitPingInterval,
             retries = commitRetries,
             raiseOnException = commitRaiseException,
-            failMessage = "[$host] commit '${commit.id.name}' is not reflected in repository '$repository' within the %d seconds"
+            failMessage = "[$vcsUrlHost] commit '${commit.id.name}' is not reflected in repository '$repository' within the %d seconds"
         ) {
             checkCommit(repository, commit.id.name)
         }
@@ -79,9 +80,9 @@ abstract class BaseTestClient(
 
     override fun tag(vcsUrl: String, commitId: String, tag: String) {
         val repository = parseUrl(vcsUrl)
-        getLog().info("[$host] tag commit '$commitId' in '$repository' as '$tag'")
+        getLog().info("[$vcsUrlHost] tag commit '$commitId' in '$repository' as '$tag'")
         val git = repositories[repository]
-            ?: throw IllegalArgumentException("[$host] repository '$repository' does not exist, can not tag")
+            ?: throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' does not exist, can not tag")
         gitCheckout(git, commitId)
         retryableExecution {
             git.tag().setName(tag).call()
@@ -93,9 +94,9 @@ abstract class BaseTestClient(
 
     override fun exportRepository(vcsUrl: String, zip: File) {
         val repository = parseUrl(vcsUrl)
-        getLog().info("[$host] export repository '$repository'")
+        getLog().info("[$vcsUrlHost] export repository '$repository'")
         val git = repositories[repository]
-            ?: throw IllegalArgumentException("[$host] repository '$repository' does not exist, can not export")
+            ?: throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' does not exist, can not export")
         val repositoryDir = git.repository.directory
         ZipOutputStream(zip.outputStream()).use { zipOutputStream ->
             repositoryDir.walkTopDown().forEach { file ->
@@ -117,9 +118,9 @@ abstract class BaseTestClient(
 
     override fun importRepository(vcsUrl: String, zip: File) {
         val repository = parseUrl(vcsUrl)
-        getLog().info("[$host] import repository '$repository'")
+        getLog().info("[$vcsUrlHost] import repository '$repository'")
         if (repositories.contains(repository)) {
-            throw IllegalArgumentException("[$host] repository '$repository' exists already, can not import")
+            throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' exists already, can not import")
         }
         createRepository(repository)
         val repositoryDir = Files.createTempDirectory("TestClient_")
@@ -141,17 +142,17 @@ abstract class BaseTestClient(
         git.remoteList().call().forEach {
             git.remoteRemove().setRemoteName(it.name).call()
         }
-        git.remoteAdd().setName("origin").setUri(URIish(repository.getHttpUrl())).call()
+        git.remoteAdd().setName("origin").setUri(URIish(repository.getUrl())).call()
         retryableExecution {
             git.push().setCredentialsProvider(jgitCredentialsProvider).setPushAll().setPushTags().call()
         }
         val commitId = git.log().call().first().id.name
         wait(
-            waitMessage = "[$host] wait commit '$commitId' is accessible in repository '$repository'",
+            waitMessage = "[$vcsUrlHost] wait commit '$commitId' is accessible in repository '$repository'",
             pingInterval = commitPingInterval,
             retries = commitRetries,
             raiseOnException = commitRaiseException,
-            failMessage = "[$host] commit '$commitId' is not reflected in repository '$repository' within the %d seconds"
+            failMessage = "[$vcsUrlHost] commit '$commitId' is not reflected in repository '$repository' within the %d seconds"
         ) {
             checkCommit(repository, commitId)
         }
@@ -161,10 +162,10 @@ abstract class BaseTestClient(
     override fun getCommits(vcsUrl: String, branch: String?): List<ChangeSet> {
         val repository = parseUrl(vcsUrl)
         getLog().info(
-            "[$host] get commits from repository '$repository'" + if (branch != null) " (branch '$branch')" else ""
+            "[$vcsUrlHost] get commits from repository '$repository'" + if (branch != null) " (branch '$branch')" else ""
         )
         val git = repositories[repository]
-            ?: throw IllegalArgumentException("[$host] repository '$repository' does not exist, can not get commits")
+            ?: throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' does not exist, can not get commits")
         return git.log().run {
             if (branch.isNullOrBlank()) {
                 this.all()
@@ -179,9 +180,9 @@ abstract class BaseTestClient(
     }
 
     override fun clearData() {
-        getLog().info("[$host] clear all data")
+        getLog().info("[$vcsUrlHost] clear all data")
         repositories.entries.forEach { (repository, git) ->
-            getLog().debug("[$host] delete directory '${git.repository.directory}'")
+            getLog().debug("[$vcsUrlHost] delete directory '${git.repository.directory}'")
             git.repository.directory.deleteRecursively()
             deleteRepository(repository)
         }
@@ -190,22 +191,22 @@ abstract class BaseTestClient(
 
     private fun checkout(repository: Repository, branch: String, parent: String?): Git {
         getLog().debug(
-            "[$host] checkout repository '$repository' branch '$branch'" + if (parent != null) " (parent '$branch')" else ""
+            "[$vcsUrlHost] checkout repository '$repository' branch '$branch'" + if (parent != null) " (parent '$branch')" else ""
         )
         val git = repositories.computeIfAbsent(repository) { _ ->
             createRepository(repository)
             val repositoryDir = Files.createTempDirectory("TestClient_")
-            getLog().debug("[$host] clone repository '$repository' to directory '$repositoryDir'")
+            getLog().debug("[$vcsUrlHost] clone repository '$repository' to directory '$repositoryDir'")
             retryableExecution {
-                Git.cloneRepository().setDirectory(repositoryDir.toFile()).setURI(repository.getHttpUrl())
+                Git.cloneRepository().setDirectory(repositoryDir.toFile()).setURI(repository.getUrl())
                     .setCredentialsProvider(jgitCredentialsProvider).call()
             }
         }
         val branches = git.branchList().call()
         if (branches.isEmpty()) {
-            getLog().debug("[$host] repository '$repository' is empty, prepare default branch '$DEFAULT_BRANCH'")
+            getLog().debug("[$vcsUrlHost] repository '$repository' is empty, prepare default branch '$DEFAULT_BRANCH'")
             parent?.let {
-                throw IllegalArgumentException("[$host] repository '$repository' is empty, but parent '$it' is specified")
+                throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' is empty, but parent '$it' is specified")
             }
             val config = git.repository.config
             config.setString(CONFIG_BRANCH_SECTION, DEFAULT_BRANCH, "remote", "origin")
@@ -216,12 +217,12 @@ abstract class BaseTestClient(
             }
         }
         if (branches.any { it.name == "refs/heads/$branch" } || branch == DEFAULT_BRANCH) {
-            getLog().debug("[$host] repository '$repository' branch '$branch' exists")
+            getLog().debug("[$vcsUrlHost] repository '$repository' branch '$branch' exists")
             parent?.let {
-                throw IllegalArgumentException("[$host] repository '$repository' branch '$branch' exists already, but parent '$it' is specified")
+                throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' branch '$branch' exists already, but parent '$it' is specified")
             }
         } else {
-            getLog().debug("[$host] create repository '$repository' branch '$branch' from parent '${parent ?: DEFAULT_BRANCH}'")
+            getLog().debug("[$vcsUrlHost] create repository '$repository' branch '$branch' from parent '${parent ?: DEFAULT_BRANCH}'")
             parent?.let { parentValue ->
                 gitCheckout(git, parentValue)
             }

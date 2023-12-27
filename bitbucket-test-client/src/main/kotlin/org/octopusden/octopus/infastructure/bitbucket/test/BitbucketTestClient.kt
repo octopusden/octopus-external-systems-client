@@ -14,23 +14,23 @@ import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-
 class BitbucketTestClient(
     url: String,
     username: String,
     password: String,
+    host: String? = null,
     commitRetries: Int = 20,
-    commitPingIntervalMsec: Long = 500,
+    commitPingInterval: Long = 500,
     commitRaiseException: Boolean = true,
-) : BaseTestClient(url, username, password, commitRetries, commitPingIntervalMsec, commitRaiseException) {
+) : BaseTestClient(url, username, password, host, commitRetries, commitPingInterval, commitRaiseException) {
     private val client: BitbucketClient = BitbucketClassicClient(object : BitbucketClientParametersProvider {
-        override fun getApiUrl() = url
+        override fun getApiUrl() = apiUrl
         override fun getAuth(): BitbucketCredentialProvider = BitbucketBasicCredentialProvider(username, password)
     })
 
-    override val urlRegex = "(?:ssh://)?git@$host[:/]([^:/]+)/([^:/]+).git".toRegex()
+    override val vcsUrlRegex = "(?:ssh://)?git@$vcsUrlHost/([^/]+)/([^/]+).git".toRegex()
 
-    override fun Repository.getHttpUrl() = "http://$host/scm/${this.path}.git"
+    override fun Repository.getUrl() = "$apiUrl/scm/${this.path}.git"
 
     override fun getLog(): Logger = log
 
@@ -39,7 +39,7 @@ class BitbucketTestClient(
     }
 
     override fun createRepository(repository: Repository) {
-        log.debug("[$host] create repository '$repository'")
+        log.debug("[$vcsUrlHost] create repository '$repository'")
         try {
             client.getProject(repository.group)
         } catch (e: NotFoundException) {
@@ -49,12 +49,12 @@ class BitbucketTestClient(
     }
 
     override fun deleteRepository(repository: Repository) {
-        log.debug("[$host] delete repository '$repository'")
+        log.debug("[$vcsUrlHost] delete repository '$repository'")
         client.deleteRepository(repository.group, repository.name)
     }
 
     override fun checkCommit(repository: Repository, sha: String) {
-        log.debug("[$host] check commit '$sha' in repository '$repository'")
+        log.debug("[$vcsUrlHost] check commit '$sha' in repository '$repository'")
         client.getCommits(repository.group, repository.name, sha)
     }
 

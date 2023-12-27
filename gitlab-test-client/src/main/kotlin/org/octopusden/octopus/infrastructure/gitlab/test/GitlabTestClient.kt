@@ -13,15 +13,16 @@ class GitlabTestClient(
     url: String,
     username: String,
     password: String,
+    vcsUrlHost: String? = null,
     commitRetries: Int = 20,
     commitPingInterval: Long = 500,
     commitRaiseException: Boolean = true,
-) : BaseTestClient(url, username, password, commitRetries, commitPingInterval, commitRaiseException) {
-    private val client = GitLabApi.oauth2Login(url, username, password)
+) : BaseTestClient(url, username, password, vcsUrlHost, commitRetries, commitPingInterval, commitRaiseException) {
+    private val client = GitLabApi.oauth2Login(apiUrl, username, password)
 
-    override val urlRegex = "(?:ssh://)?git@$host:((?:[^/]+/)+)([^/]+).git".toRegex()
+    override val vcsUrlRegex = "(?:ssh://)?git@${this.vcsUrlHost}:((?:[^/]+/)+)([^/]+).git".toRegex()
 
-    override fun Repository.getHttpUrl() = "http://$host/${this.path}.git"
+    override fun Repository.getUrl() = "$apiUrl/${this.path}.git"
 
     override fun getLog(): Logger = log
 
@@ -30,9 +31,9 @@ class GitlabTestClient(
     }
 
     override fun createRepository(repository: Repository) {
-        log.debug("[$host] create repository '$repository'")
+        log.debug("[$vcsUrlHost] create repository '$repository'")
         if (existRepository(repository)) {
-            log.error("[$host] repository '$repository' exists already (previous test(s) probably crashed)")
+            log.error("[$vcsUrlHost] repository '$repository' exists already (previous test(s) probably crashed)")
             deleteRepository(repository)
         }
         val groupParams = GroupParams()
@@ -48,7 +49,7 @@ class GitlabTestClient(
     }
 
     override fun deleteRepository(repository: Repository) {
-        log.debug("[$host] delete repository '$repository'")
+        log.debug("[$vcsUrlHost] delete repository '$repository'")
         if (existRepository(repository)) {
             try {
                 val project = retryableExecution { client.projectApi.getProject(repository.path) }
@@ -58,7 +59,7 @@ class GitlabTestClient(
                 project.withDefaultBranch(null)
                 retryableExecution { client.projectApi.updateProject(project) }
                 while (existRepository(repository)) {
-                    log.warn("[$host] wait till repository '$repository' is moved for deleted")
+                    log.warn("[$vcsUrlHost] wait till repository '$repository' is moved for deleted")
                     TimeUnit.SECONDS.sleep(1)
                 }
                 retryableExecution { client.projectApi.deleteProject(project.id) }
@@ -69,7 +70,7 @@ class GitlabTestClient(
     }
 
     override fun checkCommit(repository: Repository, sha: String) {
-        log.debug("[$host] check commit '$sha' in repository '$repository'")
+        log.debug("[$vcsUrlHost] check commit '$sha' in repository '$repository'")
         client.commitsApi.getCommits(repository.path, sha, null, null)
     }
 
