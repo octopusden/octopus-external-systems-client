@@ -13,15 +13,42 @@ import org.octopusden.octopus.infrastructure.gitea.client.getOrganizations
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class GiteaTestClient(
-    url: String,
-    username: String,
-    password: String,
-    externalHost: String? = null,
-    commitRetries: Int = 20,
-    commitPingInterval: Long = 500,
-    commitRaiseException: Boolean = true,
-) : BaseTestClient(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException) {
+class GiteaTestClient : BaseTestClient {
+    constructor(url: String, username: String, password: String) : super(url, username, password)
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        externalHost: String
+    ) : super(url, username, password, externalHost)
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        commitRetries: Int,
+        commitPingInterval: Long,
+        commitRaiseException: Boolean
+    ) : super(
+        url,
+        username,
+        password,
+        commitRetries = commitRetries,
+        commitPingInterval = commitPingInterval,
+        commitRaiseException = commitRaiseException
+    )
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        externalHost: String,
+        commitRetries: Int,
+        commitPingInterval: Long,
+        commitRaiseException: Boolean
+    ) : super(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException)
+
     private val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = apiUrl
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(username, password)

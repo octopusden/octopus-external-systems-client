@@ -14,15 +14,42 @@ import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class BitbucketTestClient(
-    url: String,
-    username: String,
-    password: String,
-    externalHost: String? = null,
-    commitRetries: Int = 20,
-    commitPingInterval: Long = 500,
-    commitRaiseException: Boolean = true,
-) : BaseTestClient(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException) {
+class BitbucketTestClient : BaseTestClient {
+    constructor(url: String, username: String, password: String) : super(url, username, password)
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        externalHost: String
+    ) : super(url, username, password, externalHost)
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        commitRetries: Int,
+        commitPingInterval: Long,
+        commitRaiseException: Boolean
+    ) : super(
+        url,
+        username,
+        password,
+        commitRetries = commitRetries,
+        commitPingInterval = commitPingInterval,
+        commitRaiseException = commitRaiseException
+    )
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        externalHost: String,
+        commitRetries: Int,
+        commitPingInterval: Long,
+        commitRaiseException: Boolean
+    ) : super(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException)
+
     private val client: BitbucketClient = BitbucketClassicClient(object : BitbucketClientParametersProvider {
         override fun getApiUrl() = apiUrl
         override fun getAuth(): BitbucketCredentialProvider = BitbucketBasicCredentialProvider(username, password)

@@ -19,15 +19,16 @@ import org.slf4j.Logger
 
 abstract class BaseTestClient(
     url: String,
-    username: String,
-    password: String,
-    externalHost: String?,
-    private val commitRetries: Int,
-    private val commitPingInterval: Long,
-    private val commitRaiseException: Boolean
+    protected val username: String,
+    protected val password: String,
+    externalHost: String? = null,
+    private val commitRetries: Int = 20,
+    private val commitPingInterval: Long = 500,
+    private val commitRaiseException: Boolean = true
 ) : TestClient {
     private val repositories = mutableMapOf<Repository, Git>()
     private val jgitCredentialsProvider = UsernamePasswordCredentialsProvider(username, password)
+
     protected val apiUrl = url.trimEnd('/')
     protected val vcsUrlHost = externalHost?.lowercase() ?: apiUrl.lowercase().replace("^(https|http)://".toRegex(), "")
     protected abstract val vcsUrlRegex: Regex
