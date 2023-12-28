@@ -13,22 +13,50 @@ import org.octopusden.octopus.infrastructure.gitea.client.getOrganizations
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class GiteaTestClient(
-    url: String,
-    username: String,
-    password: String,
-    commitRetries: Int = 20,
-    commitPingInterval: Long = 500,
-    commitRaiseException: Boolean = true,
-) : BaseTestClient(url, username, password, commitRetries, commitPingInterval, commitRaiseException) {
+class GiteaTestClient : BaseTestClient {
+    constructor(url: String, username: String, password: String) : super(url, username, password)
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        externalHost: String
+    ) : super(url, username, password, externalHost)
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        commitRetries: Int,
+        commitPingInterval: Long,
+        commitRaiseException: Boolean
+    ) : super(
+        url,
+        username,
+        password,
+        commitRetries = commitRetries,
+        commitPingInterval = commitPingInterval,
+        commitRaiseException = commitRaiseException
+    )
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        externalHost: String,
+        commitRetries: Int,
+        commitPingInterval: Long,
+        commitRaiseException: Boolean
+    ) : super(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException)
+
     private val client = GiteaClassicClient(object : ClientParametersProvider {
-        override fun getApiUrl(): String = url
+        override fun getApiUrl(): String = apiUrl
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(username, password)
     })
 
-    override val urlRegex = "(?:ssh://)?git@$host[:/]([^:/]+)/([^:/]+).git".toRegex()
+    override val vcsUrlRegex = "(?:ssh://)?git@$vcsUrlHost[:/]([^:/]+)/([^:/]+).git".toRegex()
 
-    override fun Repository.getHttpUrl() = "http://$host/${this.path}.git"
+    override fun Repository.getUrl() = "$apiUrl/${this.path}.git"
 
     override fun getLog(): Logger = log
 
@@ -37,7 +65,7 @@ class GiteaTestClient(
     }
 
     override fun createRepository(repository: Repository) {
-        log.debug("[$host] create repository '$repository'")
+        log.debug("[$vcsUrlHost] create repository '$repository'")
         try {
             client.getOrganization(repository.group)
         } catch (e: NotFoundException) {
@@ -47,12 +75,12 @@ class GiteaTestClient(
     }
 
     override fun deleteRepository(repository: Repository) {
-        log.debug("[$host] delete repository '$repository'")
+        log.debug("[$vcsUrlHost] delete repository '$repository'")
         client.deleteRepository(repository.group, repository.name)
     }
 
     override fun checkCommit(repository: Repository, sha: String) {
-        log.debug("[$host] check commit '$sha' in repository '$repository'")
+        log.debug("[$vcsUrlHost] check commit '$sha' in repository '$repository'")
         client.getCommits(repository.group, repository.name, sha)
     }
 

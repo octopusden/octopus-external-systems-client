@@ -9,19 +9,47 @@ import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class GitlabTestClient(
-    url: String,
-    username: String,
-    password: String,
-    commitRetries: Int = 20,
-    commitPingInterval: Long = 500,
-    commitRaiseException: Boolean = true,
-) : BaseTestClient(url, username, password, commitRetries, commitPingInterval, commitRaiseException) {
-    private val client = GitLabApi.oauth2Login(url, username, password)
+class GitlabTestClient : BaseTestClient {
+    constructor(url: String, username: String, password: String) : super(url, username, password)
 
-    override val urlRegex = "(?:ssh://)?git@$host:((?:[^/]+/)+)([^/]+).git".toRegex()
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        externalHost: String
+    ) : super(url, username, password, externalHost)
 
-    override fun Repository.getHttpUrl() = "http://$host/${this.path}.git"
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        commitRetries: Int,
+        commitPingInterval: Long,
+        commitRaiseException: Boolean
+    ) : super(
+        url,
+        username,
+        password,
+        commitRetries = commitRetries,
+        commitPingInterval = commitPingInterval,
+        commitRaiseException = commitRaiseException
+    )
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        externalHost: String,
+        commitRetries: Int,
+        commitPingInterval: Long,
+        commitRaiseException: Boolean
+    ) : super(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException)
+
+    private val client = GitLabApi.oauth2Login(apiUrl, username, password)
+
+    override val vcsUrlRegex = "(?:ssh://)?git@$vcsUrlHost:((?:[^/]+/)+)([^/]+).git".toRegex()
+
+    override fun Repository.getUrl() = "$apiUrl/${this.path}.git"
 
     override fun getLog(): Logger = log
 
@@ -30,9 +58,9 @@ class GitlabTestClient(
     }
 
     override fun createRepository(repository: Repository) {
-        log.debug("[$host] create repository '$repository'")
+        log.debug("[$vcsUrlHost] create repository '$repository'")
         if (existRepository(repository)) {
-            log.error("[$host] repository '$repository' exists already (previous test(s) probably crashed)")
+            log.error("[$vcsUrlHost] repository '$repository' exists already (previous test(s) probably crashed)")
             deleteRepository(repository)
         }
         val groupParams = GroupParams()
@@ -48,7 +76,7 @@ class GitlabTestClient(
     }
 
     override fun deleteRepository(repository: Repository) {
-        log.debug("[$host] delete repository '$repository'")
+        log.debug("[$vcsUrlHost] delete repository '$repository'")
         if (existRepository(repository)) {
             try {
                 val project = retryableExecution { client.projectApi.getProject(repository.path) }
@@ -58,7 +86,7 @@ class GitlabTestClient(
                 project.withDefaultBranch(null)
                 retryableExecution { client.projectApi.updateProject(project) }
                 while (existRepository(repository)) {
-                    log.warn("[$host] wait till repository '$repository' is moved for deleted")
+                    log.warn("[$vcsUrlHost] wait till repository '$repository' is moved for deleted")
                     TimeUnit.SECONDS.sleep(1)
                 }
                 retryableExecution { client.projectApi.deleteProject(project.id) }
@@ -69,7 +97,7 @@ class GitlabTestClient(
     }
 
     override fun checkCommit(repository: Repository, sha: String) {
-        log.debug("[$host] check commit '$sha' in repository '$repository'")
+        log.debug("[$vcsUrlHost] check commit '$sha' in repository '$repository'")
         client.commitsApi.getCommits(repository.path, sha, null, null)
     }
 
