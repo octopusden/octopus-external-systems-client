@@ -14,6 +14,7 @@ dependencies {
     api(platform("com.fasterxml.jackson:jackson-bom:2.14.0"))
     api("com.fasterxml.jackson.module:jackson-module-kotlin")
     api("com.fasterxml.jackson.core:jackson-databind")
+    api("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
 
 
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.0")
