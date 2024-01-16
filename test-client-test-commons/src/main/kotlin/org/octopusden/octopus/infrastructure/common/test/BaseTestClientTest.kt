@@ -9,15 +9,9 @@ import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 
 
-private const val TAG = "test_tag"
-private const val PROJECT = "test_project"
-private const val REPOSITORY = "test-repository"
-private const val FEATURE_BRANCH = "feature"
-private const val DEVELOP_BRANCH = "develop"
-
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseTestClientTest(
-    private val testClient: TestClient, vcsFormatter: String
+    protected val testClient: TestClient, vcsFormatter: String
 ) {
     abstract fun getTags(project: String, repository: String): Collection<TestTag>
     abstract fun getCommits(project: String, repository: String, branch: String): Collection<TestCommit>
@@ -30,7 +24,7 @@ abstract class BaseTestClientTest(
         description: String
     ): TestPullRequest
 
-    private var vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
+    protected var vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
 
     @AfterEach
     fun afterEachTestClientTest() {
@@ -232,4 +226,12 @@ abstract class BaseTestClientTest(
     data class TestTag(val displayId: String, val commitId: String)
     data class TestCommit(val commitId: String, val message: String)
     data class TestPullRequest(val id: Long)
+
+    companion object {
+        private const val TAG = "test_tag"
+        const val PROJECT = "test_project"
+        const val REPOSITORY = "test-repository"
+        private const val FEATURE_BRANCH = "feature"
+        private const val DEVELOP_BRANCH = "develop"
+    }
 }

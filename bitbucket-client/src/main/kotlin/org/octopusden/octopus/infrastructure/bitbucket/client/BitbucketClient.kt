@@ -22,6 +22,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketRepos
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.DefaultReviewersQuery
+import org.octopusden.octopus.infrastructure.bitbucket.client.exception.InvalidCommitIdException
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -82,7 +83,7 @@ interface BitbucketClient {
     )
 
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/commits")
-    fun getCommits(
+    fun _getCommits(
         @Param("projectKey") projectKey: String,
         @Param("repository") repository: String,
         @QueryMap requestParams: Map<String, Any>
@@ -90,14 +91,16 @@ interface BitbucketClient {
 
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/commits/{id}")
     @Throws(NotFoundException::class)
-    fun getCommit(
+    @Suppress("FunctionName")
+    fun _getCommit(
         @Param("projectKey") projectKey: String,
         @Param("repository") repository: String,
         @Param("id", expander = BitbucketCommitIdValidator::class) id: String
     ): BitbucketCommit
 
     @RequestLine("GET $JIRA_ISSUES_PATH/{issueKey}/commits")
-    fun getCommits(
+    @Suppress("FunctionName")
+    fun _getCommits(
         @Param("issueKey") issueKey: String,
         @QueryMap requestParams: Map<String, Any>
     ): BitbucketEntityList<BitbucketJiraCommit>
@@ -142,6 +145,22 @@ fun BitbucketClient.getRepositories(): List<BitbucketRepository> =
 fun BitbucketClient.getRepositories(projectKey: String): List<BitbucketRepository> =
     execute({ parameters: Map<String, Any> -> getRepositories(projectKey, parameters) })
 
+
+fun BitbucketClient.getCommit(projectKey: String, repository: String, commitIdOrRef: String): BitbucketCommit =
+    try {
+        _getCommit(projectKey, repository, commitIdOrRef)
+    } catch (e: InvalidCommitIdException) {
+        _log.info("Treat `$commitIdOrRef` as a ref. ${e.message}")
+        run {
+            val shortBranchName = commitIdOrRef.replace("^refs/heads/".toRegex(), "")
+            val fullBranchName = "refs/heads/$shortBranchName"
+            getBranches(projectKey, repository)
+                .firstOrNull { b -> b.id == fullBranchName }
+                ?.latestCommit
+                ?.let { commitId -> _getCommit(projectKey, repository, commitId) }
+        } ?: throw NotFoundException("Ref '$commitIdOrRef' does not exist in repository '$repository' and ${e.message}")
+    }
+
 fun BitbucketClient.getCommits(
     projectKey: String,
     repository: String,
@@ -154,9 +173,7 @@ fun BitbucketClient.getCommits(
         emptyList()
     } else {
         execute({ parameters: Map<String, Any> ->
-            getCommits(
-                projectKey, repository, parameters + mapOf("until" to toId, "since" to fromId)
-            )
+            _getCommits(projectKey, repository, parameters + mapOf("until" to toId, "since" to fromId))
         }).also { commits ->
             if (!commits.any { commit -> commit.parents.any { it.id == fromId } }) {
                 throw NotFoundException("Cannot find commit '$fromId' in commit graph for commit '$toId' in '$projectKey:$repository'")
@@ -168,15 +185,13 @@ fun BitbucketClient.getCommits(
 fun BitbucketClient.getCommits(
     projectKey: String, repository: String, until: String, sinceDate: Date? = null
 ) = execute({ parameters: Map<String, Any> ->
-    getCommits(
-        projectKey, repository, parameters + mapOf("until" to until)
-    )
+    _getCommits(projectKey, repository, parameters + mapOf("until" to until))
 }, { commit: BitbucketCommit ->
     sinceDate == null || commit.authorTimestamp > sinceDate
 })
 
 fun BitbucketClient.getCommits(issueKey: String): List<BitbucketJiraCommit> =
-    execute({ parameters: Map<String, Any> -> getCommits(issueKey, parameters) })
+    execute({ parameters: Map<String, Any> -> _getCommits(issueKey, parameters) })
 
 fun BitbucketClient.getTags(
     projectKey: String,
