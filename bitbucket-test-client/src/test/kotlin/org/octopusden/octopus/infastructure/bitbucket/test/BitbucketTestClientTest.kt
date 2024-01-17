@@ -10,10 +10,13 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.createPullRequestW
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
-import org.octopusden.octopus.infrastructure.bitbucket.client.exception.InvalidCommitIdException
+import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
+import org.octopusden.octopus.infrastructure.bitbucket.client.getCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommits
 import org.octopusden.octopus.infrastructure.bitbucket.client.getTags
+import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
+import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 
 private const val HOST = "localhost:7990"
 private const val USER = "admin"
@@ -52,9 +55,16 @@ class BitbucketTestClientTest : BaseTestClientTest(
 
     @Test
     fun testGetCommitInvalidId() {
-        Assertions.assertThrowsExactly(InvalidCommitIdException::class.java) {
-            client.getCommit("projectKey", "repository", "bug/fix")
-        }
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit 1",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+        Assertions.assertThrowsExactly(NotFoundException::class.java, {
+            client.getCommit(PROJECT, REPOSITORY, "bug/fix")
+        }, "Ref 'bug/fix' does not exist in repository 'test-repository' and 'bug/fix' is not valid BitBucket commit id")
     }
 
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)

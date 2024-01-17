@@ -80,23 +80,23 @@ class BitbucketClassicClient(
         return client.deleteRepository(projectKey, repository)
     }
 
-    override fun getCommits(
+    override fun _getCommits(
         projectKey: String,
         repository: String,
         requestParams: Map<String, Any>
     ): BitbucketEntityList<BitbucketCommit> {
-        return client.getCommits(projectKey, repository, requestParams)
+        return client._getCommits(projectKey, repository, requestParams)
     }
 
-    override fun getCommit(projectKey: String, repository: String, id: String): BitbucketCommit {
-        return client.getCommit(projectKey, repository, id)
+    override fun _getCommit(projectKey: String, repository: String, id: String): BitbucketCommit {
+        return client._getCommit(projectKey, repository, id)
     }
 
-    override fun getCommits(
+    override fun _getCommits(
         issueKey: String,
         requestParams: Map<String, Any>
     ): BitbucketEntityList<BitbucketJiraCommit> {
-        return client.getCommits(issueKey, requestParams)
+        return client._getCommits(issueKey, requestParams)
     }
 
     override fun getTags(
