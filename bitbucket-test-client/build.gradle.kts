@@ -9,19 +9,22 @@ java {
     withSourcesJar()
 }
 
-configure<ComposeExtension> {
-    useComposeFiles.add("${projectDir}${File.separator}docker${File.separator}docker-compose.yml")
-    waitForTcpPorts.set(true)
-    captureContainersOutputToFiles.set(buildDir.resolve("docker_logs"))
-    environment.putAll(
-        mapOf(
-            "BITBUCKET_LICENSE" to project.properties["bitbucket.license"],
-            "DOCKER_REGISTRY" to project.properties["docker.registry"]
+if ((project.properties["bitbucket.license"] as String).isBlank()) {
+    tasks["test"].enabled = false
+} else {
+    configure<ComposeExtension> {
+        useComposeFiles.add("${projectDir}${File.separator}docker${File.separator}docker-compose.yml")
+        waitForTcpPorts.set(true)
+        captureContainersOutputToFiles.set(buildDir.resolve("docker_logs"))
+        environment.putAll(
+            mapOf(
+                "BITBUCKET_LICENSE" to project.properties["bitbucket.license"],
+                "DOCKER_REGISTRY" to project.properties["docker.registry"]
+            )
         )
-    )
+    }
+    dockerCompose.isRequiredBy(tasks["test"])
 }
-
-dockerCompose.isRequiredBy(tasks["test"])
 
 dependencies {
     api(project(":test-client-commons"))
