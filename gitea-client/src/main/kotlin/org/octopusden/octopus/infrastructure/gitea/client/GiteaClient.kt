@@ -131,7 +131,7 @@ fun GiteaClient.getCommits(
             "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false, "sha" to until
         )
     )
-}, { commit: GiteaCommit -> sinceDate == null || commit.commit.author.date > sinceDate })
+}, { commit: GiteaCommit -> sinceDate == null || commit.created > sinceDate })
 
 fun GiteaClient.getCommits(
     organization: String,
