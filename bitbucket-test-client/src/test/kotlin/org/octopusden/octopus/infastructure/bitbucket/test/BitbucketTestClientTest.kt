@@ -53,6 +53,9 @@ class BitbucketTestClientTest : BaseTestClientTest(
         description
     ).toTestPullRequest()
 
+    override fun getPullRequest(project: String, repository: String, index: Long) =
+        client.getPullRequest(project, repository, index).toTestPullRequest()
+
     @Test
     fun testGetCommitInvalidId() {
         testClient.commit(
@@ -69,5 +72,5 @@ class BitbucketTestClientTest : BaseTestClientTest(
 
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)
     private fun BitbucketCommit.toTestCommit() = TestCommit(id, message)
-    private fun BitbucketPullRequest.toTestPullRequest() = TestPullRequest(id)
+    private fun BitbucketPullRequest.toTestPullRequest() = TestPullRequest(id, title, description ?: "", fromRef.displayId, toRef.displayId)
 }

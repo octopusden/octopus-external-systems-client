@@ -1,7 +1,18 @@
 package org.octopusden.octopus.infrastructure.bitbucket.client.dto
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import java.util.Date
 
-@JsonIgnoreProperties(ignoreUnknown = true)
-class BitbucketPullRequest @JsonCreator constructor(id: Long) : BaseBitbucketEntity<Long>(id)
+class BitbucketPullRequest(
+    id: Long,
+    val title: String,
+    val description: String? = null,
+    val author: BitbucketPullRequestUser,
+    val reviewers: List<BitbucketPullRequestUser>,
+    val fromRef: BitbucketRef,
+    val toRef: BitbucketRef,
+    val state: BitbucketPullRequestState,
+    val createdDate: Date,
+    val updatedDate: Date
+) : BaseBitbucketEntity<Long>(id) {
+    class BitbucketPullRequestUser(val user: BitbucketUser)
+}

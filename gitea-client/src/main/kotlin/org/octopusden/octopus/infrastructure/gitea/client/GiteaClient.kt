@@ -108,6 +108,13 @@ interface GiteaClient {
         @Param("repository") repository: String,
         dto: GiteaCreatePullRequest
     ): GiteaPullRequest
+
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}/pulls/{number}")
+    fun getPullRequest(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        @Param("number") number: Long
+    ): GiteaPullRequest
 }
 
 fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {
@@ -131,7 +138,7 @@ fun GiteaClient.getCommits(
             "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false, "sha" to until
         )
     )
-}, { commit: GiteaCommit -> sinceDate == null || commit.commit.author.date > sinceDate })
+}, { commit: GiteaCommit -> sinceDate == null || commit.created > sinceDate })
 
 fun GiteaClient.getCommits(
     organization: String,

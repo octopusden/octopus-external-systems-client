@@ -33,20 +33,22 @@ class GitlabTestClientTest : BaseTestClientTest(
         targetBranch: String,
         title: String,
         description: String
-    ): TestPullRequest {
-        val prj = client.projectApi.getProject(project, repository)
+    ) = client.mergeRequestApi.createMergeRequest(
+        client.projectApi.getProject(project, repository).id,
+        sourceBranch,
+        targetBranch,
+        title,
+        description,
+        0L
+    ).toTestPullRequest()
 
-        return client.mergeRequestApi.createMergeRequest(
-            prj.id,
-            sourceBranch,
-            targetBranch,
-            title,
-            description,
-            0L
+    override fun getPullRequest(project: String, repository: String, index: Long) =
+        client.mergeRequestApi.getMergeRequest(
+            client.projectApi.getProject(project, repository).id,
+            index
         ).toTestPullRequest()
-    }
 
     private fun Tag.toTestTag() = TestTag(name, commit.id)
     private fun Commit.toTestCommit() = TestCommit(id, message)
-    private fun MergeRequest.toTestPullRequest() = TestPullRequest(id)
+    private fun MergeRequest.toTestPullRequest() = TestPullRequest(id, title, description, sourceBranch, targetBranch)
 }

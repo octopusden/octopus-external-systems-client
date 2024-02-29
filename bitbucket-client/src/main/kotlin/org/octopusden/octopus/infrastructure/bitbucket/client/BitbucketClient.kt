@@ -6,7 +6,7 @@ import feign.QueryMap
 import feign.RequestLine
 import java.util.Date
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BaseBitbucketEntity
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketAuthor
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUser
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePrRef
@@ -124,7 +124,7 @@ interface BitbucketClient {
         @Param("projectKey") projectKey: String,
         @Param("repository") repository: String,
         @QueryMap query: DefaultReviewersQuery
-    ): Set<BitbucketAuthor>
+    ): Set<BitbucketUser>
 
     @RequestLine("POST $PROJECT_PATH/{projectKey}/repos/{repository}/pull-requests")
     @Headers("Content-Type: application/json")
@@ -132,6 +132,14 @@ interface BitbucketClient {
         @Param("projectKey") projectKey: String,
         @Param("repository") repository: String,
         dto: BitbucketCreatePullRequest
+    ): BitbucketPullRequest
+
+    @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/pull-requests/{id}")
+    @Headers("Content-Type: application/json")
+    fun getPullRequest(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        @Param("id") id: Long
     ): BitbucketPullRequest
 }
 

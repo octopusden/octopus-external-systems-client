@@ -83,6 +83,12 @@ class GiteaClassicClient(
         dto: GiteaCreatePullRequest
     ) = client.createPullRequest(organization, repository, dto)
 
+    override fun getPullRequest(
+        organization: String,
+        repository: String,
+        number: Long
+    ) = client.getPullRequest(organization, repository, number)
+
     companion object {
         private fun getMapper(): ObjectMapper {
             val objectMapper = jacksonObjectMapper()
