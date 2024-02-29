@@ -8,8 +8,7 @@ import java.util.Date
 class BitbucketCommit @JsonCreator constructor(
     id: String,
     val message: String,
-    val committer: BitbucketCommitter,
-    val author: BitbucketAuthor,
+    val author: BitbucketUser,
     val authorTimestamp: Date,
     val parents: List<BitbucketParent>
 ) : BaseBitbucketEntity<String>(id)

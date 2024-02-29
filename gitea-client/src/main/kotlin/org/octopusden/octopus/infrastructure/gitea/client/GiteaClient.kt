@@ -108,6 +108,13 @@ interface GiteaClient {
         @Param("repository") repository: String,
         dto: GiteaCreatePullRequest
     ): GiteaPullRequest
+
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}/pulls/{number}")
+    fun getPullRequest(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        @Param("number") number: Long
+    ): GiteaPullRequest
 }
 
 fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {

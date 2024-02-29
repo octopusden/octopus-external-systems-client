@@ -47,7 +47,10 @@ class GiteaTestClientTest :
             description
         ).toTestPullRequest()
 
+    override fun getPullRequest(project: String, repository: String, index: Long) =
+        client.getPullRequest(project, repository, index).toTestPullRequest()
+
     private fun GiteaTag.toTestTag() = TestTag(name, commit.sha)
     private fun GiteaCommit.toTestCommit() = TestCommit(sha, commit.message)
-    private fun GiteaPullRequest.toTestPullRequest() = TestPullRequest(id)
+    private fun GiteaPullRequest.toTestPullRequest() = TestPullRequest(number, title, body, head.label, base.label)
 }

@@ -1,5 +1,3 @@
 package org.octopusden.octopus.infrastructure.bitbucket.client.dto
 
-enum class BitbucketPullRequestState {
-    OPEN, MERGED, DECLINED
-}
+data class BitbucketUser(val name: String)

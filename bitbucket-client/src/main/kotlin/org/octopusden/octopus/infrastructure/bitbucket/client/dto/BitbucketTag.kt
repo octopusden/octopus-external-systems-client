@@ -1,11 +1,7 @@
 package org.octopusden.octopus.infrastructure.bitbucket.client.dto
 
-import com.fasterxml.jackson.annotation.JsonCreator
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-
-@JsonIgnoreProperties(ignoreUnknown = true)
-class BitbucketTag @JsonCreator constructor(
+class BitbucketTag(
     id: String,
-    val displayId: String,
-    val latestCommit: String
-) : BaseBitbucketEntity<String>(id)
+    displayId: String,
+    latestCommit: String
+) : BitbucketRef(id, displayId, latestCommit, BitbucketRefType.TAG)

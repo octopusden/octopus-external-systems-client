@@ -10,7 +10,7 @@ import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketAuthor
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUser
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateProject
@@ -119,7 +119,7 @@ class BitbucketClassicClient(
         projectKey: String,
         repository: String,
         query: DefaultReviewersQuery
-    ): Set<BitbucketAuthor> = client.getDefaultReviewers(projectKey, repository, query)
+    ): Set<BitbucketUser> = client.getDefaultReviewers(projectKey, repository, query)
 
     override fun createPullRequest(
         projectKey: String,
@@ -128,6 +128,12 @@ class BitbucketClassicClient(
     ): BitbucketPullRequest {
         return client.createPullRequest(projectKey, repository, dto)
     }
+
+    override fun getPullRequest(
+        projectKey: String,
+        repository: String,
+        id: Long
+    ) = client.getPullRequest(projectKey, repository, id)
 
     companion object {
         private fun getMapper(): ObjectMapper {

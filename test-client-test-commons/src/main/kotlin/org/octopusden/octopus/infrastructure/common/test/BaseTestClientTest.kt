@@ -24,6 +24,12 @@ abstract class BaseTestClientTest(
         description: String
     ): TestPullRequest
 
+    abstract fun getPullRequest(
+        project: String,
+        repository: String,
+        index: Long
+    ): TestPullRequest
+
     protected var vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
 
     @AfterEach
@@ -140,15 +146,22 @@ abstract class BaseTestClientTest(
             )
         )
         testClient.commit(NewChangeSet("$FEATURE_BRANCH commit", vcsUrl, FEATURE_BRANCH))
+        val title = "PR Title"
+        val description = "PR Description"
         val pullRequest = createPullRequestWithDefaultReviewers(
             PROJECT,
             REPOSITORY,
             FEATURE_BRANCH,
             BaseTestClient.DEFAULT_BRANCH,
-            "PR Title",
-            "PR Description"
+            title,
+            description
         )
-        Assertions.assertTrue(pullRequest.id > 0)
+        Thread.sleep(60000)
+        Assertions.assertEquals(pullRequest.title, title)
+        Assertions.assertEquals(pullRequest.description, description)
+        Assertions.assertEquals(pullRequest.sourceBranch, FEATURE_BRANCH)
+        Assertions.assertEquals(pullRequest.targetBranch, BaseTestClient.DEFAULT_BRANCH)
+        Assertions.assertEquals(pullRequest, getPullRequest(PROJECT, REPOSITORY, pullRequest.index))
     }
 
     @Test
@@ -225,7 +238,7 @@ abstract class BaseTestClientTest(
 
     data class TestTag(val displayId: String, val commitId: String)
     data class TestCommit(val commitId: String, val message: String)
-    data class TestPullRequest(val id: Long)
+    data class TestPullRequest(val index: Long, val title: String, val description: String, val sourceBranch: String, val targetBranch: String)
 
     companion object {
         private const val TAG = "test_tag"
