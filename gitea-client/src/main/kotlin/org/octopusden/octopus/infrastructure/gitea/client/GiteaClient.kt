@@ -101,6 +101,13 @@ interface GiteaClient {
         @Param("repository") repository: String,
     ): Collection<GiteaUser>
 
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}/pulls")
+    fun getPullRequests(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        @QueryMap requestParams: Map<String, Any>
+    ): GiteaEntityList<GiteaPullRequest>
+
     @RequestLine("POST $REPO_PATH/{organization}/{repository}/pulls")
     @Headers("Content-Type: application/json")
     fun createPullRequest(
@@ -235,6 +242,15 @@ fun GiteaClient.createPullRequestWithDefaultReviewers(
         GiteaCreatePullRequest(title, description, sourceBranch, targetBranch, defaultReviewers, assignee)
     )
 }
+
+fun GiteaClient.getPullRequests(
+    organization: String,
+    repository: String
+) = execute({ parameters: Map<String, Any> ->
+    getPullRequests(
+        organization, repository, parameters + mapOf("limit" to ENTITY_LIMIT)
+    )
+})
 
 private fun <T : BaseGiteaEntity> execute(
     function: (Map<String, Any>) -> GiteaEntityList<T>,
