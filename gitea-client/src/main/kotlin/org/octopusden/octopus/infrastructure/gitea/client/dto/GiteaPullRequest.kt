@@ -23,7 +23,7 @@ data class GiteaPullRequest(
     val merged: Boolean,
     val createdAt: Date,
     val updatedAt: Date
-) {
+): BaseGiteaEntity() {
     data class GiteaPullRequestBranch(val label: String)
     enum class GiteaPullRequestState(
         @get:JsonValue

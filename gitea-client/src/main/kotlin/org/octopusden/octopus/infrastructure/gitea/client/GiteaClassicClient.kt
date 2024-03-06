@@ -77,6 +77,12 @@ class GiteaClassicClient(
     override fun getDefaultReviewers(organization: String, repository: String) =
         client.getDefaultReviewers(organization, repository)
 
+    override fun getPullRequests(
+        organization: String,
+        repository: String,
+        requestParams: Map<String, Any>
+    ) = client.getPullRequests(organization, repository, requestParams)
+
     override fun createPullRequest(
         organization: String,
         repository: String,
