@@ -136,17 +136,6 @@ fun GiteaClient.getRepositories(organization: String): Collection<GiteaRepositor
 
 fun GiteaClient.getCommits(
     organization: String,
-    repository: String
-) = execute({ parameters: Map<String, Any> ->
-    getCommits(
-        organization, repository, parameters + mapOf(
-            "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false
-        )
-    )
-})
-
-fun GiteaClient.getCommits(
-    organization: String,
     repository: String,
     until: String,
     sinceDate: Date? = null
