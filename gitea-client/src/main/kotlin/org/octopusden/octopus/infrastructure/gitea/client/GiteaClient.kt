@@ -11,6 +11,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreatePullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
@@ -122,6 +123,14 @@ interface GiteaClient {
         @Param("repository") repository: String,
         @Param("number") number: Long
     ): GiteaPullRequest
+
+    @RequestLine("PATCH $REPO_PATH/{organization}/{repository}")
+    @Headers("Content-Type: application/json")
+    fun editRepository(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        dto: GiteaEditRepository
+    )
 }
 
 fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {

@@ -13,6 +13,7 @@ import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProv
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreatePullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 
 class GiteaClassicClient(
@@ -94,6 +95,12 @@ class GiteaClassicClient(
         repository: String,
         number: Long
     ) = client.getPullRequest(organization, repository, number)
+
+    override fun editRepository(
+        organization: String,
+        repository: String,
+        dto: GiteaEditRepository
+    ) = client.editRepository(organization, repository, dto)
 
     companion object {
         private fun getMapper(): ObjectMapper {
