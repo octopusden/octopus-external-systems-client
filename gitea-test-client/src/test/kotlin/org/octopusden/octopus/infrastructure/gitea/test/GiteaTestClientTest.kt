@@ -11,7 +11,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.createPullRequestWithD
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
-import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepositoryConfig
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.getCommits
@@ -60,13 +60,13 @@ class GiteaTestClientTest :
     private fun GiteaPullRequest.toTestPullRequest() = TestPullRequest(number, title, body, head.label, base.label)
 
     @Test
-    fun testEditRepository() {
+    fun testUpdateRepositoryConfiguration() {
         val organizationName = "test-edit-org"
         val repositoryName = "test-edit-repo"
         val newRepositoryName = "test-edit-repository"
         client.createOrganization(GiteaCreateOrganization(organizationName))
         client.createRepository(organizationName, GiteaCreateRepository("test-edit-repo"))
-        client.editRepository(organizationName, repositoryName, GiteaEditRepository(name = newRepositoryName))
+        client.updateRepositoryConfiguration(organizationName, repositoryName, GiteaRepositoryConfig(name = newRepositoryName))
         Assertions.assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
     }
 }

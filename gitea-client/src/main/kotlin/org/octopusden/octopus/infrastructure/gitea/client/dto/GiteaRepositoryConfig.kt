@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.annotation.JsonNaming
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
-data class GiteaEditRepository(
+data class GiteaRepositoryConfig(
     val allowManualMerge: Boolean? = null,
     val allowMergeCommits: Boolean? = null,
     val allowRebase: Boolean? = null,
