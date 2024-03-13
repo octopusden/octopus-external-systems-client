@@ -1,5 +1,7 @@
 package org.octopusden.octopus.infrastructure.gitea.test
 
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.CredentialProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
@@ -7,6 +9,9 @@ import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 import org.octopusden.octopus.infrastructure.gitea.client.GiteaClassicClient
 import org.octopusden.octopus.infrastructure.gitea.client.createPullRequestWithDefaultReviewers
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepositoryConfig
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.getCommits
@@ -53,4 +58,15 @@ class GiteaTestClientTest :
     private fun GiteaTag.toTestTag() = TestTag(name, commit.sha)
     private fun GiteaCommit.toTestCommit() = TestCommit(sha, commit.message)
     private fun GiteaPullRequest.toTestPullRequest() = TestPullRequest(number, title, body, head.label, base.label)
+
+    @Test
+    fun testUpdateRepositoryConfiguration() {
+        val organizationName = "test-edit-org"
+        val repositoryName = "test-edit-repo"
+        val newRepositoryName = "test-edit-repository"
+        client.createOrganization(GiteaCreateOrganization(organizationName))
+        client.createRepository(organizationName, GiteaCreateRepository("test-edit-repo"))
+        client.updateRepositoryConfiguration(organizationName, repositoryName, GiteaRepositoryConfig(name = newRepositoryName))
+        Assertions.assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
+    }
 }
