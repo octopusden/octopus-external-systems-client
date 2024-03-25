@@ -13,6 +13,7 @@ data class GiteaPullRequest(
     val number: Long,
     val title: String,
     val body: String,
+    val user: GiteaUser,
     @JsonSetter(nulls = Nulls.AS_EMPTY)
     val assignees: List<GiteaUser>,
     @JsonSetter(nulls = Nulls.AS_EMPTY)
