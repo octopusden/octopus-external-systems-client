@@ -11,7 +11,7 @@ import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseTestClientTest(
-    protected val testClient: TestClient, vcsFormatter: String
+    protected val testClient: TestClient, protected val vcsFormatter: String
 ) {
     abstract fun getTags(project: String, repository: String): Collection<TestTag>
     abstract fun getCommits(project: String, repository: String, branch: String): Collection<TestCommit>
@@ -30,7 +30,7 @@ abstract class BaseTestClientTest(
         index: Long
     ): TestPullRequest
 
-    protected var vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
+    private val vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
 
     @AfterEach
     fun afterEachTestClientTest() {

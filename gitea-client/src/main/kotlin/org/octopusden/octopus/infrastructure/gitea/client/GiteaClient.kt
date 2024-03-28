@@ -16,7 +16,6 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepository
-import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaShortCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaUser
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
@@ -176,8 +175,7 @@ fun GiteaClient.getCommits(
     var orphanedCommits = listOf<GiteaCommit>()
     val excludedCommits = mutableSetOf<String>()
     do {
-        page++
-        val giteaResponse = getCommits(organization, repository, parameters + mapOf("page" to page))
+        val giteaResponse = getCommits(organization, repository, parameters + mapOf("page" to ++page))
         val includedCommits = mutableListOf<GiteaCommit>()
         for (commit in giteaResponse.values) {
             if (commit.sha == fromSha) {
@@ -192,7 +190,7 @@ fun GiteaClient.getCommits(
         }
         commits.putAll(includedCommits.associateBy { it.sha })
         orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
-            commit.parents.any { parentCommit: GiteaShortCommit ->
+            commit.parents.any { parentCommit ->
                 !excludedCommits.contains(parentCommit.sha) &&
                         !commits.containsKey(parentCommit.sha)
             }
@@ -203,6 +201,29 @@ fun GiteaClient.getCommits(
         throw NotFoundException("Cannot find commit '$fromSha' in commit graph for commit '$toSha' in '$organization:$repository'")
     }
     return commits.map { it.value }
+}
+
+fun GiteaClient.getBranchesCommitGraph(
+    organization: String,
+    repository: String
+): List<GiteaCommit> {
+    val parameters = mapOf("limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false)
+    val commits = mutableMapOf<String, GiteaCommit>()
+    var page: Int
+    getBranches(organization, repository).forEach { branch ->
+        var orphanedCommits = listOf<GiteaCommit>()
+        page = 0
+        do {
+            val giteaResponse = getCommits(organization, repository, parameters + mapOf("sha" to branch.commit.id, "page" to ++page))
+            val includedCommits = giteaResponse.values.filter { !commits.containsKey(it.sha) }
+            commits.putAll(includedCommits.associateBy { it.sha })
+            orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
+                commit.parents.any { !commits.containsKey(it.sha) }
+            }
+        } while ((giteaResponse.hasMore ?: (giteaResponse.values.isNotEmpty())) && orphanedCommits.isNotEmpty())
+        _log.debug("Pages retrieved: $page")
+    }
+    return commits.values.sortedByDescending { it.created }
 }
 
 fun GiteaClient.getTags(

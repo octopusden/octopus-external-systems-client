@@ -61,7 +61,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
         testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit 1",
-                vcsUrl,
+                vcsFormatter.format(PROJECT, REPOSITORY),
                 BaseTestClient.DEFAULT_BRANCH
             )
         )

@@ -1,5 +1,6 @@
 package org.octopusden.octopus.infrastructure.gitea.test
 
+import java.io.File
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -11,9 +12,11 @@ import org.octopusden.octopus.infrastructure.gitea.client.createPullRequestWithD
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
-import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepositoryConfig
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepositoryConfig
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
+import org.octopusden.octopus.infrastructure.gitea.client.getBranches
+import org.octopusden.octopus.infrastructure.gitea.client.getBranchesCommitGraph
 import org.octopusden.octopus.infrastructure.gitea.client.getCommits
 import org.octopusden.octopus.infrastructure.gitea.client.getTags
 
@@ -68,5 +71,20 @@ class GiteaTestClientTest :
         client.createRepository(organizationName, GiteaCreateRepository("test-edit-repo"))
         client.updateRepositoryConfiguration(organizationName, repositoryName, GiteaRepositoryConfig(name = newRepositoryName))
         Assertions.assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
+    }
+
+    @Test
+    fun testGetBranchesCommitGraph() {
+        val repository = "test-repository-branches-commit-graph"
+        val vcsUrl = vcsFormatter.format(PROJECT, repository)
+        testClient.importRepository(vcsUrl, File("src/test/resources/$repository.zip"))
+        Assertions.assertIterableEquals(
+            mutableSetOf<TestCommit>().apply {
+                client.getBranches(PROJECT, repository).forEach { branch ->
+                    addAll(testClient.getCommits(vcsUrl, branch.name).map { TestCommit(it.id, it.message) })
+                }
+            }.sortedBy { it.commitId },
+            client.getBranchesCommitGraph(PROJECT, repository).map { it.toTestCommit() }.sortedBy { it.commitId }
+        )
     }
 }
