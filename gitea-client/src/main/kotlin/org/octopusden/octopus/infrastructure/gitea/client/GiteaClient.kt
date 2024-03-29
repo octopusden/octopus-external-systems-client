@@ -18,6 +18,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaUser
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaGetRepositoryConfig
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -130,6 +131,13 @@ interface GiteaClient {
         @Param("repository") repository: String,
         dto: GiteaRepositoryConfig
     )
+
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}")
+    @Headers("Content-Type: application/json")
+    fun getRepositoryConfiguration(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+    ): GiteaGetRepositoryConfig
 }
 
 fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {

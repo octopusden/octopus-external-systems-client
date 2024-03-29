@@ -32,18 +32,41 @@ data class GiteaRepositoryConfig(
     val private: Boolean? = null,
     val template: Boolean? = null,
     val website: String? = null
-) {
-    data class ExternalTracker(
-        val externalTrackerFormat: String?,
-        val externalTrackerRegexpPattern: String?,
-        val externalTrackerStyle: String?,
-        val externalTrackerUrl: String?
+) : GiteaBaseRepositoryConfig() {
+    constructor(config: GiteaGetRepositoryConfig) : this(
+        // allowManualMerge = config.allowManualMerge,
+        allowMergeCommits = config.allowMergeCommits,
+        allowRebase = config.allowRebase,
+        allowRebaseExplicit = config.allowRebaseExplicit,
+        allowRebaseUpdate = config.allowRebaseUpdate,
+        allowSquashMerge = config.allowSquashMerge,
+        archived = config.archived,
+        // autodetectManualMerge = config.autodetectManualMerge,
+        defaultAllowMaintainerEdit = config.defaultAllowMaintainerEdit,
+        defaultBranch = config.defaultBranch,
+        defaultDeleteBranchAfterMerge = config.defaultDeleteBranchAfterMerge,
+        defaultMergeStyle = config.defaultMergeStyle,
+        description = config.description,
+        // enablePrune = config.enablePrune,
+        externalTracker = config.externalTracker,
+        externalWiki = config.externalWiki,
+        hasIssues = config.hasIssues,
+        hasProjects = config.hasProjects,
+        hasPullRequests = config.hasPullRequests,
+        hasWiki = config.hasWiki,
+        ignoreWhitespaceConflicts = config.ignoreWhitespaceConflicts,
+        internalTracker = config.internalTracker,
+        mirrorInterval = config.mirror?.let { m ->
+            if (m) {
+                config.mirrorInterval
+            } else {
+                null
+            }
+        },
+        name = config.name,
+        private = config.private,
+        template = config.template,
+        website = config.website
     )
 
-    data class ExternalWiki(val externalWikiUrl: String)
-    data class InternalTracker(
-        val allowOnlyContributorsToTrackTime: Boolean?,
-        val enableIssueDependencies: Boolean?,
-        val enableTimeTracker: Boolean?
-    )
 }

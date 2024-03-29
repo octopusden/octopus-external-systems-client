@@ -74,6 +74,59 @@ class GiteaTestClientTest :
     }
 
     @Test
+    fun testGetRepositoryConfiguration() {
+        val organizationName = "test-get-org"
+        val repositoryName = "test-get-repo"
+        client.createOrganization(GiteaCreateOrganization(organizationName))
+        client.createRepository(organizationName, GiteaCreateRepository(repositoryName))
+        val repositoryConfig = client.getRepositoryConfiguration(organizationName, repositoryName)
+        val newConfig = GiteaRepositoryConfig(repositoryConfig).copy(
+            allowMergeCommits = repositoryConfig.allowMergeCommits?.let { !it },
+            allowRebase = repositoryConfig.allowRebase?.let { !it },
+            allowRebaseExplicit = repositoryConfig.allowRebaseExplicit?.let { !it },
+            allowRebaseUpdate = repositoryConfig.allowRebaseUpdate?.let { !it },
+            allowSquashMerge = repositoryConfig.allowSquashMerge?.let { !it },
+            defaultAllowMaintainerEdit = repositoryConfig.defaultAllowMaintainerEdit?.let { !it },
+            defaultBranch = repositoryConfig.defaultBranch?.let { "master" },
+            defaultDeleteBranchAfterMerge = repositoryConfig.defaultDeleteBranchAfterMerge?.let { !it },
+            defaultMergeStyle = repositoryConfig.defaultMergeStyle?.let { "squash" },
+            description = repositoryConfig.description?.let { "Repository test get configuration" },
+            hasIssues = repositoryConfig.hasIssues?.let { !it },
+            hasProjects = repositoryConfig.hasProjects?.let { !it },
+            hasPullRequests = repositoryConfig.hasPullRequests?.let { !it },
+            hasWiki = repositoryConfig.hasWiki?.let { !it },
+            ignoreWhitespaceConflicts = repositoryConfig.ignoreWhitespaceConflicts?.let { !it },
+            name = repositoryConfig.name,
+            private = repositoryConfig.private?.let { !it },
+            template = repositoryConfig.template?.let { !it },
+            website = repositoryConfig.website?.let { "https://localhost" },
+        )
+        client.updateRepositoryConfiguration(organizationName, repositoryName, newConfig)
+        val resConfig = client.getRepositoryConfiguration(organizationName, repositoryName)
+        Assertions.assertEquals(resConfig.allowMergeCommits, newConfig.allowMergeCommits)
+        Assertions.assertEquals(resConfig.allowRebase, newConfig.allowRebase)
+        Assertions.assertEquals(resConfig.allowRebaseExplicit, newConfig.allowRebaseExplicit)
+        Assertions.assertEquals(resConfig.allowRebaseUpdate, newConfig.allowRebaseUpdate)
+        Assertions.assertEquals(resConfig.allowSquashMerge, newConfig.allowSquashMerge)
+        Assertions.assertEquals(resConfig.archived, newConfig.archived)
+        Assertions.assertEquals(resConfig.defaultAllowMaintainerEdit, newConfig.defaultAllowMaintainerEdit)
+        Assertions.assertEquals(resConfig.defaultBranch, newConfig.defaultBranch)
+        Assertions.assertEquals(resConfig.defaultDeleteBranchAfterMerge, newConfig.defaultDeleteBranchAfterMerge)
+        Assertions.assertEquals(resConfig.defaultMergeStyle, newConfig.defaultMergeStyle)
+        Assertions.assertEquals(resConfig.description, newConfig.description)
+        Assertions.assertEquals(resConfig.hasIssues, newConfig.hasIssues)
+        Assertions.assertEquals(resConfig.hasProjects, newConfig.hasProjects)
+        Assertions.assertEquals(resConfig.hasPullRequests, newConfig.hasPullRequests)
+        Assertions.assertEquals(resConfig.hasWiki, newConfig.hasWiki)
+        Assertions.assertEquals(resConfig.ignoreWhitespaceConflicts, newConfig.ignoreWhitespaceConflicts)
+        Assertions.assertEquals(resConfig.mirrorInterval, newConfig.mirrorInterval)
+        Assertions.assertEquals(resConfig.name, newConfig.name)
+        Assertions.assertEquals(resConfig.private, newConfig.private)
+        Assertions.assertEquals(resConfig.template, newConfig.template)
+        Assertions.assertEquals(resConfig.website, newConfig.website)
+    }
+
+    @Test
     fun testGetBranchesCommitGraph() {
         val repository = "test-repository-branches-commit-graph"
         val vcsUrl = vcsFormatter.format(PROJECT, repository)
