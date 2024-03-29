@@ -35,9 +35,6 @@ class GiteaClassicClient(
     override fun getOrganizations(requestParams: Map<String, Any>) =
         client.getOrganizations(requestParams)
 
-    override fun getRepositories(requestParams: Map<String, Any>) =
-        client.getRepositories(requestParams)
-
     override fun createOrganization(dto: GiteaCreateOrganization) = client.createOrganization(dto)
 
     override fun getOrganization(organization: String): GiteaOrganization = client.getOrganization(organization)
@@ -95,6 +92,13 @@ class GiteaClassicClient(
         repository: String,
         number: Long
     ) = client.getPullRequest(organization, repository, number)
+
+    override fun getPullRequestReviews(
+        organization: String,
+        repository: String,
+        number: Long,
+        requestParams: Map<String, Any>
+    ) = client.getPullRequestReviews(organization, repository, number, requestParams)
 
     override fun updateRepositoryConfiguration(
         organization: String,

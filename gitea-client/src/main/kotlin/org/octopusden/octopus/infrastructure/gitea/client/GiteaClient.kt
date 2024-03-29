@@ -15,6 +15,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepositoryCon
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequestReview
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaUser
@@ -31,9 +32,6 @@ const val ENTITY_LIMIT = 50
 interface GiteaClient {
     @RequestLine("GET $ORG_PATH")
     fun getOrganizations(@QueryMap requestParams: Map<String, Any>): GiteaEntityList<GiteaOrganization>
-
-    @RequestLine("GET $REPO_PATH/search")
-    fun getRepositories(@QueryMap requestParams: Map<String, Any>): GiteaEntityList<GiteaRepository>
 
     @RequestLine("POST $ORG_PATH")
     @Headers("Content-Type: application/json")
@@ -123,6 +121,14 @@ interface GiteaClient {
         @Param("number") number: Long
     ): GiteaPullRequest
 
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}/pulls/{number}/reviews")
+    fun getPullRequestReviews(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        @Param("number") number: Long,
+        @QueryMap requestParams: Map<String, Any>
+    ): GiteaEntityList<GiteaPullRequestReview>
+
     @RequestLine("PATCH $REPO_PATH/{organization}/{repository}")
     @Headers("Content-Type: application/json")
     fun updateRepositoryConfiguration(
@@ -136,9 +142,6 @@ fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {
     return execute({ parameters: Map<String, Any> -> getOrganizations(parameters) })
 }
 
-fun GiteaClient.getRepositories(): Collection<GiteaRepository> =
-    execute({ parameters: Map<String, Any> -> getRepositories(parameters) })
-
 fun GiteaClient.getRepositories(organization: String): Collection<GiteaRepository> =
     execute({ parameters: Map<String, Any> -> getRepositories(organization, parameters) })
 
@@ -150,7 +153,7 @@ fun GiteaClient.getCommits(
 ) = execute({ parameters: Map<String, Any> ->
     getCommits(
         organization, repository, parameters + mapOf(
-            "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false, "sha" to until
+            "stat" to false, "verification" to false, "files" to false, "sha" to until
         )
     )
 }, { commit: GiteaCommit -> sinceDate == null || commit.created > sinceDate })
@@ -277,9 +280,15 @@ fun GiteaClient.getPullRequests(
     organization: String,
     repository: String
 ) = execute({ parameters: Map<String, Any> ->
-    getPullRequests(
-        organization, repository, parameters + mapOf("limit" to ENTITY_LIMIT)
-    )
+    getPullRequests(organization, repository, parameters)
+})
+
+fun GiteaClient.getPullRequestReviews(
+    organization: String,
+    repository: String,
+    number: Long
+) = execute({ parameters: Map<String, Any> ->
+    getPullRequestReviews(organization, repository, number, parameters)
 })
 
 private fun <T : BaseGiteaEntity> execute(
@@ -289,6 +298,7 @@ private fun <T : BaseGiteaEntity> execute(
     var page = 1
     val entities = mutableListOf<T>()
     val parameters = mutableMapOf<String, Any>()
+    parameters["limit"] = ENTITY_LIMIT
     do {
         parameters["page"] = page
         val giteaResponse = function.invoke(parameters)

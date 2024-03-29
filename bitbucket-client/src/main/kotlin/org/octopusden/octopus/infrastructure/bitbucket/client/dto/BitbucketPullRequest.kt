@@ -14,5 +14,5 @@ class BitbucketPullRequest(
     val createdDate: Date,
     val updatedDate: Date
 ) : BaseBitbucketEntity<Long>(id) {
-    class BitbucketPullRequestUser(val user: BitbucketUser)
+    class BitbucketPullRequestUser(val user: BitbucketUser, val approved: Boolean)
 }
