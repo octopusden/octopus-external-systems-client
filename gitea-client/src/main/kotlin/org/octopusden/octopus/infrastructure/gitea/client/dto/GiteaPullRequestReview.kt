@@ -8,7 +8,8 @@ import java.util.Date
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class GiteaPullRequestReview(
     val id: Long,
-    val user: GiteaUser,
+    val user: GiteaUser?,
+    val team: GiteaTeam?,
     val state: GiteaPullRequestReviewState,
     val dismissed: Boolean,
     val submittedAt: Date,
