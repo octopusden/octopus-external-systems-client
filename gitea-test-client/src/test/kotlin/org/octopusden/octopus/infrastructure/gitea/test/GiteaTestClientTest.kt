@@ -13,7 +13,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
-import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepositoryConfig
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.getBranches
 import org.octopusden.octopus.infrastructure.gitea.client.getBranchesCommitGraph
@@ -69,8 +69,37 @@ class GiteaTestClientTest :
         val newRepositoryName = "test-edit-repository"
         client.createOrganization(GiteaCreateOrganization(organizationName))
         client.createRepository(organizationName, GiteaCreateRepository("test-edit-repo"))
-        client.updateRepositoryConfiguration(organizationName, repositoryName, GiteaRepositoryConfig(name = newRepositoryName))
+        client.updateRepositoryConfiguration(organizationName, repositoryName, GiteaEditRepoOption(name = newRepositoryName))
         Assertions.assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
+    }
+
+    @Test
+    fun testGetRepository() {
+        val organizationName = "test-get-org"
+        val repositoryName = "test-get-repo"
+        client.createOrganization(GiteaCreateOrganization(organizationName))
+        client.createRepository(organizationName, GiteaCreateRepository(repositoryName))
+        val giteaRepository = client.getRepository(organizationName, repositoryName)
+        val giteaRepositoryConfig = GiteaEditRepoOption(giteaRepository).copy(
+            allowMergeCommits = giteaRepository.allowMergeCommits?.let { !it },
+            allowRebase = giteaRepository.allowRebase?.let { !it },
+            allowRebaseExplicit = giteaRepository.allowRebaseExplicit?.let { !it },
+            allowRebaseUpdate = giteaRepository.allowRebaseUpdate?.let { !it },
+            allowSquashMerge = giteaRepository.allowSquashMerge?.let { !it },
+            defaultBranch = giteaRepository.defaultBranch?.let { "master" },
+            description = giteaRepository.description?.let { "Repository test get configuration" },
+            hasProjects = giteaRepository.hasProjects?.let { !it },
+            hasPullRequests = giteaRepository.hasPullRequests?.let { !it },
+            hasWiki = giteaRepository.hasWiki?.let { !it },
+            internalTracker = giteaRepository.internalTracker,
+            name = giteaRepository.name,
+            private = giteaRepository.private?.let { !it },
+            template = giteaRepository.template?.let { !it },
+            website = giteaRepository.website?.let { "https://localhost" },
+        )
+        client.updateRepositoryConfiguration(organizationName, repositoryName, giteaRepositoryConfig)
+        val giteaRepositoryConfigResult = GiteaEditRepoOption(client.getRepository(organizationName, repositoryName))
+        Assertions.assertEquals(giteaRepositoryConfigResult.toString(), giteaRepositoryConfig.toString())
     }
 
     @Test

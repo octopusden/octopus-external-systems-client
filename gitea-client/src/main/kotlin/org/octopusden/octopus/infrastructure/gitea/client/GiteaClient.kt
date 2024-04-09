@@ -11,7 +11,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreatePullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
-import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepositoryConfig
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
@@ -134,7 +134,7 @@ interface GiteaClient {
     fun updateRepositoryConfiguration(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        dto: GiteaRepositoryConfig
+        dto: GiteaEditRepoOption
     )
 }
 
@@ -264,6 +264,7 @@ fun GiteaClient.createPullRequestWithDefaultReviewers(
     val defaultReviewers = getDefaultReviewers(organization, repository)
         .map { u -> u.username }
         .toMutableSet()
+
 
     val assignee = defaultReviewers.firstOrNull()
     assignee?.let { defaultReviewers.remove(assignee) }
