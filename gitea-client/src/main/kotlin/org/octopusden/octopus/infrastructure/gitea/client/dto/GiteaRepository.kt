@@ -12,6 +12,10 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class GiteaRepository(
+    val id: Long,
+    val name: String,
+    val fullName: String,
+    val avatarUrl: String,
     val allowMergeCommits: Boolean? = null,
     val allowRebase: Boolean? = null,
     val allowRebaseExplicit: Boolean? = null,
@@ -19,7 +23,6 @@ data class GiteaRepository(
     val allowSquashMerge: Boolean? = null,
     val archived: Boolean? = null,
     val archivedAt: String? = null, // java.time.OffsetDateTime
-    val avatarUrl: String? = null,
     val cloneUrl: String? = null,
     val createdAt: String? = null, // java.time.OffsetDateTime
     val defaultAllowMaintainerEdit: Boolean? = null,
@@ -32,7 +35,6 @@ data class GiteaRepository(
     val externalWiki: GiteaExternalWiki? = null,
     val fork: Boolean? = null,
     val forksCount: Long? = null,
-    val fullName: String? = null,
     val hasActions: Boolean? = null,
     val hasIssues: Boolean? = null,
     val hasPackages: Boolean? = null,
@@ -41,7 +43,6 @@ data class GiteaRepository(
     val hasReleases: Boolean? = null,
     val hasWiki: Boolean? = null,
     val htmlUrl: String? = null,
-    val id: Long? = null,
     val ignoreWhitespaceConflicts: Boolean? = null,
     val `internal`: Boolean? = null,
     val internalTracker: GiteaInternalTracker? = null,
@@ -51,7 +52,6 @@ data class GiteaRepository(
     val mirror: Boolean? = null,
     val mirrorInterval: String? = null,
     val mirrorUpdated: String? = null, // java.time.OffsetDateTime
-    val name: String? = null,
     val openIssuesCount: Long? = null,
     val openPrCounter: Long? = null,
     val originalUrl: String? = null,

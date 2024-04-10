@@ -265,7 +265,6 @@ fun GiteaClient.createPullRequestWithDefaultReviewers(
         .map { u -> u.username }
         .toMutableSet()
 
-
     val assignee = defaultReviewers.firstOrNull()
     assignee?.let { defaultReviewers.remove(assignee) }
 
@@ -316,4 +315,39 @@ private fun <T : BaseGiteaEntity> execute(
     } while ((giteaResponse.hasMore ?: (currentPartEntities.isNotEmpty())) && inFilter)
     _log.debug("Pages retrieved: $page")
     return entities
+}
+
+fun GiteaRepository.toGiteaEditRepoOption(): GiteaEditRepoOption {
+    return GiteaEditRepoOption(
+        allowMergeCommits = allowMergeCommits,
+        allowRebase = allowRebase,
+        allowRebaseExplicit = allowRebaseExplicit,
+        allowRebaseUpdate = allowRebaseUpdate,
+        allowSquashMerge = allowSquashMerge,
+        archived = archived,
+        defaultAllowMaintainerEdit = defaultAllowMaintainerEdit,
+        defaultBranch = defaultBranch,
+        defaultDeleteBranchAfterMerge = defaultDeleteBranchAfterMerge,
+        defaultMergeStyle = defaultMergeStyle,
+        description = description,
+        externalTracker = externalTracker,
+        externalWiki = externalWiki,
+        hasIssues = hasIssues,
+        hasProjects = hasProjects,
+        hasPullRequests = hasPullRequests,
+        hasWiki = hasWiki,
+        ignoreWhitespaceConflicts = ignoreWhitespaceConflicts,
+        internalTracker = internalTracker,
+        mirrorInterval = mirror?.let { m ->
+            if (m) {
+                mirrorInterval
+            } else {
+                null
+            }
+        },
+        name = name,
+        private = private,
+        template = template,
+        website = website
+    )
 }

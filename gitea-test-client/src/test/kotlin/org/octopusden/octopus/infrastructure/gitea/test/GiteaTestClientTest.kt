@@ -8,6 +8,7 @@ import org.octopusden.octopus.infrastructure.client.commons.CredentialProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 import org.octopusden.octopus.infrastructure.gitea.client.GiteaClassicClient
+import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.createPullRequestWithDefaultReviewers
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
@@ -80,7 +81,7 @@ class GiteaTestClientTest :
         client.createOrganization(GiteaCreateOrganization(organizationName))
         client.createRepository(organizationName, GiteaCreateRepository(repositoryName))
         val giteaRepository = client.getRepository(organizationName, repositoryName)
-        val giteaRepositoryConfig = GiteaEditRepoOption(giteaRepository).copy(
+        val giteaRepositoryConfig = giteaRepository.toGiteaEditRepoOption().copy(
             allowMergeCommits = giteaRepository.allowMergeCommits?.let { !it },
             allowRebase = giteaRepository.allowRebase?.let { !it },
             allowRebaseExplicit = giteaRepository.allowRebaseExplicit?.let { !it },
@@ -98,7 +99,7 @@ class GiteaTestClientTest :
             website = giteaRepository.website?.let { "https://localhost" },
         )
         client.updateRepositoryConfiguration(organizationName, repositoryName, giteaRepositoryConfig)
-        val giteaRepositoryConfigResult = GiteaEditRepoOption(client.getRepository(organizationName, repositoryName))
+        val giteaRepositoryConfigResult = client.getRepository(organizationName, repositoryName).toGiteaEditRepoOption()
         Assertions.assertEquals(giteaRepositoryConfigResult.toString(), giteaRepositoryConfig.toString())
     }
 

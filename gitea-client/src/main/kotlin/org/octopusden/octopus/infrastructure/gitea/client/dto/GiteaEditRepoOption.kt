@@ -35,37 +35,4 @@ data class GiteaEditRepoOption(
     val `private`: Boolean? = null,  /* either `true` to make the repository private or `false` to make it public. Note: you will get a 422 error if the organization restricts changing repository visibility to organization owners and a non-owner tries to change the value of private. */
     val template: Boolean? = null,  /* either `true` to make this repository a template or `false` to make it a normal repository */
     val website: String? = null  /* a URL with more information about the repository. */
-) : BaseGiteaEntity() {
-    constructor(repository: GiteaRepository) : this(
-        allowMergeCommits = repository.allowMergeCommits,
-        allowRebase = repository.allowRebase,
-        allowRebaseExplicit = repository.allowRebaseExplicit,
-        allowRebaseUpdate = repository.allowRebaseUpdate,
-        allowSquashMerge = repository.allowSquashMerge,
-        archived = repository.archived,
-        defaultAllowMaintainerEdit = repository.defaultAllowMaintainerEdit,
-        defaultBranch = repository.defaultBranch,
-        defaultDeleteBranchAfterMerge = repository.defaultDeleteBranchAfterMerge,
-        defaultMergeStyle = repository.defaultMergeStyle,
-        description = repository.description,
-        externalTracker = repository.externalTracker,
-        externalWiki = repository.externalWiki,
-        hasIssues = repository.hasIssues,
-        hasProjects = repository.hasProjects,
-        hasPullRequests = repository.hasPullRequests,
-        hasWiki = repository.hasWiki,
-        ignoreWhitespaceConflicts = repository.ignoreWhitespaceConflicts,
-        internalTracker = repository.internalTracker,
-        mirrorInterval = repository.mirror?.let { m ->
-            if (m) {
-                repository.mirrorInterval
-            } else {
-                null
-            }
-        },
-        name = repository.name,
-        private = repository.private,
-        template = repository.template,
-        website = repository.website
-    )
-}
+) : BaseGiteaEntity()
