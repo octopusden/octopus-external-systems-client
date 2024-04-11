@@ -5,11 +5,11 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class GiteaTeam(
+    val id: Long,
+    val name: String,
     val canCreateOrgRepo: Boolean? = null,
     val description: String? = null,
-    val id: Long? = null,
     val includesAllRepositories: Boolean? = null,
-    val name: String? = null,
     val organization: GiteaOrganization? = null,
     val permission: GiteaTeam.Permission? = null,
     val units: List<String>? = null,
