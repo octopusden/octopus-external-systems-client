@@ -11,7 +11,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreatePullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
-import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepositoryConfig
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
@@ -134,7 +134,7 @@ interface GiteaClient {
     fun updateRepositoryConfiguration(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        dto: GiteaRepositoryConfig
+        dto: GiteaEditRepoOption
     )
 }
 
@@ -315,4 +315,39 @@ private fun <T : BaseGiteaEntity> execute(
     } while ((giteaResponse.hasMore ?: (currentPartEntities.isNotEmpty())) && inFilter)
     _log.debug("Pages retrieved: $page")
     return entities
+}
+
+fun GiteaRepository.toGiteaEditRepoOption(): GiteaEditRepoOption {
+    return GiteaEditRepoOption(
+        allowMergeCommits = allowMergeCommits,
+        allowRebase = allowRebase,
+        allowRebaseExplicit = allowRebaseExplicit,
+        allowRebaseUpdate = allowRebaseUpdate,
+        allowSquashMerge = allowSquashMerge,
+        archived = archived,
+        defaultAllowMaintainerEdit = defaultAllowMaintainerEdit,
+        defaultBranch = defaultBranch,
+        defaultDeleteBranchAfterMerge = defaultDeleteBranchAfterMerge,
+        defaultMergeStyle = defaultMergeStyle,
+        description = description,
+        externalTracker = externalTracker,
+        externalWiki = externalWiki,
+        hasIssues = hasIssues,
+        hasProjects = hasProjects,
+        hasPullRequests = hasPullRequests,
+        hasWiki = hasWiki,
+        ignoreWhitespaceConflicts = ignoreWhitespaceConflicts,
+        internalTracker = internalTracker,
+        mirrorInterval = mirror?.let { m ->
+            if (m) {
+                mirrorInterval
+            } else {
+                null
+            }
+        },
+        name = name,
+        private = private,
+        template = template,
+        website = website
+    )
 }
