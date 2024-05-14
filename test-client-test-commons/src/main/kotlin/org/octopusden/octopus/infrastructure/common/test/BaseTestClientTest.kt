@@ -146,6 +146,7 @@ abstract class BaseTestClientTest(
             )
         )
         testClient.commit(NewChangeSet("$FEATURE_BRANCH commit", vcsUrl, FEATURE_BRANCH))
+        Thread.sleep(5000)
         val title = "PR Title"
         val description = "PR Description"
         val pullRequest = createPullRequestWithDefaultReviewers(

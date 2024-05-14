@@ -76,7 +76,8 @@ interface GiteaClient {
     fun getCommit(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        @Param("sha") sha: String
+        @Param("sha") sha: String,
+        @QueryMap requestParams: Map<String, Any>
     ): GiteaCommit
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/tags")
@@ -145,15 +146,27 @@ fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {
 fun GiteaClient.getRepositories(organization: String): Collection<GiteaRepository> =
     execute({ parameters: Map<String, Any> -> getRepositories(organization, parameters) })
 
+fun GiteaClient.getCommit(
+    organization: String,
+    repository: String,
+    sha: String,
+    files: Boolean = false
+) = getCommit(
+    organization, repository, sha, mapOf(
+        "stat" to false, "verification" to false, "files" to files
+    )
+)
+
 fun GiteaClient.getCommits(
     organization: String,
     repository: String,
     until: String,
-    sinceDate: Date? = null
+    sinceDate: Date? = null,
+    files: Boolean = false
 ) = execute({ parameters: Map<String, Any> ->
     getCommits(
         organization, repository, parameters + mapOf(
-            "stat" to false, "verification" to false, "files" to false, "sha" to until
+            "stat" to false, "verification" to false, "files" to files, "sha" to until
         )
     )
 }, { commit: GiteaCommit -> sinceDate == null || commit.created > sinceDate })
@@ -162,7 +175,8 @@ fun GiteaClient.getCommits(
     organization: String,
     repository: String,
     until: String,
-    since: String
+    since: String,
+    files: Boolean = false
 ): List<GiteaCommit> {
     val toSha = getCommit(organization, repository, until).sha
     val fromSha = getCommit(organization, repository, since).sha
@@ -170,7 +184,7 @@ fun GiteaClient.getCommits(
         return emptyList()
     }
     val parameters = mapOf(
-        "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false, "sha" to toSha
+        "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to files, "sha" to toSha
     )
     val commits = mutableMapOf<String, GiteaCommit>()
     var page = 0
@@ -208,16 +222,18 @@ fun GiteaClient.getCommits(
 
 fun GiteaClient.getBranchesCommitGraph(
     organization: String,
-    repository: String
+    repository: String,
+    files: Boolean = false
 ): List<GiteaCommit> {
-    val parameters = mapOf("limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to false)
+    val parameters = mapOf("limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to files)
     val commits = mutableMapOf<String, GiteaCommit>()
     var page: Int
     getBranches(organization, repository).forEach { branch ->
         var orphanedCommits = listOf<GiteaCommit>()
         page = 0
         do {
-            val giteaResponse = getCommits(organization, repository, parameters + mapOf("sha" to branch.commit.id, "page" to ++page))
+            val giteaResponse =
+                getCommits(organization, repository, parameters + mapOf("sha" to branch.commit.id, "page" to ++page))
             val includedCommits = giteaResponse.values.filter { !commits.containsKey(it.sha) }
             commits.putAll(includedCommits.associateBy { it.sha })
             orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
