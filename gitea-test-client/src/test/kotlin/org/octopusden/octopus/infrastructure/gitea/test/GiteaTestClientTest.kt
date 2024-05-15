@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.CredentialProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
+import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
+import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.octopusden.octopus.infrastructure.gitea.client.GiteaClassicClient
 import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.createPullRequestWithDefaultReviewers
@@ -18,6 +20,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOptio
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.getBranches
 import org.octopusden.octopus.infrastructure.gitea.client.getBranchesCommitGraph
+import org.octopusden.octopus.infrastructure.gitea.client.getCommit
 import org.octopusden.octopus.infrastructure.gitea.client.getCommits
 import org.octopusden.octopus.infrastructure.gitea.client.getTags
 
@@ -116,5 +119,21 @@ class GiteaTestClientTest :
             }.sortedBy { it.commitId },
             client.getBranchesCommitGraph(PROJECT, repository).map { it.toTestCommit() }.sortedBy { it.commitId }
         )
+    }
+
+    @Test
+    fun getCommitWithFiles() {
+        val changeSet = testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit 1",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+        val commit = client.getCommit(PROJECT, REPOSITORY, changeSet.id, true)
+        Assertions.assertEquals(1, commit.files!!.size)
+        Assertions.assertEquals(GiteaCommit.GiteaCommitAffectedFileStatus.ADDED, commit.files!!.first().status)
+        Assertions.assertTrue(commit.files!!.first().filename.endsWith(".commit"))
+        Assertions.assertEquals(commit, client.getCommits(PROJECT, REPOSITORY, changeSet.id, null, true).first())
     }
 }

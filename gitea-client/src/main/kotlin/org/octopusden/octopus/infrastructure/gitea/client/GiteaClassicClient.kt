@@ -57,8 +57,8 @@ class GiteaClassicClient(
         requestParams: Map<String, Any>
     ) = client.getCommits(organization, repository, requestParams)
 
-    override fun getCommit(organization: String, repository: String, sha: String) =
-        client.getCommit(organization, repository, sha)
+    override fun getCommit(organization: String, repository: String, sha: String, requestParams: Map<String, Any>) =
+        client.getCommit(organization, repository, sha, requestParams)
 
     override fun getTags(
         organization: String,
