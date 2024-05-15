@@ -13,6 +13,7 @@ import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUser
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
@@ -80,23 +81,31 @@ class BitbucketClassicClient(
         return client.deleteRepository(projectKey, repository)
     }
 
-    override fun _getCommits(
+    override fun getCommits(
         projectKey: String,
         repository: String,
         requestParams: Map<String, Any>
     ): BitbucketEntityList<BitbucketCommit> {
-        return client._getCommits(projectKey, repository, requestParams)
+        return client.getCommits(projectKey, repository, requestParams)
     }
 
     override fun _getCommit(projectKey: String, repository: String, id: String): BitbucketCommit {
         return client._getCommit(projectKey, repository, id)
     }
 
-    override fun _getCommits(
+    override fun _getCommitChanges(
+        projectKey: String,
+        repository: String,
+        id: String
+    ): BitbucketEntityList<BitbucketCommitChange> {
+        return client._getCommitChanges(projectKey, repository, id)
+    }
+
+    override fun getCommits(
         issueKey: String,
         requestParams: Map<String, Any>
     ): BitbucketEntityList<BitbucketJiraCommit> {
-        return client._getCommits(issueKey, requestParams)
+        return client.getCommits(issueKey, requestParams)
     }
 
     override fun getTags(
