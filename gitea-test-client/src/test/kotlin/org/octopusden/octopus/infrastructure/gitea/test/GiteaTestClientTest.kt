@@ -130,10 +130,10 @@ class GiteaTestClientTest :
                 BaseTestClient.DEFAULT_BRANCH
             )
         )
-        val commits = client.getCommits(PROJECT, REPOSITORY, changeSet.id, null, true)
-        Assertions.assertEquals(1, commits.last().files!!.size)
-        Assertions.assertEquals(GiteaCommit.GiteaCommitAffectedFileStatus.ADDED, commits.last().files!!.first().status)
-        Assertions.assertTrue(commits.last().files!!.first().filename.endsWith(".commit"))
-        Assertions.assertEquals(commits.last(), client.getCommit(PROJECT, REPOSITORY, changeSet.id, true))
+        val commit = client.getCommit(PROJECT, REPOSITORY, changeSet.id, true)
+        Assertions.assertEquals(1, commit.files!!.size)
+        Assertions.assertEquals(GiteaCommit.GiteaCommitAffectedFileStatus.ADDED, commit.files!!.first().status)
+        Assertions.assertTrue(commit.files!!.first().filename.endsWith(".commit"))
+        Assertions.assertEquals(commit, client.getCommits(PROJECT, REPOSITORY, changeSet.id, null, true).first())
     }
 }
