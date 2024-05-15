@@ -8,10 +8,12 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketClientPar
 import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketCredentialProvider
 import org.octopusden.octopus.infrastructure.bitbucket.client.createPullRequestWithDefaultReviewers
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommit
+import org.octopusden.octopus.infrastructure.bitbucket.client.getCommitChanges
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommits
 import org.octopusden.octopus.infrastructure.bitbucket.client.getTags
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
@@ -58,16 +60,24 @@ class BitbucketTestClientTest : BaseTestClientTest(
 
     @Test
     fun testGetCommitInvalidId() {
-        testClient.commit(
-            NewChangeSet(
-                "${BaseTestClient.DEFAULT_BRANCH} commit 1",
-                vcsFormatter.format(PROJECT, REPOSITORY),
-                BaseTestClient.DEFAULT_BRANCH
-            )
-        )
         Assertions.assertThrowsExactly(NotFoundException::class.java, {
             client.getCommit(PROJECT, REPOSITORY, "bug/fix")
         }, "Ref 'bug/fix' does not exist in repository 'test-repository' and 'bug/fix' is not valid BitBucket commit id")
+    }
+
+    @Test
+    fun testGetCommitChanges() {
+        val changeSet = testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit 1",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+        val changes = client.getCommitChanges(PROJECT, REPOSITORY, changeSet.id)
+        Assertions.assertEquals(1, changes.size)
+        Assertions.assertEquals(BitbucketCommitChange.BitbucketCommitChangeType.ADD, changes.first().type)
+        Assertions.assertTrue(changes.first().path.value.endsWith(".commit"))
     }
 
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)

@@ -30,7 +30,7 @@ abstract class BaseTestClientTest(
         index: Long
     ): TestPullRequest
 
-    private val vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
+    protected val vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
 
     @AfterEach
     fun afterEachTestClientTest() {
