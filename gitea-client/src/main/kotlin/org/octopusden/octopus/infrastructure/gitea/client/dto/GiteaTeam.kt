@@ -1,5 +1,6 @@
 package org.octopusden.octopus.infrastructure.gitea.client.dto
 
+import com.fasterxml.jackson.annotation.JsonValue
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.annotation.JsonNaming
 
@@ -11,11 +12,14 @@ data class GiteaTeam(
     val description: String? = null,
     val includesAllRepositories: Boolean? = null,
     val organization: GiteaOrganization? = null,
-    val permission: GiteaTeam.Permission? = null,
+    val permission: GiteaTeamPermission? = null,
     val units: List<String>? = null,
     val unitsMap: Map<String, String>? = null
 ) : BaseGiteaEntity() {
-    enum class Permission(val value: String) {
+    enum class GiteaTeamPermission(
+        @get:JsonValue
+        val jsonValue: String
+    ) {
         NONE("none"), READ("read"), WRITE("write"), ADMIN("admin"), OWNER("owner")
     }
 }
