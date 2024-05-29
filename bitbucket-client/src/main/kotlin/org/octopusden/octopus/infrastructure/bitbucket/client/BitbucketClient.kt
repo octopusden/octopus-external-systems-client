@@ -162,19 +162,23 @@ fun BitbucketClient.getRepositories(): List<BitbucketRepository> =
 fun BitbucketClient.getRepositories(projectKey: String): List<BitbucketRepository> =
     execute({ parameters: Map<String, Any> -> getRepositories(projectKey, parameters) })
 
+private fun BitbucketClient.findRef(projectKey: String, repository: String, ref: String) =
+    if (ref.startsWith("refs/heads/")) {
+        getBranches(projectKey, repository).firstOrNull { branch -> branch.id == ref }
+    } else if (ref.startsWith("refs/tags/")) {
+        getTags(projectKey, repository).firstOrNull { tag -> tag.id == ref }
+    } else {
+        getBranches(projectKey, repository).firstOrNull { branch -> branch.id == "refs/heads/$ref" }
+            ?: getTags(projectKey, repository).firstOrNull { tag -> tag.id == "refs/tags/$ref" }
+    }
 
 fun BitbucketClient.getCommit(projectKey: String, repository: String, commitIdOrRef: String): BitbucketCommit =
     try {
         _getCommit(projectKey, repository, commitIdOrRef)
     } catch (e: InvalidCommitIdException) {
         _log.info("Treat `$commitIdOrRef` as a ref. ${e.message}")
-        run {
-            val shortBranchName = commitIdOrRef.replace("^refs/heads/".toRegex(), "")
-            val fullBranchName = "refs/heads/$shortBranchName"
-            getBranches(projectKey, repository)
-                .firstOrNull { b -> b.id == fullBranchName }
-                ?.latestCommit
-                ?.let { commitId -> _getCommit(projectKey, repository, commitId) }
+        findRef(projectKey, repository, commitIdOrRef)?.let {
+            _getCommit(projectKey, repository, it.latestCommit)
         } ?: throw NotFoundException("Ref '$commitIdOrRef' does not exist in repository '$repository' and ${e.message}")
     }
 
@@ -183,13 +187,8 @@ fun BitbucketClient.getCommitChanges(projectKey: String, repository: String, com
         _getCommitChanges(projectKey, repository, commitIdOrRef)
     } catch (e: InvalidCommitIdException) {
         _log.info("Treat `$commitIdOrRef` as a ref. ${e.message}")
-        run {
-            val shortBranchName = commitIdOrRef.replace("^refs/heads/".toRegex(), "")
-            val fullBranchName = "refs/heads/$shortBranchName"
-            getBranches(projectKey, repository)
-                .firstOrNull { b -> b.id == fullBranchName }
-                ?.latestCommit
-                ?.let { commitId -> _getCommitChanges(projectKey, repository, commitId) }
+        findRef(projectKey, repository, commitIdOrRef)?.let {
+            _getCommitChanges(projectKey, repository, it.latestCommit)
         } ?: throw NotFoundException("Ref '$commitIdOrRef' does not exist in repository '$repository' and ${e.message}")
     }.values
 
