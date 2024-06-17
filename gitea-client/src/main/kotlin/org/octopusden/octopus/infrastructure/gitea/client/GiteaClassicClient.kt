@@ -13,6 +13,7 @@ import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProv
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreatePullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 
@@ -51,47 +52,38 @@ class GiteaClassicClient(
     override fun deleteRepository(organization: String, repository: String) =
         client.deleteRepository(organization, repository)
 
-    override fun getCommits(
-        organization: String,
-        repository: String,
-        requestParams: Map<String, Any>
-    ) = client.getCommits(organization, repository, requestParams)
+    override fun getCommits(organization: String, repository: String, requestParams: Map<String, Any>) =
+        client.getCommits(organization, repository, requestParams)
 
     override fun getCommit(organization: String, repository: String, sha: String, requestParams: Map<String, Any>) =
         client.getCommit(organization, repository, sha, requestParams)
 
-    override fun getTags(
-        organization: String,
-        repository: String,
-        requestParams: Map<String, Any>
-    ) = client.getTags(organization, repository, requestParams)
+    override fun getTags(organization: String, repository: String, requestParams: Map<String, Any>) =
+        client.getTags(organization, repository, requestParams)
 
-    override fun getBranches(
-        organization: String,
-        repository: String,
-        requestParams: Map<String, Any>
-    ) = client.getBranches(organization, repository, requestParams)
+    override fun createTag(organization: String, repository: String, dto: GiteaCreateTag) =
+        client.createTag(organization, repository, dto)
 
-    override fun getDefaultReviewers(organization: String, repository: String) =
-        client.getDefaultReviewers(organization, repository)
+    override fun getTag(organization: String, repository: String, tag: String) =
+        client.getTag(organization, repository, tag)
 
-    override fun getPullRequests(
-        organization: String,
-        repository: String,
-        requestParams: Map<String, Any>
-    ) = client.getPullRequests(organization, repository, requestParams)
+    override fun deleteTag(organization: String, repository: String, tag: String) =
+        client.deleteTag(organization, repository, tag)
 
-    override fun createPullRequest(
-        organization: String,
-        repository: String,
-        dto: GiteaCreatePullRequest
-    ) = client.createPullRequest(organization, repository, dto)
+    override fun getBranches(organization: String, repository: String, requestParams: Map<String, Any>) =
+        client.getBranches(organization, repository, requestParams)
 
-    override fun getPullRequest(
-        organization: String,
-        repository: String,
-        number: Long
-    ) = client.getPullRequest(organization, repository, number)
+    override fun getBranch(organization: String, repository: String, branch: String) =
+        client.getBranch(organization, repository, branch)
+
+    override fun getPullRequests(organization: String, repository: String, requestParams: Map<String, Any>) =
+        client.getPullRequests(organization, repository, requestParams)
+
+    override fun createPullRequest(organization: String, repository: String, dto: GiteaCreatePullRequest) =
+        client.createPullRequest(organization, repository, dto)
+
+    override fun getPullRequest(organization: String, repository: String, number: Long) =
+        client.getPullRequest(organization, repository, number)
 
     override fun getPullRequestReviews(
         organization: String,
@@ -100,11 +92,8 @@ class GiteaClassicClient(
         requestParams: Map<String, Any>
     ) = client.getPullRequestReviews(organization, repository, number, requestParams)
 
-    override fun updateRepositoryConfiguration(
-        organization: String,
-        repository: String,
-        dto: GiteaEditRepoOption
-    ) = client.updateRepositoryConfiguration(organization, repository, dto)
+    override fun updateRepositoryConfiguration(organization: String, repository: String, dto: GiteaEditRepoOption) =
+        client.updateRepositoryConfiguration(organization, repository, dto)
 
     companion object {
         private fun getMapper(): ObjectMapper {
