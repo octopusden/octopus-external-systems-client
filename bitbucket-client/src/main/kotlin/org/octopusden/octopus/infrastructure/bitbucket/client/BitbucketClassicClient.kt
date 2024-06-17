@@ -10,19 +10,10 @@ import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUser
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntityList
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketJiraCommit
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketProject
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketRepository
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.DefaultReviewersQuery
 
@@ -42,107 +33,60 @@ class BitbucketClassicClient(
         getMapper()
     )
 
-    override fun getProjects(requestParams: Map<String, Any>): BitbucketEntityList<BitbucketProject> {
-        return client.getProjects(requestParams)
-    }
+    override fun getProjects(requestParams: Map<String, Any>) = client.getProjects(requestParams)
 
-    override fun getRepositories(requestParams: Map<String, Any>): BitbucketEntityList<BitbucketRepository> {
-        return client.getRepositories(requestParams)
-    }
+    override fun getRepositories(requestParams: Map<String, Any>) = client.getRepositories(requestParams)
 
-    override fun createProject(dto: BitbucketCreateProject) {
-        client.createProject(dto)
-    }
+    override fun createProject(dto: BitbucketCreateProject) = client.createProject(dto)
 
-    override fun getProject(projectKey: String): BitbucketProject {
-        return client.getProject(projectKey)
-    }
+    override fun getProject(projectKey: String) = client.getProject(projectKey)
 
-    override fun getRepositories(
-        projectKey: String,
-        requestParams: Map<String, Any>
-    ): BitbucketEntityList<BitbucketRepository> {
-        return client.getRepositories(projectKey, requestParams)
-    }
+    override fun getRepositories(projectKey: String, requestParams: Map<String, Any>) =
+        client.getRepositories(projectKey, requestParams)
 
-    override fun getRepository(projectKey: String, repository: String): BitbucketRepository {
-        return client.getRepository(projectKey, repository)
-    }
+    override fun getRepository(projectKey: String, repository: String) = client.getRepository(projectKey, repository)
 
-    override fun createRepository(projectKey: String, dto: BitbucketCreateRepository) {
+    override fun createRepository(projectKey: String, dto: BitbucketCreateRepository) =
         client.createRepository(projectKey, dto)
-    }
 
-    override fun updateRepository(projectKey: String, repository: String, dto: BitbucketUpdateRepository) {
-        return client.updateRepository(projectKey, repository, dto)
-    }
+    override fun updateRepository(projectKey: String, repository: String, dto: BitbucketUpdateRepository) =
+        client.updateRepository(projectKey, repository, dto)
 
-    override fun deleteRepository(projectKey: String, repository: String) {
-        return client.deleteRepository(projectKey, repository)
-    }
+    override fun deleteRepository(projectKey: String, repository: String) =
+        client.deleteRepository(projectKey, repository)
 
-    override fun getCommits(
-        projectKey: String,
-        repository: String,
-        requestParams: Map<String, Any>
-    ): BitbucketEntityList<BitbucketCommit> {
-        return client.getCommits(projectKey, repository, requestParams)
-    }
+    override fun getCommits(projectKey: String, repository: String, requestParams: Map<String, Any>) =
+        client.getCommits(projectKey, repository, requestParams)
 
-    override fun _getCommit(projectKey: String, repository: String, id: String): BitbucketCommit {
-        return client._getCommit(projectKey, repository, id)
-    }
+    override fun _getCommit(projectKey: String, repository: String, id: String) =
+        client._getCommit(projectKey, repository, id)
 
-    override fun _getCommitChanges(
-        projectKey: String,
-        repository: String,
-        id: String
-    ): BitbucketEntityList<BitbucketCommitChange> {
-        return client._getCommitChanges(projectKey, repository, id)
-    }
+    override fun _getCommitChanges(projectKey: String, repository: String, id: String) =
+        client._getCommitChanges(projectKey, repository, id)
 
-    override fun getCommits(
-        issueKey: String,
-        requestParams: Map<String, Any>
-    ): BitbucketEntityList<BitbucketJiraCommit> {
-        return client.getCommits(issueKey, requestParams)
-    }
+    override fun getCommits(issueKey: String, requestParams: Map<String, Any>) =
+        client.getCommits(issueKey, requestParams)
 
-    override fun getTags(
-        projectKey: String,
-        repository: String,
-        requestParams: Map<String, Any>
-    ): BitbucketEntityList<BitbucketTag> {
-        return client.getTags(projectKey, repository, requestParams)
-    }
+    override fun getTags(projectKey: String, repository: String, requestParams: Map<String, Any>) =
+        client.getTags(projectKey, repository, requestParams)
 
-    override fun getBranches(
-        projectKey: String,
-        repository: String,
-        requestParams: Map<String, Any>
-    ): BitbucketEntityList<BitbucketBranch> {
-        return client.getBranches(projectKey, repository, requestParams)
-    }
+    override fun createTag(projectKey: String, repository: String, dto: BitbucketCreateTag) =
+        client.createTag(projectKey, repository, dto)
 
-    override fun getDefaultReviewers(
-        projectKey: String,
-        repository: String,
-        query: DefaultReviewersQuery
-    ): Set<BitbucketUser> = client.getDefaultReviewers(projectKey, repository, query)
+    override fun deleteTag(projectKey: String, repository: String, tag: String) =
+        client.deleteTag(projectKey, repository, tag)
 
-    override fun createPullRequest(
-        projectKey: String,
-        repository: String,
-        dto: BitbucketCreatePullRequest
-    ): BitbucketPullRequest {
-        return client.createPullRequest(projectKey, repository, dto)
-    }
+    override fun getBranches(projectKey: String, repository: String, requestParams: Map<String, Any>) =
+        client.getBranches(projectKey, repository, requestParams)
 
-    override fun getPullRequest(
-        projectKey: String,
-        repository: String,
-        id: Long
-    ) = client.getPullRequest(projectKey, repository, id)
+    override fun getDefaultReviewers(projectKey: String, repository: String, query: DefaultReviewersQuery) =
+        client.getDefaultReviewers(projectKey, repository, query)
+
+    override fun createPullRequest(projectKey: String, repository: String, dto: BitbucketCreatePullRequest) =
+        client.createPullRequest(projectKey, repository, dto)
+
+    override fun getPullRequest(projectKey: String, repository: String, id: Long) =
+        client.getPullRequest(projectKey, repository, id)
 
     companion object {
         private fun getMapper(): ObjectMapper {

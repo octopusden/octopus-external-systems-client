@@ -3,6 +3,7 @@ version: '3'
 services:
   bitbucket:
     image: ${DOCKER_REGISTRY}/atlassian/bitbucket-server:8.14.0-jdk11
+    container_name: bitbucket-test-client-ft-bitbucket
     depends_on:
       - postgres
     ports:
@@ -19,11 +20,11 @@ services:
       JDBC_DRIVER: org.postgresql.Driver
       JDBC_USER: bitbucket
       JDBC_PASSWORD: bitbucket
-      JDBC_URL: jdbc:postgresql://bitbucket-db:5432/bitbucket
+      JDBC_URL: jdbc:postgresql://bitbucket-test-client-ft-bitbucket-db:5432/bitbucket
 
   postgres:
     image: ${DOCKER_REGISTRY}/postgres:12-alpine
-    container_name: bitbucket-db
+    container_name: bitbucket-test-client-ft-bitbucket-db
     environment:
       POSTGRES_USER: bitbucket
       POSTGRES_PASSWORD: bitbucket

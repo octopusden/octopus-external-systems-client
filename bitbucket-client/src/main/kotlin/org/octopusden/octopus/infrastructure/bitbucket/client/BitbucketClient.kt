@@ -6,7 +6,6 @@ import feign.QueryMap
 import feign.RequestLine
 import java.util.Date
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BaseBitbucketEntity
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUser
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
@@ -15,6 +14,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreat
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequestReviewer
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntityList
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketJiraCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketProject
@@ -22,6 +22,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullR
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUser
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.DefaultReviewersQuery
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.InvalidCommitIdException
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
@@ -32,6 +33,7 @@ private val _log: Logger = LoggerFactory.getLogger(BitbucketClient::class.java)
 
 const val PROJECT_PATH = "rest/api/1.0/projects"
 const val REPO_PATH = "rest/api/1.0/repos"
+const val GIT_PROJECT_PATH = "/rest/git/1.0/projects"
 const val JIRA_ISSUES_PATH = "rest/jira/1.0/issues"
 const val DEFAULT_REVIEWERS_PATH = "rest/default-reviewers/1.0/projects"
 const val ENTITY_LIMIT = 100
@@ -121,6 +123,21 @@ interface BitbucketClient {
         @QueryMap requestParams: Map<String, Any>,
     ): BitbucketEntityList<BitbucketTag>
 
+    @RequestLine("POST $PROJECT_PATH/{projectKey}/repos/{repository}/tags")
+    @Headers("Content-Type: application/json")
+    fun createTag(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        dto: BitbucketCreateTag
+    ): BitbucketTag
+
+    @RequestLine("DELETE $GIT_PROJECT_PATH/{projectKey}/repos/{repository}/tags/{tag}", decodeSlash = false)
+    fun deleteTag(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        @Param("tag") tag: String
+    )
+
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/branches")
     fun getBranches(
         @Param("projectKey") projectKey: String,
@@ -152,27 +169,50 @@ interface BitbucketClient {
     ): BitbucketPullRequest
 }
 
-fun BitbucketClient.getProjects(): List<BitbucketProject> {
-    return execute({ parameters: Map<String, Any> -> getProjects(parameters) })
+fun BitbucketClient.getProjects() = execute(
+    { parameters: Map<String, Any> -> getProjects(parameters) }
+)
+
+fun BitbucketClient.getRepositories() = execute(
+    { parameters: Map<String, Any> -> getRepositories(parameters) }
+)
+
+fun BitbucketClient.getRepositories(projectKey: String) = execute(
+    { parameters: Map<String, Any> -> getRepositories(projectKey, parameters) }
+)
+
+private fun String.isBranchId() = startsWith("refs/heads/")
+
+private fun String.isTagId() = startsWith("refs/tags/")
+
+private fun BitbucketClient.findBranch(projectKey: String, repository: String, branch: String): BitbucketBranch? {
+    val isId = branch.isBranchId()
+    return execute({ parameters: Map<String, Any> ->
+        getBranches(
+            projectKey,
+            repository,
+            parameters + mapOf("filterText" to if (isId) branch.substring(10) else branch)
+        )
+    }).find { if (isId) it.id == branch else it.displayId == branch }
 }
 
-fun BitbucketClient.getRepositories(): List<BitbucketRepository> =
-    execute({ parameters: Map<String, Any> -> getRepositories(parameters) })
-
-fun BitbucketClient.getRepositories(projectKey: String): List<BitbucketRepository> =
-    execute({ parameters: Map<String, Any> -> getRepositories(projectKey, parameters) })
+private fun BitbucketClient.findTag(projectKey: String, repository: String, tag: String): BitbucketTag? {
+    val isId = tag.isTagId()
+    return execute({ parameters: Map<String, Any> ->
+        getTags(
+            projectKey,
+            repository,
+            parameters + mapOf("filterText" to if (isId) tag.substring(10) else tag)
+        )
+    }).find { if (isId) it.id == tag else it.displayId == tag }
+}
 
 private fun BitbucketClient.findRef(projectKey: String, repository: String, ref: String) =
-    if (ref.startsWith("refs/heads/")) {
-        getBranches(projectKey, repository).firstOrNull { branch -> branch.id == ref }
-    } else if (ref.startsWith("refs/tags/")) {
-        getTags(projectKey, repository).firstOrNull { tag -> tag.id == ref }
-    } else {
-        getBranches(projectKey, repository).firstOrNull { branch -> branch.id == "refs/heads/$ref" }
-            ?: getTags(projectKey, repository).firstOrNull { tag -> tag.id == "refs/tags/$ref" }
-    }
+    if (ref.isBranchId()) findBranch(projectKey, repository, ref)
+    else if (ref.isTagId()) findTag(projectKey, repository, ref)
+    else findBranch(projectKey, repository, ref) ?: findTag(projectKey, repository, ref)
 
-fun BitbucketClient.getCommit(projectKey: String, repository: String, commitIdOrRef: String): BitbucketCommit =
+fun BitbucketClient.getCommit(projectKey: String, repository: String, commitIdOrRef: String) =
     try {
         _getCommit(projectKey, repository, commitIdOrRef)
     } catch (e: InvalidCommitIdException) {
@@ -182,21 +222,21 @@ fun BitbucketClient.getCommit(projectKey: String, repository: String, commitIdOr
         } ?: throw NotFoundException("Ref '$commitIdOrRef' does not exist in repository '$repository' and ${e.message}")
     }
 
-fun BitbucketClient.getCommitChanges(projectKey: String, repository: String, commitIdOrRef: String): List<BitbucketCommitChange> =
-    try {
-        _getCommitChanges(projectKey, repository, commitIdOrRef)
-    } catch (e: InvalidCommitIdException) {
-        _log.info("Treat `$commitIdOrRef` as a ref. ${e.message}")
-        findRef(projectKey, repository, commitIdOrRef)?.let {
-            _getCommitChanges(projectKey, repository, it.latestCommit)
-        } ?: throw NotFoundException("Ref '$commitIdOrRef' does not exist in repository '$repository' and ${e.message}")
-    }.values
-
-fun BitbucketClient.getCommits(
+fun BitbucketClient.getCommitChanges(
     projectKey: String,
     repository: String,
-    until: String,
-    since: String
+    commitIdOrRef: String
+) = try {
+    _getCommitChanges(projectKey, repository, commitIdOrRef)
+} catch (e: InvalidCommitIdException) {
+    _log.info("Treat `$commitIdOrRef` as a ref. ${e.message}")
+    findRef(projectKey, repository, commitIdOrRef)?.let {
+        _getCommitChanges(projectKey, repository, it.latestCommit)
+    } ?: throw NotFoundException("Ref '$commitIdOrRef' does not exist in repository '$repository' and ${e.message}")
+}.values
+
+fun BitbucketClient.getCommits(
+    projectKey: String, repository: String, until: String, since: String
 ): List<BitbucketCommit> {
     val toId = getCommit(projectKey, repository, until).id
     val fromId = getCommit(projectKey, repository, since).id
@@ -221,18 +261,25 @@ fun BitbucketClient.getCommits(
     sinceDate == null || commit.authorTimestamp > sinceDate
 })
 
-fun BitbucketClient.getCommits(issueKey: String): List<BitbucketJiraCommit> =
-    execute({ parameters: Map<String, Any> -> getCommits(issueKey, parameters) })
+fun BitbucketClient.getCommits(issueKey: String) = execute(
+    { parameters: Map<String, Any> -> getCommits(issueKey, parameters) }
+)
 
-fun BitbucketClient.getTags(
-    projectKey: String,
-    repository: String
-): List<BitbucketTag> = execute({ parameters: Map<String, Any> -> getTags(projectKey, repository, parameters) })
+fun BitbucketClient.getTags(projectKey: String, repository: String) = execute(
+    { parameters: Map<String, Any> -> getTags(projectKey, repository, parameters) }
+)
 
-fun BitbucketClient.getBranches(
-    projectKey: String,
-    repository: String
-): List<BitbucketBranch> = execute({ parameters: Map<String, Any> -> getBranches(projectKey, repository, parameters) })
+fun BitbucketClient.getTag(projectKey: String, repository: String, tag: String) =
+    findTag(projectKey, repository, tag)
+        ?: throw NotFoundException("Tag '$tag' is not found in '$projectKey:$repository'")
+
+fun BitbucketClient.getBranches(projectKey: String, repository: String) = execute(
+    { parameters: Map<String, Any> -> getBranches(projectKey, repository, parameters) }
+)
+
+fun BitbucketClient.getBranch(projectKey: String, repository: String, branch: String) =
+    findBranch(projectKey, repository, branch)
+        ?: throw NotFoundException("Branch '$branch' is not found in '$projectKey:$repository'")
 
 fun BitbucketClient.createPullRequestWithDefaultReviewers(
     projectKey: String,
@@ -241,31 +288,14 @@ fun BitbucketClient.createPullRequestWithDefaultReviewers(
     targetBranch: String,
     title: String,
     description: String
-): BitbucketPullRequest {
-    val existedRepository = getRepository(projectKey, repository)
-
-    val branches = getBranches(projectKey, repository)
-        .associateBy { bitbucketBranch -> bitbucketBranch.displayId }
-
-    fun getRef(type: String, branchName: String): BitbucketCreatePrRef = branches[branchName]
-        ?.let { BitbucketCreatePrRef(it.id, existedRepository) }
-        ?: throw NotFoundException("$type branch '$branchName' not found in '$projectKey:$repository'")
-
-    val sourceRef = getRef("Source", sourceBranch)
-    val targetRef = getRef("Target", targetBranch)
-
+) = getRepository(projectKey, repository).let {
+    val source = BitbucketCreatePrRef(getBranch(projectKey, repository, sourceBranch).id, it)
+    val target = BitbucketCreatePrRef(getBranch(projectKey, repository, targetBranch).id, it)
     val defaultReviewers = getDefaultReviewers(
-        projectKey,
-        repository,
-        DefaultReviewersQuery(existedRepository.id, sourceRef.id, existedRepository.id, targetRef.id)
-    )
-        .map { BitbucketCreatePullRequestReviewer(it) }
-        .toSet()
-
-    return createPullRequest(
-        projectKey,
-        repository,
-        BitbucketCreatePullRequest(title, description, sourceRef, targetRef, defaultReviewers)
+        projectKey, repository, DefaultReviewersQuery(it.id, source.id, it.id, target.id)
+    ).map { users -> BitbucketCreatePullRequestReviewer(users) }
+    createPullRequest(
+        projectKey, repository, BitbucketCreatePullRequest(title, description, source, target, defaultReviewers)
     )
 }
 
