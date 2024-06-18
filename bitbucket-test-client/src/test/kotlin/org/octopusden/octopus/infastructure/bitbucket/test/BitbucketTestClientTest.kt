@@ -9,12 +9,14 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketCredentia
 import org.octopusden.octopus.infrastructure.bitbucket.client.createPullRequestWithDefaultReviewers
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommitChanges
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommits
+import org.octopusden.octopus.infrastructure.bitbucket.client.getTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.getTags
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
@@ -35,6 +37,16 @@ class BitbucketTestClientTest : BaseTestClientTest(
 
     override fun getTags(project: String, repository: String): Collection<TestTag> =
         client.getTags(project, repository).map { t -> t.toTestTag() }
+
+    override fun getTag(project: String, repository: String, tag: String) =
+        client.getTag(project, repository, tag).toTestTag()
+
+    override fun deleteTag(project: String, repository: String, tag: String) =
+        client.deleteTag(project, repository, tag)
+
+    override fun createTag(project: String, repository: String, commitId: String, tag: String) {
+        client.createTag(project, repository, BitbucketCreateTag(tag, commitId, "test"))
+    }
 
     override fun getCommits(project: String, repository: String, branch: String) =
         client.getCommits(project, repository, branch).map { c -> c.toTestCommit() }
