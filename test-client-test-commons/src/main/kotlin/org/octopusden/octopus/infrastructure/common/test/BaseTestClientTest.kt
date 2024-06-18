@@ -14,6 +14,9 @@ abstract class BaseTestClientTest(
     protected val testClient: TestClient, protected val vcsFormatter: String
 ) {
     abstract fun getTags(project: String, repository: String): Collection<TestTag>
+    abstract fun getTag(project: String, repository: String, tag: String): TestTag
+    abstract fun deleteTag(project: String, repository: String, tag: String)
+    abstract fun createTag(project: String, repository: String, commitId: String, tag: String)
     abstract fun getCommits(project: String, repository: String, branch: String): Collection<TestCommit>
     abstract fun createPullRequestWithDefaultReviewers(
         project: String,
@@ -119,20 +122,23 @@ abstract class BaseTestClientTest(
 
     @Test
     fun testTag() {
-        val expectedId = testClient.commit(NewChangeSet("tag commit", vcsUrl, BaseTestClient.DEFAULT_BRANCH)).id
-        testClient.tag(vcsUrl, expectedId, TAG)
-        Assertions.assertEquals(TAG, getTags(PROJECT, REPOSITORY).first().displayId)
-        Assertions.assertEquals(expectedId, getTags(PROJECT, REPOSITORY).first().commitId)
+        val tag1 = TestTag("test-0.1", testClient.commit(NewChangeSet("tag commit 1", vcsUrl, BaseTestClient.DEFAULT_BRANCH)).id)
+        val tag2 = TestTag("test-0.2", testClient.commit(NewChangeSet("tag commit 2", vcsUrl, BaseTestClient.DEFAULT_BRANCH)).id)
+        testClient.tag(vcsUrl, tag1.commitId, tag1.displayId)
+        createTag(PROJECT, REPOSITORY, tag2.commitId, tag2.displayId)
+        Assertions.assertIterableEquals(listOf(tag1, tag2), getTags(PROJECT, REPOSITORY).sortedBy { it.displayId })
+        deleteTag(PROJECT, REPOSITORY, tag1.displayId)
+        Assertions.assertEquals(1, getTags(PROJECT, REPOSITORY).size)
+        Assertions.assertEquals(tag2, getTag(PROJECT, REPOSITORY, tag2.displayId))
     }
 
     @Test
     fun testTagException() {
         assertThrows<IllegalArgumentException> {
-            testClient.tag(vcsUrl, "", TAG)
+            testClient.tag(vcsUrl, "", "tag")
         }
-        testClient.commit(NewChangeSet("message", vcsUrl, DEVELOP_BRANCH)).id
         assertThrows<IllegalArgumentException> {
-            testClient.tag(vcsUrl, "left", TAG)
+            testClient.tag(vcsUrl, "left", "tag")
         }
     }
 
@@ -170,7 +176,7 @@ abstract class BaseTestClientTest(
         testClient.commit(NewChangeSet("${BaseTestClient.DEFAULT_BRANCH} commit", vcsUrl, BaseTestClient.DEFAULT_BRANCH))
         testClient.commit(NewChangeSet("$FEATURE_BRANCH commit", vcsUrl, FEATURE_BRANCH))
         val tagCommitId = testClient.commit(NewChangeSet("tag commit", vcsUrl, BaseTestClient.DEFAULT_BRANCH)).id
-        testClient.tag(vcsUrl, tagCommitId, TAG)
+        testClient.tag(vcsUrl, tagCommitId, "tag")
         val zip = File.createTempFile("TestClientTest", "zip").also { it.deleteOnExit() }
         testClient.exportRepository(vcsUrl, zip)
         testClient.clearData()
@@ -200,7 +206,7 @@ abstract class BaseTestClientTest(
                 BaseTestClient.INITIAL_COMMIT_MESSAGE
             )
         )
-        Assertions.assertEquals(TAG, getTags(PROJECT, REPOSITORY).first().displayId)
+        Assertions.assertEquals("tag", getTags(PROJECT, REPOSITORY).first().displayId)
         Assertions.assertEquals(tagCommitId, getTags(PROJECT, REPOSITORY).first().commitId)
     }
 
@@ -242,7 +248,6 @@ abstract class BaseTestClientTest(
     data class TestPullRequest(val index: Long, val title: String, val description: String, val sourceBranch: String, val targetBranch: String)
 
     companion object {
-        private const val TAG = "test_tag"
         const val PROJECT = "test_project"
         const val REPOSITORY = "test-repository"
         private const val FEATURE_BRANCH = "feature"

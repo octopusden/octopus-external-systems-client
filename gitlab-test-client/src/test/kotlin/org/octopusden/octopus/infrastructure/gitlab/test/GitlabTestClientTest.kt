@@ -21,6 +21,16 @@ class GitlabTestClientTest : BaseTestClientTest(
         return client.tagsApi.getTags(prj.id).map { t -> t.toTestTag() }
     }
 
+    override fun getTag(project: String, repository: String, tag: String) =
+        client.tagsApi.getTag(client.projectApi.getProject(project, repository).id, tag).toTestTag()
+
+    override fun deleteTag(project: String, repository: String, tag: String) =
+        client.tagsApi.deleteTag(client.projectApi.getProject(project, repository).id, tag)
+
+    override fun createTag(project: String, repository: String, commitId: String, tag: String) {
+        client.tagsApi.createTag(client.projectApi.getProject(project, repository).id, tag, commitId)
+    }
+
     override fun getCommits(project: String, repository: String, branch: String): List<TestCommit> {
         val prj = client.projectApi.getProject(project, repository)
         return client.commitsApi.getCommits(prj.id, branch, null, null).map { c -> c.toTestCommit() }

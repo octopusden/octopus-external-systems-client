@@ -15,6 +15,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.createPullRequestWithD
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
@@ -39,6 +40,16 @@ class GiteaTestClientTest :
 
     override fun getTags(project: String, repository: String) =
         client.getTags(project, repository).map { t -> t.toTestTag() }
+
+    override fun getTag(project: String, repository: String, tag: String) =
+        client.getTag(project, repository, tag).toTestTag()
+
+    override fun deleteTag(project: String, repository: String, tag: String) =
+        client.deleteTag(project, repository, tag)
+
+    override fun createTag(project: String, repository: String, commitId: String, tag: String) {
+        client.createTag(project, repository, GiteaCreateTag(tag, commitId, "test"))
+    }
 
     override fun getCommits(project: String, repository: String, branch: String) =
         client.getCommits(project, repository, branch).map { c -> c.toTestCommit() }

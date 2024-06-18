@@ -5,7 +5,7 @@ class BitbucketCreatePullRequest(
     val description: String,
     val fromRef: BitbucketCreatePrRef,
     val toRef: BitbucketCreatePrRef,
-    val reviewers: Set<BitbucketCreatePullRequestReviewer>,
+    val reviewers: List<BitbucketCreatePullRequestReviewer>,
 ) {
     val state: BitbucketPullRequestState = BitbucketPullRequestState.OPEN
     val open: Boolean = true

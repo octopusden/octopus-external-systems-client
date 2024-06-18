@@ -11,6 +11,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreatePullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
@@ -18,7 +19,6 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequestReview
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
-import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaUser
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -87,6 +87,30 @@ interface GiteaClient {
         @QueryMap requestParams: Map<String, Any>,
     ): GiteaEntityList<GiteaTag>
 
+    @RequestLine("POST $REPO_PATH/{organization}/{repository}/tags")
+    @Headers("Content-Type: application/json")
+    fun createTag(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        dto: GiteaCreateTag
+    ): GiteaTag
+
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}/tags/{tag}", decodeSlash = false)
+    @Throws(NotFoundException::class)
+    fun getTag(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        @Param("tag") tag: String
+    ): GiteaTag
+
+    @RequestLine("DELETE $REPO_PATH/{organization}/{repository}/tags/{tag}", decodeSlash = false)
+    @Throws(NotFoundException::class)
+    fun deleteTag(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        @Param("tag") tag: String
+    )
+
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/branches")
     fun getBranches(
         @Param("organization") organization: String,
@@ -94,11 +118,13 @@ interface GiteaClient {
         @QueryMap requestParams: Map<String, Any>,
     ): GiteaEntityList<GiteaBranch>?
 
-    @RequestLine("GET $REPO_PATH/{organization}/{repository}/reviewers")
-    fun getDefaultReviewers(
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}/branches/{branch}")
+    @Throws(NotFoundException::class)
+    fun getBranch(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-    ): Collection<GiteaUser>
+        @Param("branch") branch: String
+    ): GiteaBranch
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/pulls")
     fun getPullRequests(
@@ -263,32 +289,15 @@ fun GiteaClient.createPullRequestWithDefaultReviewers(
     sourceBranch: String,
     targetBranch: String,
     title: String,
-    description: String
+    description: String,
+    assignee: String? = null
 ): GiteaPullRequest {
-    val branches = getBranches(organization, repository)
-        .map { branch -> branch.name }
-
-    fun checkBranch(type: String, branchName: String) {
-        if (!branches.contains(branchName)) {
-            throw NotFoundException("$type branch '$branchName' not found in '$organization:$repository'")
-        }
-    }
-
-    checkBranch("Source", sourceBranch)
-    checkBranch("Target", targetBranch)
-
-    val defaultReviewers = getDefaultReviewers(organization, repository)
-        .map { u -> u.username }
-        .toMutableSet()
-
-    val assignee = defaultReviewers.firstOrNull()
-    assignee?.let { defaultReviewers.remove(assignee) }
-
-
+    val head = getBranch(organization, repository, sourceBranch).name
+    val base = getBranch(organization, repository, targetBranch).name
     return createPullRequest(
         organization,
         repository,
-        GiteaCreatePullRequest(title, description, sourceBranch, targetBranch, defaultReviewers, assignee)
+        GiteaCreatePullRequest(title, description, head, base, assignee)
     )
 }
 
