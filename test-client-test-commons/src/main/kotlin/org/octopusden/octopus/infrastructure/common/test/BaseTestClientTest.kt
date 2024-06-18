@@ -127,9 +127,10 @@ abstract class BaseTestClientTest(
         testClient.tag(vcsUrl, tag1.commitId, tag1.displayId)
         createTag(PROJECT, REPOSITORY, tag2.commitId, tag2.displayId)
         Assertions.assertIterableEquals(listOf(tag1, tag2), getTags(PROJECT, REPOSITORY).sortedBy { it.displayId })
-        deleteTag(PROJECT, REPOSITORY, tag1.displayId)
-        Assertions.assertEquals(1, getTags(PROJECT, REPOSITORY).size)
+        Assertions.assertEquals(tag1, getTag(PROJECT, REPOSITORY, tag1.displayId))
         Assertions.assertEquals(tag2, getTag(PROJECT, REPOSITORY, tag2.displayId))
+        deleteTag(PROJECT, REPOSITORY, tag1.displayId)
+        Assertions.assertIterableEquals(listOf(tag2), getTags(PROJECT, REPOSITORY))
     }
 
     @Test

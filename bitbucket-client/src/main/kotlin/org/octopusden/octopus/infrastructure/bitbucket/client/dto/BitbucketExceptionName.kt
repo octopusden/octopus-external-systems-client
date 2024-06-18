@@ -12,6 +12,10 @@ enum class BitbucketExceptionName(
         "com.atlassian.bitbucket.repository.NoSuchRepositoryException",
         { message -> NotFoundException(message) }
     ),
+    NO_SUCH_TAG(
+        "com.atlassian.bitbucket.repository.NoSuchTagException",
+        { message -> NotFoundException(message) }
+    ),
     NO_SUCH_COMMIT(
         "com.atlassian.bitbucket.repository.NoSuchCommitException",
         { message -> NotFoundException(message) }
