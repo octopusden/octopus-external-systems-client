@@ -28,6 +28,10 @@ enum class BitbucketExceptionName(
         "com.atlassian.bitbucket.project.NoSuchProjectException",
         { message -> NotFoundException(message) }
     ),
+    NO_SUCH_OBJECT(
+        "com.atlassian.bitbucket.NoSuchObjectException",
+        { message -> NotFoundException(message) }
+    ),
     OTHER("", { message -> IllegalStateException(message) });
 
     companion object {
