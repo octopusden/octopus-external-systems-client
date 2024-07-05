@@ -1,0 +1,29 @@
+<root>
+  <page path="/admin/createObjectMenu.html">
+    <usage userId="1" timestamp="1718105788889" />
+  </page>
+  <page path="/admin/createProject.html">
+    <usage userId="1" timestamp="1718105791709" />
+  </page>
+  <page path="/admin/editProject.html">
+    <usage userId="1" timestamp="1718105837484" />
+  </page>
+  <page path="/project.html?tab=projectOverview">
+    <usage userId="1" timestamp="1718105844781" />
+  </page>
+  <page path="/admin/projectHealthStatusItems.html">
+    <usage userId="1" timestamp="1718105842779" />
+  </page>
+  <page path="/projectHealthStatusItems.html">
+    <usage userId="1" timestamp="1718105847272" />
+  </page>
+  <page path="/admin/createObjectFromUrl.html">
+    <usage userId="1" timestamp="1718105790429" />
+  </page>
+  <page path="/overview.html">
+    <usage userId="1" timestamp="1718105774635" />
+  </page>
+  <page path="/">
+    <usage userId="1" timestamp="1718106068382" />
+  </page>
+</root>
