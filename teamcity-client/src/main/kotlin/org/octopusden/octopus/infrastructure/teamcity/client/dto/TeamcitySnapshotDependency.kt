@@ -7,5 +7,5 @@ data class TeamcitySnapshotDependency(
     val type: String,
     val properties: TeamcityProperties,
     @JsonProperty("source-buildType")
-    val sourceBuildType: TeamcityBuildType,
+    val sourceBuildType: TeamcityLinkBuildType,
 )

@@ -16,6 +16,7 @@ repositories {
 dependencies {
     api(project(":client-commons"))
     implementation("io.github.openfeign:feign-jaxb")
+    implementation("org.slf4j:slf4j-simple:2.0.7")
     testImplementation("junit:junit:4.13.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 }

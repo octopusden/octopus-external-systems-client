@@ -1,11 +1,16 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.annotation.JsonNaming
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonInclude
 
-//@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
 data class TeamcityVcsRoot(
-    val vcsName: String,
-    val project: TeamcityProject,
-    val properties: TeamcityProperties,
+    val id: String,
+    val name: String,
+    val vcsName: String? = null,
+    val href: String,
+    val project: TeamcityProject? = null,
+    val projectLocator: String? = null,
+    val properties: TeamcityProperties? = null,
 )
