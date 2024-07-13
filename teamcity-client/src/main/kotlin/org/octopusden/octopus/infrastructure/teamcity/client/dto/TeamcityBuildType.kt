@@ -14,17 +14,17 @@ data class TeamcityBuildType(
     val name: String,
     val projectId: String,
     val projectName: String,
-//    val template: TeamcityBuildType,
+//    val template: TeamcityBuildType? = null,
     val href: String,
     @JsonProperty("vcs-root-entries")
     val vcsRoots: TeamcityVcsRootEntries? = null,
     val parameters: TeamcityProperties? = null,
 
-    val webUrl: String,
+    val webUrl: String? = null,
 //    val paused: Boolean,
 
 //    val internalId: String,
-//    val templateFlag: Boolean,
+    val templateFlag: Boolean? = null,
 //    val type: Type,
 //    val uuid: String,
 //    val description: String,

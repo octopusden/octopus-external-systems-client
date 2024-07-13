@@ -14,6 +14,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeatures
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
@@ -31,8 +32,8 @@ private const val REST: String = "/app/rest/$API_VERSION"
 interface TeamcityClient {
 
     @RequestLine("POST $REST/projects")
-    @Headers("Content-Type: application/json")
-    fun createProject(dto: TeamcityCreateProject)
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun createProject(dto: TeamcityCreateProject): TeamcityProject
 
     @RequestLine("DELETE $REST/projects/{project}")
     fun deleteProject(@Param("project") project: String)
@@ -42,8 +43,13 @@ interface TeamcityClient {
     fun getProject(@Param("project") project: String): TeamcityProject
 
     @RequestLine("POST $REST/buildTypes")
-    @Headers("Content-Type: application/json")
-    fun createBuildType(dto: TeamcityCreateBuildType)
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun createBuildType(dto: TeamcityCreateBuildType): TeamcityBuildType
+
+    @RequestLine("POST $REST/projects/{project}/buildTypes")
+    @Headers("Content-Type: text/plain", "Accept: application/json")
+    @Body("{name}")
+    fun createBuildType(@Param("project") project: String, @Param("name") buildTypeName: String): TeamcityBuildType
 
     @RequestLine("DELETE $REST/buildTypes/{buildType}")
     fun deleteBuildType(@Param("buildType") buildType: String)
@@ -55,6 +61,10 @@ interface TeamcityClient {
     @RequestLine("GET $REST/buildTypes")
     @Headers("Accept: application/json")
     fun getBuildTypes(): TeamcityBuildTypes
+
+    @RequestLine("GET $REST/projects/{project}/buildTypes")
+    @Headers("Accept: application/json")
+    fun getBuildTypes(@Param("project") project: String): TeamcityBuildTypes
 
     @RequestLine("POST $REST/buildTypes/{buildType}/features")
     @Headers("Content-Type: application/json")
@@ -80,7 +90,6 @@ interface TeamcityClient {
 
     @RequestLine("GET $REST/buildTypes/{buildType}/features/{feature}/parameters/{parameter}")
     @Headers("Accept: text/plain")
-//    @JsonRawValue
     fun getBuildTypeFeatureParameter(
         @Param("buildType") buildType: String,
         @Param("feature") feature: String,
@@ -90,7 +99,7 @@ interface TeamcityClient {
     @RequestLine("PUT $REST/buildTypes/{buildType}/settings/buildNumberCounter")
     @Headers("Content-Type: text/plain")
     @Body("{newValue}")
-    fun updateBuildCounter(@Param("buildType") buildType: String, @Param("newValue") newValue: String)
+    fun setBuildCounter(@Param("buildType") buildType: String, @Param("newValue") newValue: String)
 
     @RequestLine("POST $REST/buildTypes/{buildType}/snapshot-dependencies")
     @Headers("Content-Type: application/json")
@@ -124,12 +133,6 @@ interface TeamcityClient {
     @Headers("Accept: application/json")
     fun getBuildSteps(@Param("buildType") buildType: String): TeamcitySteps
 
-//        POST   "$baseUrl/httpAuth/app/rest/$apiVersion/buildTypes/id:${buildTypeId}       /vcs-root-entries"
-//        DELETE "$baseUrl/httpAuth/app/rest/$apiVersion/buildTypes/id:${buildType.id}      /vcs-root-entries/id:${vcsRootEntry.id}"
-//        DELETE "$baseUrl/httpAuth/app/rest/$apiVersion/buildTypes/id:$buildConfigurationId/vcs-root-entries/id:$vcsRootId"
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/buildTypes/id:$buildConfigurationId/vcs-root-entries"
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/buildTypes/id:$buildConfigurationId/vcs-root-entries/${vcsRootIds[0]}"
-//        PUT    "$baseUrl/httpAuth/app/rest/$apiVersion/buildTypes/id:$buildConfigurationId/vcs-root-entries/$vcsRootEntryId/checkout-rules"
     @RequestLine("POST $REST/buildTypes/{buildType}/vcs-root-entries")
     @Headers("Content-Type: application/json")
     fun createBuildTypeVcsRootEntry(
@@ -165,17 +168,12 @@ interface TeamcityClient {
     )
 
     @RequestLine("POST $REST/vcs-roots")
-    @Headers("Accept: application/json","Content-Type: application/json")
+    @Headers("Accept: application/json", "Content-Type: application/json")
     fun createVcsRoot(vcsRoot: TeamcityCreateVcsRoot): TeamcityVcsRoot
 
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/vcs-roots/id:${it.id}"
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/vcs-roots/id:${root.id}"
-//        PUT    "$baseUrl/httpAuth/app/rest/$apiVersion/vcs-roots/id:${rootId}/properties/$propertyName"
     @RequestLine("GET $REST/vcs-roots/{vcsRootId}")
     @Headers("Accept: application/json")
-    fun getVcsRoot(
-        @Param("vcsRootId") vcsRootId: String
-    ): TeamcityVcsRoot
+    fun getVcsRoot(@Param("vcsRootId") vcsRootId: String): TeamcityVcsRoot
 
     @RequestLine("PUT $REST/vcs-roots/{vcsRootId}/properties/{propertyName}")
     @Headers("Content-Type: text/plain")
@@ -193,29 +191,75 @@ interface TeamcityClient {
         @Param("propertyName") propertyName: String,
     ): String
 
+    @RequestLine("GET $REST/buildTypes/{buildType}/template")
+    @Headers("Accept: text/plain")
+    fun getBuildTypeTemplate(@Param("buildType") buildType: String): String
+
+    @RequestLine("PUT $REST/buildTypes/{buildType}/template")
+    @Headers("Content-Type: text/plain")
+    @Body("{template}")
+    fun attachTemplateToBuildType(@Param("buildType") buildType: String, @Param("template") template: String)
+
+    @RequestLine("DELETE $REST/buildTypes/{buildType}/templates")
+    fun detachTemplatesFromBuildType(@Param("buildType") buildType: String)
+
+    @RequestLine("POST $REST/{type}/{id}/parameters")
+    @Headers("Content-Type: application/json")
+    fun createParameter(
+        @Param("type") configurationType: ConfigurationType,
+        @Param("id") id: String,
+        parameter: TeamcityProperty
+    )
+
+    @RequestLine("POST $REST/{type}/{id}/parameters")
+    @Headers("Content-Type: application/xml")
+    @Body("<property name=\"{parameterName}\" value=\"{value}\"/>")
+    fun createParameter(
+        @Param("type") configurationType: ConfigurationType,
+        @Param("id") id: String,
+        @Param("parameterName") parameterName: String,
+        @Param("value") value: String = ""
+    )
+
+    @RequestLine("PUT $REST/{type}/{id}/parameters/{parameterName}")
+    @Headers("Content-Type: text/plain")
+    @Body("{value}")
+    fun setParameter(
+        @Param("type") configurationType: ConfigurationType,
+        @Param("id") id: String,
+        @Param("parameterName") parameterName: String,
+        @Param("value") value: String
+    )
+
+    @RequestLine("GET $REST/{type}/{id}/parameters/{parameterName}")
+    @Headers("Accept: text/plain")
+    @Body("{value}")
+    fun getParameter(
+        @Param("type") configurationType: ConfigurationType,
+        @Param("id") id: String,
+        @Param("parameterName") parameterName: String
+    ): String
+
+    @RequestLine("DELETE $REST/{type}/{id}/parameters/{parameterName}")
+    fun deleteParameter(
+        @Param("type") configurationType: ConfigurationType,
+        @Param("id") id: String,
+        @Param("parameterName") parameterName: String
+    )
+
 // TODO:
-//        DELETE "$baseUrl/httpAuth/app/rest/$apiVersion/$type/id:${id}/parameters/${parameterName}"
-//        PUT    "$baseUrl/httpAuth/app/rest/$apiVersion/$type/id:${id}/parameters/${parameterName}"
-//        ...
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/buildTypes/id:$buildConfigurationId/template"
-//        PUT    "$baseUrl/httpAuth/app/rest/$apiVersion/buildTypes/id:$configurationId/template"
-//        DELETE "$baseUrl/httpAuth/app/rest/$apiVersion/buildTypes/id:$configurationId/templates"
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/projects/${projectId}/parameters/${parameterName}/value"
-//        PUT    "$baseUrl/httpAuth/app/rest/$apiVersion/projects/id:${projectId}/name"  body: "$name"
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/projects/id:$projectId/buildTypes"
-//        POST   "$baseUrl/httpAuth/app/rest/$apiVersion/projects/id:$projectId/buildTypes"
+//        for releng buildSrc/src/main/java/com/openwaygroup/components/automation/releng/impl/TeamCityServiceImpl.java
 //        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/projects?locator=parameter:(name:${pName},value:${pValue}),count:2000"
+//        ...
 //        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/vcs-root-instances?locator=property:(name:$fieldName,value:$it,matchType:equals,ignoreCase:true),count:99999,buildType:(id:$buildConfigurationId)"
 //        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/vcs-roots?locator=property:(name:url,value:$url,matchType:equals,ignoreCase:true),count:99999"
 //        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/vcs-roots?locator=property:(name:url,value:$url,matchType:equals,ignoreCase:true),property:(name:branch,value:$branch,matchType:equals,ignoreCase:true),count:99999"
 }
 
-open class Locator(private val locator: String) {
-    constructor(locators: Map<String, String>) : this(
-        locators.entries.joinToString(",", prefix = "?locator=", transform = { "${it.key}:${it.value}" })
-    )
 
-    override fun toString(): String {
-        return locator
-    }
+enum class ConfigurationType(private val value: String) {
+    PROJECT("projects"),
+    BUILD_TYPE("buildTypes");
+
+    override fun toString() = value
 }

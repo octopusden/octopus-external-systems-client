@@ -4,7 +4,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
-import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
@@ -14,7 +13,6 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkBui
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkVcsRoot
-import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperties
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
@@ -36,29 +34,23 @@ class TeamcityClassicClientTest {
         )
     }
 
-    private fun createProject(projectName: String, parentId: String = "RDDepartment"): TeamcityProject {
-        val id = projectName + "Id"
+    private fun createProject(projectName: String, parentId: String = "RDDepartment") =
         client.createProject(
             TeamcityCreateProject(
                 name = projectName,
-                id = id,
+                id = projectName + "Id",
                 parentProject = TeamcityLinkProject(id = parentId)
             )
         )
-        return client.getProject(id)
-    }
 
-    private fun createBuildType(buildName: String, projectId: String): TeamcityBuildType {
-        val id = "${buildName}Id"
+    private fun createBuildType(buildName: String, projectId: String) =
         client.createBuildType(
             TeamcityCreateBuildType(
-                id = id,
+                id = "${buildName}Id",
                 name = buildName,
                 project = TeamcityLinkProject(id = projectId)
             )
         )
-        return client.getBuildType(id)
-    }
 
     @Test
     fun testProject() {
@@ -80,7 +72,7 @@ class TeamcityClassicClientTest {
     fun createBuildType() {
         val project = createProject("TestCreateBuildType")
         val buildType = createBuildType("TestCreateBuildType", project.id)
-        client.updateBuildCounter(buildType.id, "21")
+        client.setBuildCounter(buildType.id, "21")
         assertEquals(buildType.name, "TestCreateBuildType")
         client.deleteProject(project.id)
     }
@@ -184,12 +176,12 @@ class TeamcityClassicClientTest {
                 projectLocator = project.id,
                 properties = TeamcityProperties(
                     listOf(
-                        TeamcityProperty("url",url),
-                        TeamcityProperty("branch","master"),
-                        TeamcityProperty("authMethod","PRIVATE_KEY_DEFAULT"),
-                        TeamcityProperty("userForTags","tcagent"),
-                        TeamcityProperty("username","git"),
-                        TeamcityProperty("ignoreKnownHosts","true"),
+                        TeamcityProperty("url", url),
+                        TeamcityProperty("branch", "master"),
+                        TeamcityProperty("authMethod", "PRIVATE_KEY_DEFAULT"),
+                        TeamcityProperty("userForTags", "tcagent"),
+                        TeamcityProperty("username", "git"),
+                        TeamcityProperty("ignoreKnownHosts", "true"),
                     )
                 )
             )
@@ -205,22 +197,73 @@ class TeamcityClassicClientTest {
         val btVcsRoot = client.getBuildTypeVcsRootEntry(buildType.id, vcsRoot.id)
         val tcVcsRoot = client.getVcsRoot(vcsRoot.id)
 
-        assertEquals(url, client.getVcsRootProperty(tcVcsRoot.id,"url"))
+        assertEquals(url, client.getVcsRootProperty(tcVcsRoot.id, "url"))
         val newUrl = "ssh://git@github.com:octopusden/octopus-teamcity-automation.git"
-        client.updateVcsRootProperty(tcVcsRoot.id,"url", newUrl)
-        assertEquals(newUrl, client.getVcsRootProperty(tcVcsRoot.id,"url"))
+        client.updateVcsRootProperty(tcVcsRoot.id, "url", newUrl)
+        assertEquals(newUrl, client.getVcsRootProperty(tcVcsRoot.id, "url"))
         client.deleteProject(project.id)
         assertEquals("${project.name}_VCS_ROOT", tcVcsRoot.name)
         assertEquals(btVcsRootEntry.vcsRoot.href, btVcsRoot.vcsRoot.href)
-//        println("#######################################\n"+tcVcsRootEntry)
     }
 
     @Test
-    fun test() {
-        val project = createProject("test")
-        val buildType = createBuildType("test", project.id)
-        // TODO: test
+    fun testTemplates() {
+        val project = createProject("TestTemplates")
+        val buildType = createBuildType("TestTemplates", project.id)
+        val template = client.createBuildType(
+            TeamcityCreateBuildType(
+                id = "TemplateId",
+                name = "Template",
+                project = TeamcityLinkProject(id = project.id),
+                templateFlag = true
+            )
+        )
+        client.attachTemplateToBuildType(buildType.id, template.id)
+        var modifiedBuildType = client.getBuildType(buildType.id)
+        assertEquals(1, modifiedBuildType.templates!!.buildTypes.size)
+        assertEquals("Template", modifiedBuildType.templates!!.buildTypes.first().name)
+        client.detachTemplatesFromBuildType(buildType.id)
+        modifiedBuildType = client.getBuildType(buildType.id)
+        assertEquals(0, modifiedBuildType.templates!!.buildTypes.size)
         client.deleteProject(project.id)
     }
+
+    @Test
+    fun testProjectBuildTypes() {
+        val project = createProject("TestProjectBuildTypes")
+        val buildType = client.createBuildType(project.id, "ProjectBuildType")
+        assertEquals(buildType.name, client.getBuildTypes(project.id).buildTypes.first().name)
+        client.deleteProject(project.id)
+    }
+
+    @Test
+    fun testParameters() {
+        val project = createProject("TestParameters")
+        val buildType = createBuildType("TestParameters", project.id)
+        listOf(
+            Pair(ConfigurationType.PROJECT, project.id),
+            Pair(ConfigurationType.BUILD_TYPE, buildType.id)
+        ).forEach { (type, id) ->
+            client.createParameter(type, id, "empty_parameter")
+            client.setParameter(type, id, "empty_parameter", "123")
+            assertEquals("123", client.getParameter(type, id, "empty_parameter"))
+            client.createParameter(type, id, "not_empty_parameter", "sun")
+            assertEquals("sun", client.getParameter(type, id, "not_empty_parameter"))
+            client.createParameter(type, id, TeamcityProperty("parameter", "someone"))
+            assertEquals("someone", client.getParameter(type, id, "parameter"))
+            client.setParameter(type, id, "parameter", "other")
+            assertEquals("other", client.getParameter(type, id, "parameter"))
+            client.deleteParameter(type, id, "parameter")
+        }
+        client.deleteProject(project.id)
+    }
+
+//    @Test
+//    fun test() {
+//        val project = createProject("test")
+//        val buildType = createBuildType("test", project.id)
+//        // TODO: test
+//        client.deleteProject(project.id)
+//    }
 
 }

@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class TeamcitySteps(
     @JsonProperty("step")
-    val steps: List<TeamcityStep>  = ArrayList<TeamcityStep>()
+    val steps: List<TeamcityStep> = ArrayList<TeamcityStep>()
 )

@@ -16,6 +16,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateP
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
@@ -69,13 +70,20 @@ class TeamcityClassicClient(
     override fun createBuildType(dto: TeamcityCreateBuildType) =
         client.createBuildType(dto)
 
+    override fun createBuildType(project: String, buildTypeName: String) =
+        client.createBuildType(project, buildTypeName)
+
     override fun getBuildType(buildType: String) =
         client.getBuildType(buildType)
 
     override fun deleteBuildType(buildType: String) =
         client.deleteBuildType(buildType)
 
-    override fun getBuildTypes() = client.getBuildTypes()
+    override fun getBuildTypes() =
+        client.getBuildTypes()
+
+    override fun getBuildTypes(project: String) =
+        client.getBuildTypes(project)
 
     override fun addBuildTypeFeature(buildType: String, feature: TeamcityLinkFeature) =
         client.addBuildTypeFeature(buildType, feature)
@@ -99,8 +107,8 @@ class TeamcityClassicClient(
         parameter: String
     ) = client.getBuildTypeFeatureParameter(buildType, feature, parameter)
 
-    override fun updateBuildCounter(buildType: String, newValue: String) =
-        client.updateBuildCounter(buildType, newValue)
+    override fun setBuildCounter(buildType: String, newValue: String) =
+        client.setBuildCounter(buildType, newValue)
 
     override fun createSnapshotDependency(buildType: String, dependency: TeamcitySnapshotDependency) =
         client.createSnapshotDependency(buildType, dependency)
@@ -147,4 +155,36 @@ class TeamcityClassicClient(
 
     override fun getVcsRootProperty(vcsRootId: String, propertyName: String) =
         client.getVcsRootProperty(vcsRootId, propertyName)
+
+    override fun getBuildTypeTemplate(buildType: String) =
+        client.getBuildTypeTemplate(buildType)
+
+    override fun attachTemplateToBuildType(buildType: String, template: String) =
+        client.attachTemplateToBuildType(buildType, template)
+
+    override fun detachTemplatesFromBuildType(buildType: String) =
+        client.detachTemplatesFromBuildType(buildType)
+
+    override fun createParameter(type: ConfigurationType, id: String, parameter: TeamcityProperty) =
+        client.createParameter(type, id, parameter)
+
+    override fun createParameter(
+        type: ConfigurationType,
+        id: String,
+        parameterName: String,
+        value: String
+    ) = client.createParameter(type, id, parameterName, value)
+
+    override fun setParameter(
+        type: ConfigurationType,
+        id: String,
+        parameterName: String,
+        value: String
+    ) = client.setParameter(type, id, parameterName, value)
+
+    override fun getParameter(type: ConfigurationType, id: String, parameterName: String) =
+        client.getParameter(type, id, parameterName)
+
+    override fun deleteParameter(type: ConfigurationType, id: String, parameterName: String) =
+        client.deleteParameter(type, id, parameterName)
 }

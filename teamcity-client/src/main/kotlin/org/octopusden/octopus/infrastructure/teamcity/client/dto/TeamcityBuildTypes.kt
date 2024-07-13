@@ -1,6 +1,9 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 
 data class TeamcityBuildTypes(
-    var buildType: List<TeamcityBuildType> = ArrayList<TeamcityBuildType>()
+    @JsonProperty("buildType")
+    var buildTypes: List<TeamcityBuildType> = ArrayList<TeamcityBuildType>()
 )

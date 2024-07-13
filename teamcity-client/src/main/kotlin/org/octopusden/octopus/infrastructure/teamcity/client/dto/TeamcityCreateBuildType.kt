@@ -24,7 +24,7 @@ data class TeamcityCreateBuildType(
 //    val paused: Boolean,
 
 //    val internalId: String,
-//    val templateFlag: Boolean,
+    val templateFlag: Boolean? = null,
 //    val type: Type,
 //    val uuid: String,
 //    val description: String,
