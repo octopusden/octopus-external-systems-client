@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class TeamcitySnapshotDependencies(
     @JsonProperty("snapshot-dependency")
-    val snapshotDependency: List<TeamcitySnapshotDependency> = ArrayList<TeamcitySnapshotDependency>()
+    val snapshotDependencies: List<TeamcitySnapshotDependency> = ArrayList<TeamcitySnapshotDependency>()
 )

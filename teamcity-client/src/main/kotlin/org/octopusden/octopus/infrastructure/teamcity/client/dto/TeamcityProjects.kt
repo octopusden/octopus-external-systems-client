@@ -1,5 +1,8 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class TeamcityProjects(
-    var project: List<TeamcityProject> = ArrayList<TeamcityProject>()
+    @JsonProperty("project")
+    var projects: List<TeamcityProject> = ArrayList<TeamcityProject>()
 )

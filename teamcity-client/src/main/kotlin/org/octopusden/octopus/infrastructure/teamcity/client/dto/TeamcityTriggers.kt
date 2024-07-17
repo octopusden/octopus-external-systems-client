@@ -1,5 +1,8 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class TeamcityTriggers(
-    val trigger: List<TeamcityTrigger> = ArrayList<TeamcityTrigger>()
+    @JsonProperty("trigger")
+    val triggers: List<TeamcityTrigger> = ArrayList<TeamcityTrigger>()
 )

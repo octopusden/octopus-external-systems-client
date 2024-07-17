@@ -16,6 +16,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateP
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
@@ -23,6 +24,11 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootEntries
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootEntry
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootInstances
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoots
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 
 class TeamcityClassicClient(
     apiParametersProvider: ClientParametersProvider,
@@ -66,6 +72,9 @@ class TeamcityClassicClient(
 
     override fun getProject(project: String) =
         client.getProject(project)
+
+    override fun getProjectsByLocator(locator: ProjectLocator): TeamcityProjects =
+        client.getProjectsByLocator(locator)
 
     override fun createBuildType(dto: TeamcityCreateBuildType) =
         client.createBuildType(dto)
@@ -187,4 +196,10 @@ class TeamcityClassicClient(
 
     override fun deleteParameter(type: ConfigurationType, id: String, parameterName: String) =
         client.deleteParameter(type, id, parameterName)
+
+    override fun getVcsRootInstancesByLocator(locator: VcsRootInstanceLocator) =
+        client.getVcsRootInstancesByLocator(locator)
+
+    override fun getVcsRootsByLocator(locator: VcsRootLocator): TeamcityVcsRoots =
+        client.getVcsRootsByLocator(locator)
 }

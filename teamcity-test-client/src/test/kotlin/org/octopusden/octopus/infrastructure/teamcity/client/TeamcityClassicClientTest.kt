@@ -291,13 +291,4 @@ class TeamcityClassicClientTest {
         client.deleteProject(secondProject.id)
         client.deleteProject(project.id)
     }
-
-//    @Test
-//    fun test() {
-//        val project = createProject("test")
-//        val buildType = createBuildType("test", project.id)
-//        // TODO: test
-//        client.deleteProject(project.id)
-//    }
-
 }

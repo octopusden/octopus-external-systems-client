@@ -7,21 +7,18 @@ open class BaseLocator {
 
     open fun propertyToString(property: KProperty1<BaseLocator, *>): String {
         val name = property.name
-        val value = property.get(this).toString()
-        return if (value.contains(':')) {
+        val value = property.get(this)
+        return if (value is BaseLocator) {
             "$name:($value)"
         } else {
             "$name:$value"
         }
     }
 
+    fun locatorListToString(entries: List<Any>, entryName: String) =
+        entries.joinToString(",") { "$entryName:(${it})" }
+
     override fun toString() = this.javaClass.kotlin.memberProperties
         .filter { property -> property.get(this) != null }
-        .joinToString(",") { property ->
-            propertyToString(property)
-        }
-}
-
-data class ProjectLocator(val id: String? = null) : BaseLocator() {
-    override fun toString() = super.toString()
+        .joinToString(",") { property -> propertyToString(property) }
 }

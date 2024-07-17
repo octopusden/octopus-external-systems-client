@@ -14,6 +14,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeatures
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
@@ -22,10 +23,12 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySteps
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootEntries
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootEntry
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootInstances
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoots
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 
-private val _log: Logger = LoggerFactory.getLogger(TeamcityClient::class.java)
 private const val API_VERSION: String = "2018.1"
 private const val REST: String = "/app/rest/$API_VERSION"
 
@@ -41,6 +44,10 @@ interface TeamcityClient {
     @RequestLine("GET $REST/projects/{project}")
     @Headers("Accept: application/json")
     fun getProject(@Param("project") project: String): TeamcityProject
+
+    @RequestLine("GET $REST/projects?locator={locator}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getProjectsByLocator(@Param("locator") locator: ProjectLocator): TeamcityProjects
 
     @RequestLine("POST $REST/buildTypes")
     @Headers("Content-Type: application/json", "Accept: application/json")
@@ -233,7 +240,6 @@ interface TeamcityClient {
 
     @RequestLine("GET $REST/{type}/{id}/parameters/{parameterName}")
     @Headers("Accept: text/plain")
-    @Body("{value}")
     fun getParameter(
         @Param("type") configurationType: ConfigurationType,
         @Param("id") id: String,
@@ -247,13 +253,13 @@ interface TeamcityClient {
         @Param("parameterName") parameterName: String
     )
 
-// TODO:
-//        for releng buildSrc/src/main/java/com/openwaygroup/components/automation/releng/impl/TeamCityServiceImpl.java
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/projects?locator=parameter:(name:${pName},value:${pValue}),count:2000"
-//        ...
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/vcs-root-instances?locator=property:(name:$fieldName,value:$it,matchType:equals,ignoreCase:true),count:99999,buildType:(id:$buildConfigurationId)"
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/vcs-roots?locator=property:(name:url,value:$url,matchType:equals,ignoreCase:true),count:99999"
-//        GET    "$baseUrl/httpAuth/app/rest/$apiVersion/vcs-roots?locator=property:(name:url,value:$url,matchType:equals,ignoreCase:true),property:(name:branch,value:$branch,matchType:equals,ignoreCase:true),count:99999"
+    @RequestLine("GET $REST/vcs-root-instances?locator={locator}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getVcsRootInstancesByLocator(@Param("locator") locator: VcsRootInstanceLocator): TeamcityVcsRootInstances
+
+    @RequestLine("GET $REST/vcs-roots?locator={locator}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getVcsRootsByLocator(@Param("locator") locator: VcsRootLocator): TeamcityVcsRoots
 }
 
 

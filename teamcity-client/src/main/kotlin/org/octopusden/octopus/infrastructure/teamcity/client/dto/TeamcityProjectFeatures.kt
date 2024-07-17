@@ -1,5 +1,8 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class TeamcityProjectFeatures(
-    val projectFeature: List<TeamcityProjectFeature> = ArrayList<TeamcityProjectFeature>()
+    @JsonProperty("projectFeature")
+    val projectFeatures: List<TeamcityProjectFeature> = ArrayList<TeamcityProjectFeature>()
 )
