@@ -3,19 +3,21 @@ package org.octopusden.octopus.infrastructure.teamcity.client.dto.locator
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
-open class BaseLocator {
+open class BaseLocator(private val baseLists:Map<String,String> = emptyMap()) {
 
-    open fun propertyToString(property: KProperty1<BaseLocator, *>): String {
+    private fun propertyToString(property: KProperty1<BaseLocator, *>): String {
         val name = property.name
         val value = property.get(this)
-        return if (value is BaseLocator) {
+        return if (baseLists.keys.contains(name) && value is List<*>) {
+            locatorListToString(value as List<Any>, baseLists.getValue(name))
+        } else if (value is BaseLocator) {
             "$name:($value)"
         } else {
             "$name:$value"
         }
     }
 
-    fun locatorListToString(entries: List<Any>, entryName: String) =
+    private fun locatorListToString(entries: List<Any>, entryName: String) =
         entries.joinToString(",") { "$entryName:(${it})" }
 
     override fun toString() = this.javaClass.kotlin.memberProperties

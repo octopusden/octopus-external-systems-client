@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-//@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class TeamcityProjectFeature(
     val id: String? = null,
     val name: String? = null,

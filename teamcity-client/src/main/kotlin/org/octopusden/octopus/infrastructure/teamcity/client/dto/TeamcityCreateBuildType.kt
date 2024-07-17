@@ -8,29 +8,19 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-//@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class TeamcityCreateBuildType(
     val id: String,
     val name: String? = null,
     val projectId: String? = null,
     val projectName: String? = null,
     val template: TeamcityLinkBuildType? = null,
-//    val href: String,
     @JsonProperty("vcs-root-entries")
     val vcsRoots: TeamcityVcsRootEntries? = null,
     val parameters: TeamcityProperties? = null,
 
-//    val webUrl: String,
-//    val paused: Boolean,
-
-//    val internalId: String,
     val templateFlag: Boolean? = null,
 //    val type: Type,
-//    val uuid: String,
 //    val description: String,
-//    val projectInternalId: String,
-//    val inherited: Boolean,
-//    val links: Links,
     val project: TeamcityLinkProject? = null,
     val templates: TeamcityBuildTypes? = null,
     val settings: TeamcityProperties? = null,
@@ -44,14 +34,7 @@ data class TeamcityCreateBuildType(
 //    @JsonProperty("agent-requirements")
 //    val agentRequirements: TeamcityAgentRequirements,
 //    val branches: Branches,
-//    val builds: Builds,
-//    val investigations: Investigations,
-//    val compatibleAgents: Agents,
-//    val compatibleCloudImages: CloudImages,
 //    val vcsRootInstances: VcsRootInstances,
-//    val externalStatusAllowed: Boolean,
-//    val pauseComment: Comment,
-//    val locator: String,
 )//{
 //    enum class Type(val value: String){REGULAR("regular"), COMPOSITE("composite"), DEPLOYMENT("deployment")}
 //}
