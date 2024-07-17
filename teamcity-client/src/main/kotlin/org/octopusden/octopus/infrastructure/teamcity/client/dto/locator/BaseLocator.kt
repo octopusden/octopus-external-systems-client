@@ -3,7 +3,7 @@ package org.octopusden.octopus.infrastructure.teamcity.client.dto.locator
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 
-open class BaseLocator(private val baseLists:Map<String,String> = emptyMap()) {
+open class BaseLocator(private val baseLists: Map<String, String> = emptyMap()) {
 
     override fun toString() = this.javaClass.kotlin.memberProperties
         .filter { property -> property.get(this) != null }

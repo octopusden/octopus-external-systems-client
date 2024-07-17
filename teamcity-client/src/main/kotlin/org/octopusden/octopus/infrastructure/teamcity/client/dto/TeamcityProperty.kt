@@ -10,7 +10,7 @@ data class TeamcityProperty(
     val value: String,
     val inherited: Boolean? = null,
     val type: Type? = null,
-){
+) {
     data class Type(val rawValue: String)
 }
 

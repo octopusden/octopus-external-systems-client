@@ -4,5 +4,6 @@ class ProjectLocator(
     val archived: Boolean? = null,
     val count: Int? = null,
     val id: String? = null,
+    val name: String? = null,
     val parameters: List<PropertyLocator>? = null
 ) : BaseLocator(mapOf("parameters" to "parameter"))

@@ -26,6 +26,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootInstances
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoots
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
@@ -67,97 +68,179 @@ class TeamcityClassicClient(
     override fun createProject(dto: TeamcityCreateProject) =
         client.createProject(dto)
 
-    override fun deleteProject(project: String) =
-        client.deleteProject(project)
+    override fun deleteProject(locator: ProjectLocator) =
+        client.deleteProject(locator)
 
-    override fun getProject(project: String) =
-        client.getProject(project)
+    fun deleteProject(id: String) =
+        deleteProject(ProjectLocator(id = id))
 
-    override fun getProjectsByLocator(locator: ProjectLocator): TeamcityProjects =
-        client.getProjectsByLocator(locator)
+    override fun getProject(locator: ProjectLocator) =
+        client.getProject(locator)
+
+    fun getProject(id: String) =
+        getProject(ProjectLocator(id = id))
+
+    override fun getProjects(locator: ProjectLocator): TeamcityProjects =
+        client.getProjects(locator)
 
     override fun createBuildType(dto: TeamcityCreateBuildType) =
         client.createBuildType(dto)
 
-    override fun createBuildType(project: String, name: String) =
+    override fun createBuildType(project: ProjectLocator, name: String) =
         client.createBuildType(project, name)
 
-    override fun getBuildType(buildType: String) =
+    fun createBuildType(projectId: String, name: String) =
+        createBuildType(ProjectLocator(id = projectId), name)
+
+    override fun getBuildType(buildType: BuildTypeLocator) =
         client.getBuildType(buildType)
 
-    override fun deleteBuildType(buildType: String) =
+    fun getBuildType(id: String) =
+        getBuildType(BuildTypeLocator(id = id))
+
+    override fun deleteBuildType(buildType: BuildTypeLocator) =
         client.deleteBuildType(buildType)
+
+    fun deleteBuildType(id: String) =
+        deleteBuildType(BuildTypeLocator(id = id))
 
     override fun getBuildTypes() =
         client.getBuildTypes()
 
-    override fun getBuildTypes(project: String) =
+    override fun getBuildTypes(project: ProjectLocator) =
         client.getBuildTypes(project)
 
-    override fun addBuildTypeFeature(buildType: String, feature: TeamcityLinkFeature) =
+    fun getBuildTypes(projectId: String) =
+        getBuildTypes(ProjectLocator(id = projectId))
+
+    override fun addBuildTypeFeature(buildType: BuildTypeLocator, feature: TeamcityLinkFeature) =
         client.addBuildTypeFeature(buildType, feature)
 
-    override fun getBuildTypeFeatures(buildType: String) =
+    fun addBuildTypeFeature(buildTypeId: String, feature: TeamcityLinkFeature) =
+        addBuildTypeFeature(BuildTypeLocator(id = buildTypeId), feature)
+
+    override fun getBuildTypeFeatures(buildType: BuildTypeLocator) =
         client.getBuildTypeFeatures(buildType)
 
-    override fun getBuildTypeFeature(buildType: String, feature: String) =
+    fun getBuildTypeFeatures(buildTypeId: String) =
+        getBuildTypeFeatures(BuildTypeLocator(id = buildTypeId))
+
+    override fun getBuildTypeFeature(buildType: BuildTypeLocator, feature: String) =
         client.getBuildTypeFeature(buildType, feature)
 
+    fun getBuildTypeFeature(buildTypeId: String, feature: String) =
+        getBuildTypeFeature(BuildTypeLocator(id = buildTypeId), feature)
+
     override fun updateBuildTypeFeatureParameter(
-        buildType: String,
+        buildType: BuildTypeLocator,
         feature: String,
         parameter: String,
         newValue: String
     ) = client.updateBuildTypeFeatureParameter(buildType, feature, parameter, newValue)
 
+    fun updateBuildTypeFeatureParameter(
+        buildTypeId: String,
+        feature: String,
+        parameter: String,
+        newValue: String
+    ) = updateBuildTypeFeatureParameter(BuildTypeLocator(id = buildTypeId), feature, parameter, newValue)
+
     override fun getBuildTypeFeatureParameter(
-        buildType: String,
+        buildType: BuildTypeLocator,
         feature: String,
         parameter: String
     ) = client.getBuildTypeFeatureParameter(buildType, feature, parameter)
 
-    override fun setBuildCounter(buildType: String, newValue: String) =
+    fun getBuildTypeFeatureParameter(
+        buildTypeId: String,
+        feature: String,
+        parameter: String
+    ) = getBuildTypeFeatureParameter(BuildTypeLocator(id = buildTypeId), feature, parameter)
+
+    override fun setBuildCounter(buildType: BuildTypeLocator, newValue: String) =
         client.setBuildCounter(buildType, newValue)
 
-    override fun createSnapshotDependency(buildType: String, dependency: TeamcitySnapshotDependency) =
+    fun setBuildCounter(buildTypeId: String, newValue: String) =
+        setBuildCounter(BuildTypeLocator(id = buildTypeId), newValue)
+
+    override fun createSnapshotDependency(buildType: BuildTypeLocator, dependency: TeamcitySnapshotDependency) =
         client.createSnapshotDependency(buildType, dependency)
 
-    override fun deleteSnapshotDependency(buildType: String, dependency: String) =
+    fun createSnapshotDependency(buildTypeId: String, dependency: TeamcitySnapshotDependency) =
+        createSnapshotDependency(BuildTypeLocator(id = buildTypeId), dependency)
+
+    override fun deleteSnapshotDependency(buildType: BuildTypeLocator, dependency: String) =
         client.deleteSnapshotDependency(buildType, dependency)
 
-    override fun getSnapshotDependencies(buildType: String): TeamcitySnapshotDependencies =
+    fun deleteSnapshotDependency(buildTypeId: String, dependency: String) =
+        deleteSnapshotDependency(BuildTypeLocator(id = buildTypeId), dependency)
+
+    override fun getSnapshotDependencies(buildType: BuildTypeLocator): TeamcitySnapshotDependencies =
         client.getSnapshotDependencies(buildType)
 
-    override fun disableBuildStep(buildType: String, step: String, newValue: Boolean) =
+    fun getSnapshotDependencies(buildTypeId: String): TeamcitySnapshotDependencies =
+        getSnapshotDependencies(BuildTypeLocator(id = buildTypeId))
+
+    override fun disableBuildStep(buildType: BuildTypeLocator, step: String, newValue: Boolean) =
         client.disableBuildStep(buildType, step, newValue)
 
-    override fun createBuildStep(buildType: String, step: TeamcityStep) =
+    fun disableBuildStep(buildTypeId: String, step: String, newValue: Boolean) =
+        disableBuildStep(BuildTypeLocator(id = buildTypeId), step, newValue)
+
+    override fun createBuildStep(buildType: BuildTypeLocator, step: TeamcityStep) =
         client.createBuildStep(buildType, step)
 
-    override fun getBuildSteps(buildType: String) = client.getBuildSteps(buildType)
-    override fun createBuildTypeVcsRootEntry(buildType: String, vcsRootEntry: TeamcityCreateVcsRootEntry) =
+    fun createBuildStep(buildTypeId: String, step: TeamcityStep) =
+        createBuildStep(BuildTypeLocator(id = buildTypeId), step)
+
+    override fun getBuildSteps(buildType: BuildTypeLocator) = client.getBuildSteps(buildType)
+
+    fun getBuildSteps(buildTypeId: String) = getBuildSteps(BuildTypeLocator(id = buildTypeId))
+
+    override fun createBuildTypeVcsRootEntry(buildType: BuildTypeLocator, vcsRootEntry: TeamcityCreateVcsRootEntry) =
         client.createBuildTypeVcsRootEntry(buildType, vcsRootEntry)
 
-    override fun deleteBuildTypeVcsRootEntry(buildType: String, vcsRootEntryId: String) =
+    fun createBuildTypeVcsRootEntry(buildTypeId: String, vcsRootEntry: TeamcityCreateVcsRootEntry) =
+        createBuildTypeVcsRootEntry(BuildTypeLocator(id = buildTypeId), vcsRootEntry)
+
+    override fun deleteBuildTypeVcsRootEntry(buildType: BuildTypeLocator, vcsRootEntryId: String) =
         client.deleteBuildTypeVcsRootEntry(buildType, vcsRootEntryId)
 
-    override fun getBuildTypeVcsRootEntries(buildType: String): TeamcityVcsRootEntries =
+    fun deleteBuildTypeVcsRootEntry(buildTypeId: String, vcsRootEntryId: String) =
+        deleteBuildTypeVcsRootEntry(BuildTypeLocator(id = buildTypeId), vcsRootEntryId)
+
+    override fun getBuildTypeVcsRootEntries(buildType: BuildTypeLocator): TeamcityVcsRootEntries =
         client.getBuildTypeVcsRootEntries(buildType)
 
-    override fun getBuildTypeVcsRootEntry(buildType: String, vcsRootEntryId: String): TeamcityVcsRootEntry =
+    fun getBuildTypeVcsRootEntries(buildTypeId: String): TeamcityVcsRootEntries =
+        getBuildTypeVcsRootEntries(BuildTypeLocator(id = buildTypeId))
+
+    override fun getBuildTypeVcsRootEntry(buildType: BuildTypeLocator, vcsRootEntryId: String): TeamcityVcsRootEntry =
         client.getBuildTypeVcsRootEntry(buildType, vcsRootEntryId)
 
+    fun getBuildTypeVcsRootEntry(buildTypeId: String, vcsRootEntryId: String): TeamcityVcsRootEntry =
+        getBuildTypeVcsRootEntry(BuildTypeLocator(id = buildTypeId), vcsRootEntryId)
+
     override fun updateBuildTypeVcsRootEntryCheckoutRules(
-        buildType: String,
+        buildType: BuildTypeLocator,
         vcsRootEntryId: String,
         checkoutRules: String
     ) = client.updateBuildTypeVcsRootEntryCheckoutRules(buildType, vcsRootEntryId, checkoutRules)
 
+    fun updateBuildTypeVcsRootEntryCheckoutRules(
+        buildTypeId: String,
+        vcsRootEntryId: String,
+        checkoutRules: String
+    ) = updateBuildTypeVcsRootEntryCheckoutRules(BuildTypeLocator(id = buildTypeId), vcsRootEntryId, checkoutRules)
+
     override fun createVcsRoot(vcsRoot: TeamcityCreateVcsRoot) =
         client.createVcsRoot(vcsRoot)
 
-    override fun getVcsRoot(vcsRootId: String): TeamcityVcsRoot =
-        client.getVcsRoot(vcsRootId)
+    override fun getVcsRoot(vcsRoot: VcsRootLocator): TeamcityVcsRoot =
+        client.getVcsRoot(vcsRoot)
+
+    fun getVcsRoot(vcsRootId: String): TeamcityVcsRoot =
+        getVcsRoot(VcsRootLocator(id = vcsRootId))
 
     override fun updateVcsRootProperty(vcsRootId: String, propertyName: String, newValue: String) =
         client.updateVcsRootProperty(vcsRootId, propertyName, newValue)
@@ -165,14 +248,23 @@ class TeamcityClassicClient(
     override fun getVcsRootProperty(vcsRootId: String, propertyName: String) =
         client.getVcsRootProperty(vcsRootId, propertyName)
 
-    override fun getBuildTypeTemplate(buildType: String) =
+    override fun getBuildTypeTemplate(buildType: BuildTypeLocator) =
         client.getBuildTypeTemplate(buildType)
 
-    override fun attachTemplateToBuildType(buildType: String, template: String) =
+    fun getBuildTypeTemplate(buildTypeId: String) =
+        getBuildTypeTemplate(BuildTypeLocator(id = buildTypeId))
+
+    override fun attachTemplateToBuildType(buildType: BuildTypeLocator, template: String) =
         client.attachTemplateToBuildType(buildType, template)
 
-    override fun detachTemplatesFromBuildType(buildType: String) =
+    fun attachTemplateToBuildType(buildTypeId: String, template: String) =
+        attachTemplateToBuildType(BuildTypeLocator(id = buildTypeId), template)
+
+    override fun detachTemplatesFromBuildType(buildType: BuildTypeLocator) =
         client.detachTemplatesFromBuildType(buildType)
+
+    fun detachTemplatesFromBuildType(buildTypeId: String) =
+        detachTemplatesFromBuildType(BuildTypeLocator(id = buildTypeId))
 
     override fun createParameter(type: ConfigurationType, id: String, parameter: TeamcityProperty) =
         client.createParameter(type, id, parameter)
@@ -189,9 +281,9 @@ class TeamcityClassicClient(
     override fun deleteParameter(type: ConfigurationType, id: String, name: String) =
         client.deleteParameter(type, id, name)
 
-    override fun getVcsRootInstancesByLocator(locator: VcsRootInstanceLocator) =
-        client.getVcsRootInstancesByLocator(locator)
+    override fun getVcsRootInstances(locator: VcsRootInstanceLocator) =
+        client.getVcsRootInstances(locator)
 
-    override fun getVcsRootsByLocator(locator: VcsRootLocator): TeamcityVcsRoots =
-        client.getVcsRootsByLocator(locator)
+    override fun getVcsRoots(locator: VcsRootLocator): TeamcityVcsRoots =
+        client.getVcsRoots(locator)
 }

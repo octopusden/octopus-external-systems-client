@@ -58,8 +58,8 @@ class TeamcityClassicClientTest {
     @Test
     fun testProject() {
         val project = createProject("TestCreateProject")
-        assertEquals(project, client.getProject("id:${project.id}"))
-        assertEquals(project, client.getProject("name:${project.name}"))
+        assertEquals(project, client.getProject(project.id))
+        assertEquals(project, client.getProject(ProjectLocator(name = project.name)))
         val subProject = createProject("SubProject", project.id)
         assertEquals(subProject.parentProjectId, project.id)
         assertEquals(subProject.parentProject?.name, project.name)
@@ -201,7 +201,7 @@ class TeamcityClassicClientTest {
         val tcVcsRoot = client.getVcsRoot(vcsRoot.id)
 
         assertEquals(url, client.getVcsRootProperty(tcVcsRoot.id, "url"))
-        val vcsRootsByLocator = client.getVcsRootsByLocator(
+        val vcsRootsByLocator = client.getVcsRoots(
             VcsRootLocator(
                 property = listOf(
                     PropertyLocator("url", url)
@@ -275,7 +275,7 @@ class TeamcityClassicClientTest {
         val project = createProject("TestProjectLocator")
         val secondProject = createProject("AnotherTestProjectLocator")
         client.createParameter(ConfigurationType.PROJECT, project.id, "ParameterName", "ParameterValue")
-        val projects = client.getProjectsByLocator(
+        val projects = client.getProjects(
             ProjectLocator(
                 count = 2000,
                 parameters = listOf(
