@@ -31,9 +31,9 @@ services:
 #      - db
     healthcheck:
       test: curl -u "admin":"admin" -f "http://localhost:8111/app/rest/server" || exit 1
-      interval: 30s
+      interval: 3s
       timeout: 15s
-      retries: 3
+      retries: 30
 
   # teamcity-agent-1:
   #   image: jetbrains/teamcity-agent:${TEAMCITY_VERSION}-linux-sudo
