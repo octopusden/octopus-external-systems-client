@@ -2,6 +2,7 @@ java {
     withJavadocJar()
     withSourcesJar()
 }
+
 repositories {
     mavenCentral()
 }
@@ -11,7 +12,3 @@ dependencies {
     testImplementation("junit:junit:4.13.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 }
-
-
-
-

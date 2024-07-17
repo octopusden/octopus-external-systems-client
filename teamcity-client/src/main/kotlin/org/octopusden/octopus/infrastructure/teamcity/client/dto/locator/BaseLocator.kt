@@ -5,6 +5,10 @@ import kotlin.reflect.full.memberProperties
 
 open class BaseLocator(private val baseLists:Map<String,String> = emptyMap()) {
 
+    override fun toString() = this.javaClass.kotlin.memberProperties
+        .filter { property -> property.get(this) != null }
+        .joinToString(",") { property -> propertyToString(property) }
+
     private fun propertyToString(property: KProperty1<BaseLocator, *>): String {
         val name = property.name
         val value = property.get(this)
@@ -19,8 +23,4 @@ open class BaseLocator(private val baseLists:Map<String,String> = emptyMap()) {
 
     private fun locatorListToString(entries: List<Any>, entryName: String) =
         entries.joinToString(",") { "$entryName:(${it})" }
-
-    override fun toString() = this.javaClass.kotlin.memberProperties
-        .filter { property -> property.get(this) != null }
-        .joinToString(",") { property -> propertyToString(property) }
 }

@@ -79,8 +79,8 @@ class TeamcityClassicClient(
     override fun createBuildType(dto: TeamcityCreateBuildType) =
         client.createBuildType(dto)
 
-    override fun createBuildType(project: String, buildTypeName: String) =
-        client.createBuildType(project, buildTypeName)
+    override fun createBuildType(project: String, name: String) =
+        client.createBuildType(project, name)
 
     override fun getBuildType(buildType: String) =
         client.getBuildType(buildType)
@@ -177,25 +177,17 @@ class TeamcityClassicClient(
     override fun createParameter(type: ConfigurationType, id: String, parameter: TeamcityProperty) =
         client.createParameter(type, id, parameter)
 
-    override fun createParameter(
-        type: ConfigurationType,
-        id: String,
-        parameterName: String,
-        value: String
-    ) = client.createParameter(type, id, parameterName, value)
+    override fun createParameter(type: ConfigurationType, id: String, name: String, value: String) =
+        client.createParameter(type, id, name, value)
 
-    override fun setParameter(
-        type: ConfigurationType,
-        id: String,
-        parameterName: String,
-        value: String
-    ) = client.setParameter(type, id, parameterName, value)
+    override fun setParameter(type: ConfigurationType, id: String, name: String, value: String) =
+        client.setParameter(type, id, name, value)
 
-    override fun getParameter(type: ConfigurationType, id: String, parameterName: String) =
-        client.getParameter(type, id, parameterName)
+    override fun getParameter(type: ConfigurationType, id: String, name: String) =
+        client.getParameter(type, id, name)
 
-    override fun deleteParameter(type: ConfigurationType, id: String, parameterName: String) =
-        client.deleteParameter(type, id, parameterName)
+    override fun deleteParameter(type: ConfigurationType, id: String, name: String) =
+        client.deleteParameter(type, id, name)
 
     override fun getVcsRootInstancesByLocator(locator: VcsRootInstanceLocator) =
         client.getVcsRootInstancesByLocator(locator)

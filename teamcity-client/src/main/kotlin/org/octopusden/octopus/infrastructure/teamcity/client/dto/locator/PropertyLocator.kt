@@ -1,6 +1,6 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto.locator
 
-data class PropertyLocator(
+class PropertyLocator(
     val name: String,
     val value: String,
     val matchType: MatchType? = null,
@@ -29,6 +29,4 @@ data class PropertyLocator(
 
         override fun toString() = value
     }
-
-    override fun toString() = super.toString()
 }

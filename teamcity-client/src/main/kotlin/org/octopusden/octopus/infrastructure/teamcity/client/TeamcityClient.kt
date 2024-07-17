@@ -56,7 +56,7 @@ interface TeamcityClient {
     @RequestLine("POST $REST/projects/{project}/buildTypes")
     @Headers("Content-Type: text/plain", "Accept: application/json")
     @Body("{name}")
-    fun createBuildType(@Param("project") project: String, @Param("name") buildTypeName: String): TeamcityBuildType
+    fun createBuildType(@Param("project") project: String, @Param("name") name: String): TeamcityBuildType
 
     @RequestLine("DELETE $REST/buildTypes/{buildType}")
     fun deleteBuildType(@Param("buildType") buildType: String)
@@ -220,37 +220,37 @@ interface TeamcityClient {
 
     @RequestLine("POST $REST/{type}/{id}/parameters")
     @Headers("Content-Type: application/xml")
-    @Body("<property name=\"{parameterName}\" value=\"{value}\"/>")
+    @Body("<property name=\"{name}\" value=\"{value}\"/>")
     fun createParameter(
         @Param("type") configurationType: ConfigurationType,
         @Param("id") id: String,
-        @Param("parameterName") parameterName: String,
+        @Param("name") name: String,
         @Param("value") value: String = ""
     )
 
-    @RequestLine("PUT $REST/{type}/{id}/parameters/{parameterName}")
+    @RequestLine("PUT $REST/{type}/{id}/parameters/{name}")
     @Headers("Content-Type: text/plain")
     @Body("{value}")
     fun setParameter(
         @Param("type") configurationType: ConfigurationType,
         @Param("id") id: String,
-        @Param("parameterName") parameterName: String,
+        @Param("name") name: String,
         @Param("value") value: String
     )
 
-    @RequestLine("GET $REST/{type}/{id}/parameters/{parameterName}")
+    @RequestLine("GET $REST/{type}/{id}/parameters/{name}")
     @Headers("Accept: text/plain")
     fun getParameter(
         @Param("type") configurationType: ConfigurationType,
         @Param("id") id: String,
-        @Param("parameterName") parameterName: String
+        @Param("name") name: String
     ): String
 
-    @RequestLine("DELETE $REST/{type}/{id}/parameters/{parameterName}")
+    @RequestLine("DELETE $REST/{type}/{id}/parameters/{name}")
     fun deleteParameter(
         @Param("type") configurationType: ConfigurationType,
         @Param("id") id: String,
-        @Param("parameterName") parameterName: String
+        @Param("name") name: String
     )
 
     @RequestLine("GET $REST/vcs-root-instances?locator={locator}")
