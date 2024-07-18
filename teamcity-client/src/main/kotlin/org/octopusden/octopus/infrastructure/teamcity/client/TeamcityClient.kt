@@ -29,6 +29,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTy
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.TeamcityLocatorExpander as Locator
 
 private const val API_VERSION: String = "2018.1"
 private const val REST: String = "/app/rest/$API_VERSION"
@@ -39,144 +40,164 @@ interface TeamcityClient {
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun createProject(dto: TeamcityCreateProject): TeamcityProject
 
-    @RequestLine("DELETE $REST/projects/{project}")
-    fun deleteProject(@Param("project") locator: ProjectLocator)
+    @RequestLine("DELETE $REST/projects/{locator}")
+    fun deleteProject(@Param("locator", expander = Locator::class) locator: ProjectLocator)
 
-    @RequestLine("GET $REST/projects/{project}")
+    @RequestLine("GET $REST/projects/{locator}")
     @Headers("Accept: application/json")
-    fun getProject(@Param("project") locator: ProjectLocator): TeamcityProject
+    fun getProject(@Param("locator", expander = Locator::class) locator: ProjectLocator): TeamcityProject
 
     @RequestLine("GET $REST/projects?locator={locator}")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun getProjects(@Param("locator") locator: ProjectLocator): TeamcityProjects
+    fun getProjects(@Param("locator", expander = Locator::class) locator: ProjectLocator): TeamcityProjects
 
     @RequestLine("POST $REST/buildTypes")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun createBuildType(dto: TeamcityCreateBuildType): TeamcityBuildType
 
-    @RequestLine("POST $REST/projects/{project}/buildTypes")
+    @RequestLine("POST $REST/projects/{locator}/buildTypes")
     @Headers("Content-Type: text/plain", "Accept: application/json")
     @Body("{name}")
-    fun createBuildType(@Param("project") project: ProjectLocator, @Param("name") name: String): TeamcityBuildType
+    fun createBuildType(
+        @Param("locator", expander = Locator::class) project: ProjectLocator,
+        @Param("name") name: String
+    ): TeamcityBuildType
 
-    @RequestLine("DELETE $REST/buildTypes/{buildType}")
-    fun deleteBuildType(@Param("buildType") buildType: BuildTypeLocator)
+    @RequestLine("DELETE $REST/buildTypes/{locator}")
+    fun deleteBuildType(@Param("locator", expander = Locator::class) buildType: BuildTypeLocator)
 
-    @RequestLine("GET $REST/buildTypes/{buildType}")
+    @RequestLine("GET $REST/buildTypes/{locator}")
     @Headers("Accept: application/json")
-    fun getBuildType(@Param("buildType") buildType: BuildTypeLocator): TeamcityBuildType
+    fun getBuildType(@Param("locator", expander = Locator::class) buildType: BuildTypeLocator): TeamcityBuildType
 
     @RequestLine("GET $REST/buildTypes")
     @Headers("Accept: application/json")
     fun getBuildTypes(): TeamcityBuildTypes
 
-    @RequestLine("GET $REST/projects/{project}/buildTypes")
+    @RequestLine("GET $REST/projects/{locator}/buildTypes")
     @Headers("Accept: application/json")
-    fun getBuildTypes(@Param("project") project: ProjectLocator): TeamcityBuildTypes
+    fun getBuildTypes(@Param("locator", expander = Locator::class) project: ProjectLocator): TeamcityBuildTypes
 
-    @RequestLine("POST $REST/buildTypes/{buildType}/features")
+    @RequestLine("POST $REST/buildTypes/{locator}/features")
     @Headers("Content-Type: application/json")
-    fun addBuildTypeFeature(@Param("buildType") buildType: BuildTypeLocator, feature: TeamcityLinkFeature)
+    fun addBuildTypeFeature(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
+        feature: TeamcityLinkFeature
+    )
 
-    @RequestLine("GET $REST/buildTypes/{buildType}/features")
+    @RequestLine("GET $REST/buildTypes/{locator}/features")
     @Headers("Accept: application/json")
-    fun getBuildTypeFeatures(@Param("buildType") buildType: BuildTypeLocator): TeamcityFeatures
+    fun getBuildTypeFeatures(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator
+    ): TeamcityFeatures
 
-    @RequestLine("GET $REST/buildTypes/{buildType}/features/{feature}")
+    @RequestLine("GET $REST/buildTypes/{locator}/features/{feature}")
     @Headers("Accept: application/json")
     fun getBuildTypeFeature(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("feature") feature: String
     ): TeamcityFeature
 
-    @RequestLine("PUT $REST/buildTypes/{buildType}/features/{feature}/parameters/{parameter}")
+    @RequestLine("PUT $REST/buildTypes/{locator}/features/{feature}/parameters/{parameter}")
     @Headers("Content-Type: text/plain")
     @Body("{newValue}")
     fun updateBuildTypeFeatureParameter(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("feature") feature: String,
         @Param("parameter") parameter: String,
         @Param("newValue") newValue: String
     )
 
-    @RequestLine("GET $REST/buildTypes/{buildType}/features/{feature}/parameters/{parameter}")
+    @RequestLine("GET $REST/buildTypes/{locator}/features/{feature}/parameters/{parameter}")
     @Headers("Accept: text/plain")
     fun getBuildTypeFeatureParameter(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("feature") feature: String,
         @Param("parameter") parameter: String
     ): String
 
-    @RequestLine("PUT $REST/buildTypes/{buildType}/settings/buildNumberCounter")
+    @RequestLine("PUT $REST/buildTypes/{locator}/settings/buildNumberCounter")
     @Headers("Content-Type: text/plain")
     @Body("{newValue}")
-    fun setBuildCounter(@Param("buildType") buildType: BuildTypeLocator, @Param("newValue") newValue: String)
+    fun setBuildCounter(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
+        @Param("newValue") newValue: String
+    )
 
-    @RequestLine("POST $REST/buildTypes/{buildType}/snapshot-dependencies")
+    @RequestLine("POST $REST/buildTypes/{locator}/snapshot-dependencies")
     @Headers("Content-Type: application/json")
     fun createSnapshotDependency(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         dependency: TeamcitySnapshotDependency
     )
 
-    @RequestLine("DELETE $REST/buildTypes/{buildType}/snapshot-dependencies/{dependency}")
+    @RequestLine("DELETE $REST/buildTypes/{locator}/snapshot-dependencies/{dependency}")
     @Headers("Accept: application/json")
     fun deleteSnapshotDependency(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("dependency") dependency: String
     )
 
-    @RequestLine("GET $REST/buildTypes/{buildType}/snapshot-dependencies")
+    @RequestLine("GET $REST/buildTypes/{locator}/snapshot-dependencies")
     @Headers("Accept: application/json")
-    fun getSnapshotDependencies(@Param("buildType") buildType: BuildTypeLocator): TeamcitySnapshotDependencies
+    fun getSnapshotDependencies(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator
+    ): TeamcitySnapshotDependencies
 
-    @RequestLine("PUT $REST/buildTypes/{buildType}/steps/{step}/disabled")
+    @RequestLine("PUT $REST/buildTypes/{locator}/steps/{step}/disabled")
     @Headers("Content-Type: text/plain")
     @Body("{newValue}")
     fun disableBuildStep(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("step") step: String,
         @Param("newValue") newValue: Boolean
     )
 
-    @RequestLine("POST $REST/buildTypes/{buildType}/steps")
+    @RequestLine("POST $REST/buildTypes/{locator}/steps")
     @Headers("Content-Type: application/json")
-    fun createBuildStep(@Param("buildType") buildType: BuildTypeLocator, step: TeamcityStep)
+    fun createBuildStep(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
+        step: TeamcityStep
+    )
 
-    @RequestLine("GET $REST/buildTypes/{buildType}/steps")
+    @RequestLine("GET $REST/buildTypes/{locator}/steps")
     @Headers("Accept: application/json")
-    fun getBuildSteps(@Param("buildType") buildType: BuildTypeLocator): TeamcitySteps
+    fun getBuildSteps(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator
+    ): TeamcitySteps
 
-    @RequestLine("POST $REST/buildTypes/{buildType}/vcs-root-entries")
+    @RequestLine("POST $REST/buildTypes/{locator}/vcs-root-entries")
     @Headers("Content-Type: application/json")
     fun createBuildTypeVcsRootEntry(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         vcsRootEntry: TeamcityCreateVcsRootEntry
     )
 
-    @RequestLine("DELETE $REST/buildTypes/{buildType}/vcs-root-entries/{vcsRootEntryId}")
+    @RequestLine("DELETE $REST/buildTypes/{locator}/vcs-root-entries/{vcsRootEntryId}")
     @Headers("Accept: application/json")
     fun deleteBuildTypeVcsRootEntry(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("vcsRootEntryId") vcsRootEntryId: String
     )
 
-    @RequestLine("GET $REST/buildTypes/{buildType}/vcs-root-entries")
+    @RequestLine("GET $REST/buildTypes/{locator}/vcs-root-entries")
     @Headers("Accept: application/json")
-    fun getBuildTypeVcsRootEntries(@Param("buildType") buildType: BuildTypeLocator): TeamcityVcsRootEntries
+    fun getBuildTypeVcsRootEntries(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator
+    ): TeamcityVcsRootEntries
 
-    @RequestLine("GET $REST/buildTypes/{buildType}/vcs-root-entries/{vcsRootEntryId}")
+    @RequestLine("GET $REST/buildTypes/{locator}/vcs-root-entries/{vcsRootEntryId}")
     @Headers("Accept: application/json")
     fun getBuildTypeVcsRootEntry(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("vcsRootEntryId") vcsRootEntryId: String
     ): TeamcityVcsRootEntry
 
-    @RequestLine("PUT $REST/buildTypes/{buildType}/vcs-root-entries/{vcsRootEntryId}/checkout-rules")
+    @RequestLine("PUT $REST/buildTypes/{locator}/vcs-root-entries/{vcsRootEntryId}/checkout-rules")
     @Headers("Content-Type: text/plain")
     @Body("{checkoutRules}")
     fun updateBuildTypeVcsRootEntryCheckoutRules(
-        @Param("buildType") buildType: BuildTypeLocator,
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("vcsRootEntryId") vcsRootEntryId: String,
         @Param("checkoutRules") checkoutRules: String
     )
@@ -185,9 +206,9 @@ interface TeamcityClient {
     @Headers("Accept: application/json", "Content-Type: application/json")
     fun createVcsRoot(vcsRoot: TeamcityCreateVcsRoot): TeamcityVcsRoot
 
-    @RequestLine("GET $REST/vcs-roots/{vcsRoot}")
+    @RequestLine("GET $REST/vcs-roots/{locator}")
     @Headers("Accept: application/json")
-    fun getVcsRoot(@Param("vcsRoot") vcsRoot: VcsRootLocator): TeamcityVcsRoot
+    fun getVcsRoot(@Param("locator", expander = Locator::class) vcsRoot: VcsRootLocator): TeamcityVcsRoot
 
     @RequestLine("PUT $REST/vcs-roots/{vcsRootId}/properties/{propertyName}")
     @Headers("Content-Type: text/plain")
@@ -205,22 +226,29 @@ interface TeamcityClient {
         @Param("propertyName") propertyName: String,
     ): String
 
-    @RequestLine("GET $REST/buildTypes/{buildType}/template")
+    @RequestLine("GET $REST/buildTypes/{locator}/template")
     @Headers("Accept: text/plain")
-    fun getBuildTypeTemplate(@Param("buildType") buildType: BuildTypeLocator): String
+    fun getBuildTypeTemplate(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator
+    ): String
 
-    @RequestLine("PUT $REST/buildTypes/{buildType}/template")
+    @RequestLine("PUT $REST/buildTypes/{locator}/template")
     @Headers("Content-Type: text/plain")
     @Body("{template}")
-    fun attachTemplateToBuildType(@Param("buildType") buildType: BuildTypeLocator, @Param("template") template: String)
+    fun attachTemplateToBuildType(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
+        @Param("template") template: String
+    )
 
-    @RequestLine("DELETE $REST/buildTypes/{buildType}/templates")
-    fun detachTemplatesFromBuildType(@Param("buildType") buildType: BuildTypeLocator)
+    @RequestLine("DELETE $REST/buildTypes/{locator}/templates")
+    fun detachTemplatesFromBuildType(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
+    )
 
     @RequestLine("POST $REST/{type}/{id}/parameters")
     @Headers("Content-Type: application/json")
     fun createParameter(
-        @Param("type") configurationType: ConfigurationType,
+        @Param("type") type: ConfigurationType,
         @Param("id") id: String,
         parameter: TeamcityProperty
     )
@@ -229,7 +257,7 @@ interface TeamcityClient {
     @Headers("Content-Type: application/xml")
     @Body("<property name=\"{name}\" value=\"{value}\"/>")
     fun createParameter(
-        @Param("type") configurationType: ConfigurationType,
+        @Param("type") type: ConfigurationType,
         @Param("id") id: String,
         @Param("name") name: String,
         @Param("value") value: String = ""
@@ -239,7 +267,7 @@ interface TeamcityClient {
     @Headers("Content-Type: text/plain")
     @Body("{value}")
     fun setParameter(
-        @Param("type") configurationType: ConfigurationType,
+        @Param("type") type: ConfigurationType,
         @Param("id") id: String,
         @Param("name") name: String,
         @Param("value") value: String
@@ -248,25 +276,29 @@ interface TeamcityClient {
     @RequestLine("GET $REST/{type}/{id}/parameters/{name}")
     @Headers("Accept: text/plain")
     fun getParameter(
-        @Param("type") configurationType: ConfigurationType,
+        @Param("type") type: ConfigurationType,
         @Param("id") id: String,
         @Param("name") name: String
     ): String
 
     @RequestLine("DELETE $REST/{type}/{id}/parameters/{name}")
     fun deleteParameter(
-        @Param("type") configurationType: ConfigurationType,
+        @Param("type") type: ConfigurationType,
         @Param("id") id: String,
         @Param("name") name: String
     )
 
     @RequestLine("GET $REST/vcs-root-instances?locator={locator}")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun getVcsRootInstances(@Param("locator") locator: VcsRootInstanceLocator): TeamcityVcsRootInstances
+    fun getVcsRootInstances(
+        @Param("locator", expander = Locator::class) locator: VcsRootInstanceLocator
+    ): TeamcityVcsRootInstances
 
     @RequestLine("GET $REST/vcs-roots?locator={locator}")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun getVcsRoots(@Param("locator") locator: VcsRootLocator): TeamcityVcsRoots
+    fun getVcsRoots(
+        @Param("locator", expander = Locator::class) locator: VcsRootLocator
+    ): TeamcityVcsRoots
 }
 
 

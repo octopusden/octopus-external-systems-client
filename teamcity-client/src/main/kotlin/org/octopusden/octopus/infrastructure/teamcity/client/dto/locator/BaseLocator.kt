@@ -1,26 +1,21 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto.locator
 
-import kotlin.reflect.KProperty1
+import org.octopusden.octopus.infrastructure.teamcity.client.TeamcityLocatorExpander
 import kotlin.reflect.full.memberProperties
 
-open class BaseLocator(private val baseLists: Map<String, String> = emptyMap()) {
+open class BaseLocator{
 
-    override fun toString() = this.javaClass.kotlin.memberProperties
+    override fun toString() = TeamcityLocatorExpander().expand(this)
+/*
+    override fun toString() = TeamcityLocatorExpander(this) this.javaClass.kotlin.memberProperties
         .filter { property -> property.get(this) != null }
-        .joinToString(",") { property -> propertyToString(property) }
+        .joinToString(",") { property -> propertyToString(property.name, property.get(this)) }
 
-    private fun propertyToString(property: KProperty1<BaseLocator, *>): String {
-        val name = property.name
-        val value = property.get(this)
-        return if (baseLists.keys.contains(name) && value is List<*>) {
-            locatorListToString(value as List<Any>, baseLists.getValue(name))
-        } else if (value is BaseLocator) {
-            "$name:($value)"
-        } else {
-            "$name:$value"
+    private fun propertyToString(name: String, value: Any?):String =
+        when (value) {
+            is List<*> -> value.joinToString(",") { "$name:(${it})" }
+            is BaseLocator -> "$name:($value)"
+            else -> "$name:$value"
         }
-    }
-
-    private fun locatorListToString(entries: List<Any>, entryName: String) =
-        entries.joinToString(",") { "$entryName:(${it})" }
+*/
 }

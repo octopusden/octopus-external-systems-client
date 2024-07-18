@@ -278,7 +278,7 @@ class TeamcityClassicClientTest {
         val projects = client.getProjects(
             ProjectLocator(
                 count = 2000,
-                parameters = listOf(
+                parameter = listOf(
                     PropertyLocator(
                         name = "ParameterName",
                         value = "ParameterValue"
