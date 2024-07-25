@@ -167,11 +167,11 @@ interface TeamcityClient {
     ): TeamcitySteps
 
     @RequestLine("POST $REST/buildTypes/{locator}/vcs-root-entries")
-    @Headers("Content-Type: application/json")
+    @Headers("Content-Type: application/json", "Accept: application/json")
     fun createBuildTypeVcsRootEntry(
         @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         vcsRootEntry: TeamcityCreateVcsRootEntry
-    )
+    ): TeamcityVcsRootEntry
 
     @RequestLine("DELETE $REST/buildTypes/{locator}/vcs-root-entries/{vcsRootEntryId}")
     @Headers("Accept: application/json")

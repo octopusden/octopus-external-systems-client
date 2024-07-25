@@ -7,6 +7,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class TeamcityCreateProject(
     val name: String,
-    val id: String,
+    val id: String? = null,
     val parentProject: TeamcityLinkProject? = null,
 )

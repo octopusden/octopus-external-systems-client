@@ -41,7 +41,6 @@ class TeamcityClassicClientTest {
         client.createProject(
             TeamcityCreateProject(
                 name = projectName,
-                id = projectName + "Id",
                 parentProject = TeamcityLinkProject(id = parentId)
             )
         )
@@ -49,7 +48,6 @@ class TeamcityClassicClientTest {
     private fun createBuildType(buildName: String, projectId: String) =
         client.createBuildType(
             TeamcityCreateBuildType(
-                id = "${buildName}Id",
                 name = buildName,
                 project = TeamcityLinkProject(id = projectId)
             )
@@ -102,7 +100,7 @@ class TeamcityClassicClientTest {
         val feature = features.first()
         assertEquals("VcsLabeling", feature.type)
         val featureId = feature.id
-        fun getVcsRootId() = client.getBuildTypeFeatureParameter(buildType.id, featureId, "vcsRootId")//.toString()
+        fun getVcsRootId() = client.getBuildTypeFeatureParameter(buildType.id, featureId, "vcsRootId")
         assertEquals("vcsId", getVcsRootId())
         client.updateBuildTypeFeatureParameter(buildType.id, featureId, "vcsRootId", "newVcsId")
         assertEquals("newVcsId", getVcsRootId())
@@ -224,7 +222,6 @@ class TeamcityClassicClientTest {
         val buildType = createBuildType("TestTemplates", project.id)
         val template = client.createBuildType(
             TeamcityCreateBuildType(
-                id = "TemplateId",
                 name = "Template",
                 project = TeamcityLinkProject(id = project.id),
                 templateFlag = true

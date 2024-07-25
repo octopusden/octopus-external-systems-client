@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class TeamcityProperty(
     val name: String,
-    val value: String,
+    val value: String?= null,
     val inherited: Boolean? = null,
     val type: Type? = null,
 ) {

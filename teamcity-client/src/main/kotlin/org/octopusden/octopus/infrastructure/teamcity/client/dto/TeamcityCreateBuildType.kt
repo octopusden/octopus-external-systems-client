@@ -9,8 +9,8 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class TeamcityCreateBuildType(
-    val id: String,
-    val name: String? = null,
+    val id: String? = null,
+    val name: String,
     val projectId: String? = null,
     val projectName: String? = null,
     val template: TeamcityLinkBuildType? = null,
@@ -19,9 +19,7 @@ data class TeamcityCreateBuildType(
     val parameters: TeamcityProperties? = null,
 
     val templateFlag: Boolean? = null,
-//    val type: Type,
-//    val description: String,
-    val project: TeamcityLinkProject? = null,
+    val project: TeamcityLinkProject,
     val templates: TeamcityBuildTypes? = null,
     val settings: TeamcityProperties? = null,
     val steps: TeamcitySteps? = null,
@@ -29,13 +27,4 @@ data class TeamcityCreateBuildType(
     val triggers: TeamcityTriggers? = null,
     @JsonProperty("snapshot-dependencies")
     val snapshotDependencies: TeamcitySnapshotDependencies? = null,
-//    @JsonProperty("artifact-dependencies")
-//    val artifactDdependencies: TeamcityArtifactDependencies,
-//    @JsonProperty("agent-requirements")
-//    val agentRequirements: TeamcityAgentRequirements,
-//    val branches: Branches,
-//    val vcsRootInstances: VcsRootInstances,
-)//{
-//    enum class Type(val value: String){REGULAR("regular"), COMPOSITE("composite"), DEPLOYMENT("deployment")}
-//}
-
+)
