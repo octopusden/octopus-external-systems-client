@@ -173,7 +173,7 @@ class TeamcityClassicClientTest {
         val vcsRoot = client.createVcsRoot(
             TeamcityCreateVcsRoot(
                 name = "${project.name}_VCS_ROOT",
-                vcsName = "jetbrains.git",
+                vcsName = TeamcityVCSType.GIT.value,
                 projectLocator = project.id,
                 properties = TeamcityProperties(
                     listOf(

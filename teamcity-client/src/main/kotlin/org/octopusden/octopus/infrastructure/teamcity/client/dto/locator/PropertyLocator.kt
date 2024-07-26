@@ -1,12 +1,14 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto.locator
 
+import com.fasterxml.jackson.annotation.JsonValue
+
 class PropertyLocator(
     val name: String,
     val value: String,
     val matchType: MatchType? = null,
     val ignoreCase: Boolean? = null,
 ) : BaseLocator() {
-    enum class MatchType(private val value: String) {
+    enum class MatchType(@get:JsonValue val value: String) {
         EXISTS("exists"),
         NOT_EXISTS("not-exists"),
         EQUALS("equals"),
@@ -25,8 +27,6 @@ class PropertyLocator(
         VER_MORE_THAN("ver-more-than"),
         VER_NO_MORE_THAN("ver-no-more-than"),
         VER_LESS_THAN("ver-less-than"),
-        VER_NO_LESS_THAN("ver-no-less-than");
-
-        override fun toString() = value
+        VER_NO_LESS_THAN("ver-no-less-than")
     }
 }

@@ -1,5 +1,6 @@
 package org.octopusden.octopus.infrastructure.teamcity.client
 
+import com.fasterxml.jackson.annotation.JsonValue
 import feign.Body
 import feign.Headers
 import feign.Param
@@ -248,7 +249,7 @@ interface TeamcityClient {
     @RequestLine("POST $REST/{type}/{id}/parameters")
     @Headers("Content-Type: application/json")
     fun createParameter(
-        @Param("type") type: ConfigurationType,
+        @Param("type", expander = ConfigurationType.ConfigurationTypeExpander::class) type: ConfigurationType,
         @Param("id") id: String,
         parameter: TeamcityProperty
     )
@@ -257,7 +258,7 @@ interface TeamcityClient {
     @Headers("Content-Type: application/xml")
     @Body("<property name=\"{name}\" value=\"{value}\"/>")
     fun createParameter(
-        @Param("type") type: ConfigurationType,
+        @Param("type", expander = ConfigurationType.ConfigurationTypeExpander::class) type: ConfigurationType,
         @Param("id") id: String,
         @Param("name") name: String,
         @Param("value") value: String = ""
@@ -267,7 +268,7 @@ interface TeamcityClient {
     @Headers("Content-Type: text/plain")
     @Body("{value}")
     fun setParameter(
-        @Param("type") type: ConfigurationType,
+        @Param("type", expander = ConfigurationType.ConfigurationTypeExpander::class) type: ConfigurationType,
         @Param("id") id: String,
         @Param("name") name: String,
         @Param("value") value: String
@@ -276,14 +277,14 @@ interface TeamcityClient {
     @RequestLine("GET $REST/{type}/{id}/parameters/{name}")
     @Headers("Accept: text/plain")
     fun getParameter(
-        @Param("type") type: ConfigurationType,
+        @Param("type", expander = ConfigurationType.ConfigurationTypeExpander::class) type: ConfigurationType,
         @Param("id") id: String,
         @Param("name") name: String
     ): String
 
     @RequestLine("DELETE $REST/{type}/{id}/parameters/{name}")
     fun deleteParameter(
-        @Param("type") type: ConfigurationType,
+        @Param("type", expander = ConfigurationType.ConfigurationTypeExpander::class) type: ConfigurationType,
         @Param("id") id: String,
         @Param("name") name: String
     )
@@ -302,9 +303,17 @@ interface TeamcityClient {
 }
 
 
-enum class ConfigurationType(private val value: String) {
+enum class ConfigurationType(
+    @get:JsonValue
+    val type: String
+) {
     PROJECT("projects"),
     BUILD_TYPE("buildTypes");
 
-    override fun toString() = value
+    class ConfigurationTypeExpander : Param.Expander {
+        override fun expand(value: Any?) = when (value) {
+            is ConfigurationType -> value.type
+            else -> throw Exception("Unknown class ${value}")
+        }
+    }
 }
