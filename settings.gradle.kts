@@ -21,3 +21,5 @@ include("bitbucket-test-client")
 include("gitlab-test-client")
 include("gitea-client")
 include("gitea-test-client")
+include("teamcity-client")
+

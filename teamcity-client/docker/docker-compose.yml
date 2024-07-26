@@ -1,0 +1,18 @@
+version: '3.1'
+
+# ./data_dir - TeamCity data directory
+# ./teamcity-server-logs - logs of primary TeamCity server
+
+services:
+  teamcity:
+    image: jetbrains/teamcity-server:${TEAMCITY_VERSION}
+    ports:
+      - "8112:8111"
+    volumes:
+      - ./teamcity-server-logs:/opt/teamcity/logs
+      - ./data_dir:/data/teamcity_server/datadir
+    healthcheck:
+      test: curl -u "admin":"admin" -f "http://localhost:8111/app/rest/server" || exit 1
+      interval: 3s
+      timeout: 15s
+      retries: 30
