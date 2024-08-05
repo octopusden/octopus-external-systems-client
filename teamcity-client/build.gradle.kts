@@ -23,9 +23,9 @@ dependencies {
 }
 
 configure<ComposeExtension> {
-    useComposeFiles.add("${buildDir}${File.separator}docker${File.separator}docker-compose.yml")
+    useComposeFiles.add(layout.projectDirectory.file("docker/docker-compose.yml").asFile.path)
     waitForTcpPorts.set(true)
-    captureContainersOutputToFiles.set(buildDir.resolve("docker_logs"))
+    captureContainersOutputToFiles.set(layout.buildDirectory.dir("docker-logs"))
     environment.putAll(
         mapOf(
             "DOCKER_REGISTRY" to project.properties["docker.registry"],
@@ -36,23 +36,11 @@ configure<ComposeExtension> {
 
 dockerCompose.isRequiredBy(tasks["test"])
 
-tasks.processTestResources {
-    dependsOn("copyDockerFiles", "copyTeamcityData")
+tasks.register<Sync>("prepareTeamcityServerData") {
+    from(zipTree(layout.projectDirectory.file("docker/data.zip")))
+    into(layout.buildDirectory.dir("teamcity-server"))
 }
 
-tasks.register<Sync>("copyDockerFiles") {
-    from("${projectDir}${File.separator}docker") {
-        exclude("data.zip")
-    }
-    into("${buildDir}${File.separator}docker")
-}
-
-tasks.register<Copy>("copyTeamcityData") {
-    dependsOn("copyDockerFiles")
-    from(zipTree("${projectDir}${File.separator}docker${File.separator}data.zip"))
-    into("${buildDir}${File.separator}docker")
-}
-
-tasks.withType<Test> {
-    dependsOn("composeUp")
+tasks.named("composeUp") {
+    dependsOn("prepareTeamcityServerData")
 }

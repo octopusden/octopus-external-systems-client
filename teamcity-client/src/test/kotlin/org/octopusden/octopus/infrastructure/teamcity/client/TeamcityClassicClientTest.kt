@@ -22,7 +22,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.Propert
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 
 
-private const val HOST = "localhost:8112"
+private const val HOST = "localhost:8111"
 private const val USER = "admin"
 private const val PASSWORD = "admin"
 
