@@ -88,6 +88,10 @@ subprojects {
         useJUnitPlatform()
     }
 
+    java {
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
     tasks.withType<KotlinCompile>().configureEach {
         kotlinOptions {
             suppressWarnings = true
