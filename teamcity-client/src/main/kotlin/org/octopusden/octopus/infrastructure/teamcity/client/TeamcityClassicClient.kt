@@ -66,6 +66,8 @@ class TeamcityClassicClient(
                 .target(TeamcityClient::class.java, apiUrl)
     }
 
+    override fun getServer() = client.getServer()
+
     override fun createProject(dto: TeamcityCreateProject) =
         client.createProject(dto)
 
