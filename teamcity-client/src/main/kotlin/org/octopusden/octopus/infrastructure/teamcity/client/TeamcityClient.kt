@@ -17,6 +17,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFea
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityServer
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
@@ -36,6 +37,9 @@ private const val API_VERSION: String = "2018.1"
 private const val REST: String = "/app/rest/$API_VERSION"
 
 interface TeamcityClient {
+    @RequestLine("GET $REST/server")
+    @Headers("Accept: application/json")
+    fun getServer(): TeamcityServer
 
     @RequestLine("POST $REST/projects")
     @Headers("Content-Type: application/json", "Accept: application/json")
@@ -49,7 +53,7 @@ interface TeamcityClient {
     fun getProject(@Param("locator", expander = Locator::class) locator: ProjectLocator): TeamcityProject
 
     @RequestLine("GET $REST/projects?locator={locator}")
-    @Headers("Content-Type: application/json", "Accept: application/json")
+    @Headers("Accept: application/json")
     fun getProjects(@Param("locator", expander = Locator::class) locator: ProjectLocator): TeamcityProjects
 
     @RequestLine("POST $REST/buildTypes")

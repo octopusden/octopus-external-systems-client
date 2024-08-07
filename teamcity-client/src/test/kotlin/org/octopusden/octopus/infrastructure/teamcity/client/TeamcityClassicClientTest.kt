@@ -54,6 +54,11 @@ class TeamcityClassicClientTest {
         )
 
     @Test
+    fun testServer() {
+        assertEquals("2021.1.4 (build 92954)", client.getServer().version)
+    }
+
+    @Test
     fun testProject() {
         val project = createProject("TestCreateProject")
         assertEquals(project, client.getProject(project.id))
