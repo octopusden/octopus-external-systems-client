@@ -5,6 +5,7 @@ import feign.Body
 import feign.Headers
 import feign.Param
 import feign.RequestLine
+import feign.form.FormData
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
@@ -304,8 +305,20 @@ interface TeamcityClient {
     fun getVcsRoots(
         @Param("locator", expander = Locator::class) locator: VcsRootLocator
     ): TeamcityVcsRoots
+
+    @RequestLine("POST /plugins/metarunner/upload.html")
+    @Headers("Content-Type: multipart/form-data")
+    fun uploadMetarunner(
+        @Param(value = "fileName") fileName: String,
+        @Param(value = "file:fileToUpload") file: FormData,
+        @Param(value = "action") action: String,
+        @Param(value = "projectId") projectId: String
+    )
 }
 
+fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileContent: ByteArray) {
+    uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
+}
 
 enum class ConfigurationType(
     @get:JsonValue

@@ -8,6 +8,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
 import feign.Logger
 import feign.RequestInterceptor
+import feign.form.FormData
+import feign.form.FormEncoder
 import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
@@ -58,7 +60,7 @@ class TeamcityClassicClient(
             Feign.builder()
                 .requestInterceptor { requestTemplate -> requestTemplate?.header("Origin", apiUrl) }
                 .client(ApacheHttpClient())
-                .encoder(JacksonEncoder(objectMapper))
+                .encoder(FormEncoder(JacksonEncoder(objectMapper)))
                 .decoder(TeamcityClientDecoder(objectMapper))
                 .requestInterceptor(interceptor)
                 .logger(Slf4jLogger(TeamcityClient::class.java))
@@ -289,4 +291,7 @@ class TeamcityClassicClient(
 
     override fun getVcsRoots(locator: VcsRootLocator): TeamcityVcsRoots =
         client.getVcsRoots(locator)
+
+    override fun uploadMetarunner(fileName: String, file: FormData, action: String, projectId: String) =
+        client.uploadMetarunner(fileName, file, action, projectId)
 }
