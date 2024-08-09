@@ -17,6 +17,7 @@ java.targetCompatibility = JavaVersion.VERSION_1_8
 
 dependencies {
     api(project(":client-commons"))
+    api("io.github.openfeign.form:feign-form:3.8.0")
     testImplementation("org.slf4j:slf4j-simple:2.0.7")
     testImplementation("junit:junit:4.13.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
