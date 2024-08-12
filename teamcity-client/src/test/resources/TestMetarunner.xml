@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<meta-runner name="Test">
+    <description>Test meta-runner</description>
+    <settings>
+        <build-runners>
+            <runner name="echo" type="simpleRunner">
+                <parameters>
+                    <param name="script.content"><![CDATA[echo TEST]]></param>
+                    <param name="use.custom.script" value="true" />
+                </parameters>
+            </runner>
+        </build-runners>
+        <requirements />
+    </settings>
+</meta-runner>

@@ -1,5 +1,6 @@
 package org.octopusden.octopus.infrastructure.teamcity.client
 
+import java.io.File
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -292,5 +293,16 @@ class TeamcityClassicClientTest {
         assertEquals("TestProjectLocator", projects.first().name)
         client.deleteProject(secondProject.id)
         client.deleteProject(project.id)
+    }
+
+    @Test
+    fun uploadMetarunnerTest() {
+        val projectId = "RDDepartment"
+        val testMetarunnerName = "TestMetarunner.xml"
+        val testMetarunnerContent = TeamcityClassicClientTest::class.java.classLoader
+            .getResourceAsStream(testMetarunnerName)!!.readBytes()
+        client.uploadMetarunner(projectId, testMetarunnerName, testMetarunnerContent)
+        File("build/teamcity-server/datadir/config/projects/$projectId/pluginData/metaRunners/$testMetarunnerName")
+            .inputStream().use { assertEquals(String(testMetarunnerContent), String(it.readBytes())) }
     }
 }

@@ -5,6 +5,7 @@ import feign.Body
 import feign.Headers
 import feign.Param
 import feign.RequestLine
+import feign.form.FormData
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
@@ -33,8 +34,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.TeamcityLocatorExpander as Locator
 
-private const val API_VERSION: String = "2018.1"
-private const val REST: String = "/app/rest/$API_VERSION"
+private const val REST: String = "/app/rest/2018.1"
 
 interface TeamcityClient {
     @RequestLine("GET $REST/server")
@@ -64,8 +64,7 @@ interface TeamcityClient {
     @Headers("Content-Type: text/plain", "Accept: application/json")
     @Body("{name}")
     fun createBuildType(
-        @Param("locator", expander = Locator::class) project: ProjectLocator,
-        @Param("name") name: String
+        @Param("locator", expander = Locator::class) project: ProjectLocator, @Param("name") name: String
     ): TeamcityBuildType
 
     @RequestLine("DELETE $REST/buildTypes/{locator}")
@@ -86,8 +85,7 @@ interface TeamcityClient {
     @RequestLine("POST $REST/buildTypes/{locator}/features")
     @Headers("Content-Type: application/json")
     fun addBuildTypeFeature(
-        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
-        feature: TeamcityLinkFeature
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator, feature: TeamcityLinkFeature
     )
 
     @RequestLine("GET $REST/buildTypes/{locator}/features")
@@ -99,8 +97,7 @@ interface TeamcityClient {
     @RequestLine("GET $REST/buildTypes/{locator}/features/{feature}")
     @Headers("Accept: application/json")
     fun getBuildTypeFeature(
-        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
-        @Param("feature") feature: String
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator, @Param("feature") feature: String
     ): TeamcityFeature
 
     @RequestLine("PUT $REST/buildTypes/{locator}/features/{feature}/parameters/{parameter}")
@@ -125,15 +122,13 @@ interface TeamcityClient {
     @Headers("Content-Type: text/plain")
     @Body("{newValue}")
     fun setBuildCounter(
-        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
-        @Param("newValue") newValue: String
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator, @Param("newValue") newValue: String
     )
 
     @RequestLine("POST $REST/buildTypes/{locator}/snapshot-dependencies")
     @Headers("Content-Type: application/json")
     fun createSnapshotDependency(
-        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
-        dependency: TeamcitySnapshotDependency
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator, dependency: TeamcitySnapshotDependency
     )
 
     @RequestLine("DELETE $REST/buildTypes/{locator}/snapshot-dependencies/{dependency}")
@@ -161,8 +156,7 @@ interface TeamcityClient {
     @RequestLine("POST $REST/buildTypes/{locator}/steps")
     @Headers("Content-Type: application/json")
     fun createBuildStep(
-        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
-        step: TeamcityStep
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator, step: TeamcityStep
     )
 
     @RequestLine("GET $REST/buildTypes/{locator}/steps")
@@ -241,8 +235,7 @@ interface TeamcityClient {
     @Headers("Content-Type: text/plain")
     @Body("{template}")
     fun attachTemplateToBuildType(
-        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
-        @Param("template") template: String
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator, @Param("template") template: String
     )
 
     @RequestLine("DELETE $REST/buildTypes/{locator}/templates")
@@ -304,15 +297,21 @@ interface TeamcityClient {
     fun getVcsRoots(
         @Param("locator", expander = Locator::class) locator: VcsRootLocator
     ): TeamcityVcsRoots
+
+    @RequestLine("POST /plugins/metarunner/upload.html")
+    @Headers("Content-Type: multipart/form-data")
+    fun uploadMetarunner(
+        @Param(value = "fileName") fileName: String,
+        @Param(value = "file:fileToUpload") file: FormData,
+        @Param(value = "action") action: String,
+        @Param(value = "projectId") projectId: String
+    )
 }
 
-
 enum class ConfigurationType(
-    @get:JsonValue
-    val type: String
+    @get:JsonValue val type: String
 ) {
-    PROJECT("projects"),
-    BUILD_TYPE("buildTypes");
+    PROJECT("projects"), BUILD_TYPE("buildTypes");
 
     class ConfigurationTypeExpander : Param.Expander {
         override fun expand(value: Any?) = when (value) {
@@ -321,3 +320,82 @@ enum class ConfigurationType(
         }
     }
 }
+
+fun TeamcityClient.deleteProject(id: String) = deleteProject(ProjectLocator(id = id))
+
+fun TeamcityClient.getProject(id: String) = getProject(ProjectLocator(id = id))
+
+fun TeamcityClient.createBuildType(projectId: String, name: String) =
+    createBuildType(ProjectLocator(id = projectId), name)
+
+fun TeamcityClient.getBuildType(id: String) = getBuildType(BuildTypeLocator(id = id))
+
+fun TeamcityClient.deleteBuildType(id: String) = deleteBuildType(BuildTypeLocator(id = id))
+
+fun TeamcityClient.getBuildTypes(projectId: String) = getBuildTypes(ProjectLocator(id = projectId))
+
+fun TeamcityClient.addBuildTypeFeature(buildTypeId: String, feature: TeamcityLinkFeature) =
+    addBuildTypeFeature(BuildTypeLocator(id = buildTypeId), feature)
+
+fun TeamcityClient.getBuildTypeFeatures(buildTypeId: String) = getBuildTypeFeatures(BuildTypeLocator(id = buildTypeId))
+
+fun TeamcityClient.getBuildTypeFeature(buildTypeId: String, feature: String) =
+    getBuildTypeFeature(BuildTypeLocator(id = buildTypeId), feature)
+
+fun TeamcityClient.updateBuildTypeFeatureParameter(
+    buildTypeId: String, feature: String, parameter: String, newValue: String
+) = updateBuildTypeFeatureParameter(BuildTypeLocator(id = buildTypeId), feature, parameter, newValue)
+
+fun TeamcityClient.getBuildTypeFeatureParameter(buildTypeId: String, feature: String, parameter: String) =
+    getBuildTypeFeatureParameter(BuildTypeLocator(id = buildTypeId), feature, parameter)
+
+fun TeamcityClient.setBuildCounter(buildTypeId: String, newValue: String) =
+    setBuildCounter(BuildTypeLocator(id = buildTypeId), newValue)
+
+fun TeamcityClient.createSnapshotDependency(buildTypeId: String, dependency: TeamcitySnapshotDependency) =
+    createSnapshotDependency(BuildTypeLocator(id = buildTypeId), dependency)
+
+fun TeamcityClient.deleteSnapshotDependency(buildTypeId: String, dependency: String) =
+    deleteSnapshotDependency(BuildTypeLocator(id = buildTypeId), dependency)
+
+fun TeamcityClient.getSnapshotDependencies(buildTypeId: String) =
+    getSnapshotDependencies(BuildTypeLocator(id = buildTypeId))
+
+fun TeamcityClient.disableBuildStep(buildTypeId: String, step: String, newValue: Boolean) =
+    disableBuildStep(BuildTypeLocator(id = buildTypeId), step, newValue)
+
+fun TeamcityClient.createBuildStep(buildTypeId: String, step: TeamcityStep) =
+    createBuildStep(BuildTypeLocator(id = buildTypeId), step)
+
+fun TeamcityClient.getBuildSteps(buildTypeId: String) = getBuildSteps(BuildTypeLocator(id = buildTypeId))
+
+fun TeamcityClient.createBuildTypeVcsRootEntry(buildTypeId: String, vcsRootEntry: TeamcityCreateVcsRootEntry) =
+    createBuildTypeVcsRootEntry(BuildTypeLocator(id = buildTypeId), vcsRootEntry)
+
+fun TeamcityClient.deleteBuildTypeVcsRootEntry(buildTypeId: String, vcsRootEntryId: String) =
+    deleteBuildTypeVcsRootEntry(BuildTypeLocator(id = buildTypeId), vcsRootEntryId)
+
+fun TeamcityClient.getBuildTypeVcsRootEntries(buildTypeId: String) =
+    getBuildTypeVcsRootEntries(BuildTypeLocator(id = buildTypeId))
+
+fun TeamcityClient.getBuildTypeVcsRootEntry(buildTypeId: String, vcsRootEntryId: String) =
+    getBuildTypeVcsRootEntry(BuildTypeLocator(id = buildTypeId), vcsRootEntryId)
+
+fun TeamcityClient.updateBuildTypeVcsRootEntryCheckoutRules(
+    buildTypeId: String, vcsRootEntryId: String, checkoutRules: String
+) = updateBuildTypeVcsRootEntryCheckoutRules(BuildTypeLocator(id = buildTypeId), vcsRootEntryId, checkoutRules)
+
+fun TeamcityClient.getVcsRoot(vcsRootId: String) = getVcsRoot(VcsRootLocator(id = vcsRootId))
+
+fun TeamcityClient.getBuildTypeTemplate(buildTypeId: String) = getBuildTypeTemplate(BuildTypeLocator(id = buildTypeId))
+
+fun TeamcityClient.attachTemplateToBuildType(buildTypeId: String, template: String) =
+    attachTemplateToBuildType(BuildTypeLocator(id = buildTypeId), template)
+
+fun TeamcityClient.detachTemplatesFromBuildType(buildTypeId: String) =
+    detachTemplatesFromBuildType(BuildTypeLocator(id = buildTypeId))
+
+fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileContent: ByteArray) {
+    uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
+}
+
