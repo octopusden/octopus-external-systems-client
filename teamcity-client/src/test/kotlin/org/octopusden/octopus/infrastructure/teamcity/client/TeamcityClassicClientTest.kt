@@ -1,7 +1,14 @@
 package org.octopusden.octopus.infrastructure.teamcity.client
 
-import java.io.File
-import org.junit.jupiter.api.Assertions.*
+import it.skrape.core.htmlDocument
+import it.skrape.matchers.toBe
+import it.skrape.selects.html5.textarea
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
@@ -296,13 +303,35 @@ class TeamcityClassicClientTest {
     }
 
     @Test
-    fun uploadMetarunnerTest() {
+    fun testUploadMetarunner() {
         val projectId = "RDDepartment"
-        val testMetarunnerName = "TestMetarunner.xml"
-        val testMetarunnerContent = TeamcityClassicClientTest::class.java.classLoader
-            .getResourceAsStream(testMetarunnerName)!!.readBytes()
-        client.uploadMetarunner(projectId, testMetarunnerName, testMetarunnerContent)
-        File("build/teamcity-server/datadir/config/projects/$projectId/pluginData/metaRunners/$testMetarunnerName")
-            .inputStream().use { assertEquals(String(testMetarunnerContent), String(it.readBytes())) }
+        val metarunnerId = "TestMetarunner"
+        val testMetarunnerName = "$metarunnerId.xml"
+        val check = { metarunnerContent: String ->
+            htmlDocument(
+                HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder()
+                        .uri(URI("http://$HOST/admin/editProject.html?projectId=$projectId&tab=metaRunner&editRunnerId=$metarunnerId"))
+                        .header("Origin", "http://$HOST").header("Authorization", "Basic YWRtaW46YWRtaW4=")
+                        .method("GET", HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString()
+                ).body()
+            ) {
+                textarea {
+                    withId = "metaRunnerContent"
+                    findAll {
+                        size toBe 1
+                        this[0].text toBe metarunnerContent
+                    }
+                }
+            }
+        }
+        val testMetarunnerCreateContent = TeamcityClassicClientTest::class.java.classLoader
+            .getResourceAsStream("${metarunnerId}Create.xml")!!.readBytes()
+        client.uploadMetarunner(projectId, testMetarunnerName, testMetarunnerCreateContent)
+        check.invoke(String(testMetarunnerCreateContent))
+        val testMetarunnerEditContent = TeamcityClassicClientTest::class.java.classLoader
+            .getResourceAsStream("${metarunnerId}Edit.xml")!!.readBytes()
+        client.uploadMetarunner(projectId, testMetarunnerName, testMetarunnerEditContent)
+        check.invoke(String(testMetarunnerEditContent))
     }
 }
