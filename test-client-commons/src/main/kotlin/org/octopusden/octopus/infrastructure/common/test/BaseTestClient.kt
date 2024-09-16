@@ -73,6 +73,7 @@ abstract class BaseTestClient(
             commit.id.name,
             commit.fullMessage,
             newChangeSet.repository,
+            newChangeSet.branch,
             commit.authorIdent.name,
             commit.authorIdent.`when`
         )
@@ -160,30 +161,22 @@ abstract class BaseTestClient(
         repositories[repository] = git
     }
 
-    override fun getCommits(vcsUrl: String, branch: String?): List<ChangeSet> {
+    override fun getCommits(vcsUrl: String, branch: String): List<ChangeSet> {
         val repository = parseUrl(vcsUrl)
         getLog().info(
-            "[$vcsUrlHost] get commits from repository '$repository'" + if (branch != null) " (branch '$branch')" else ""
+            "[$vcsUrlHost] get commits from repository '$repository' (branch '$branch')"
         )
         val git = repositories[repository]
             ?: throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' does not exist, can not get commits")
-        return git.log().run {
-            if (branch.isNullOrBlank()) {
-                this.all()
-            } else {
-                this.add(git.repository.resolve(branch))
-            }
-        }.call().map {
-            ChangeSet(
-                it.id.name, it.fullMessage, vcsUrl, it.authorIdent.name, it.authorIdent.`when`
-            )
+        return git.log().add(git.repository.resolve(branch)).call().map {
+            ChangeSet(it.id.name, it.fullMessage, vcsUrl, branch, it.authorIdent.name, it.authorIdent.`when`)
         }
     }
 
     override fun clearData() {
         getLog().info("[$vcsUrlHost] clear all data")
         repositories.entries.forEach { (repository, git) ->
-            getLog().debug("[$vcsUrlHost] delete directory '${git.repository.directory}'")
+            getLog().debug("[{}] delete directory '{}'", vcsUrlHost, git.repository.directory)
             git.repository.directory.deleteRecursively()
             deleteRepository(repository)
         }
@@ -192,12 +185,16 @@ abstract class BaseTestClient(
 
     private fun checkout(repository: Repository, branch: String, parent: String?): Git {
         getLog().debug(
-            "[$vcsUrlHost] checkout repository '$repository' branch '$branch'" + if (parent != null) " (parent '$branch')" else ""
+            "[{}] checkout repository '{}' branch '{}'{}",
+            vcsUrlHost,
+            repository,
+            branch,
+            if (parent != null) " (parent '$branch')" else ""
         )
         val git = repositories.computeIfAbsent(repository) { _ ->
             createRepository(repository)
             val repositoryDir = Files.createTempDirectory("TestClient_")
-            getLog().debug("[$vcsUrlHost] clone repository '$repository' to directory '$repositoryDir'")
+            getLog().debug("[{}] clone repository '{}' to directory '{}'", vcsUrlHost, repository, repositoryDir)
             retryableExecution {
                 Git.cloneRepository().setDirectory(repositoryDir.toFile()).setURI(repository.getUrl())
                     .setCredentialsProvider(jgitCredentialsProvider).call()
@@ -205,7 +202,12 @@ abstract class BaseTestClient(
         }
         val branches = git.branchList().call()
         if (branches.isEmpty()) {
-            getLog().debug("[$vcsUrlHost] repository '$repository' is empty, prepare default branch '$DEFAULT_BRANCH'")
+            getLog().debug(
+                "[{}] repository '{}' is empty, prepare default branch '{}'",
+                vcsUrlHost,
+                repository,
+                DEFAULT_BRANCH
+            )
             parent?.let {
                 throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' is empty, but parent '$it' is specified")
             }
@@ -218,12 +220,18 @@ abstract class BaseTestClient(
             }
         }
         if (branches.any { it.name == "refs/heads/$branch" } || branch == DEFAULT_BRANCH) {
-            getLog().debug("[$vcsUrlHost] repository '$repository' branch '$branch' exists")
+            getLog().debug("[{}] repository '{}' branch '{}' exists", vcsUrlHost, repository, branch)
             parent?.let {
                 throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' branch '$branch' exists already, but parent '$it' is specified")
             }
         } else {
-            getLog().debug("[$vcsUrlHost] create repository '$repository' branch '$branch' from parent '${parent ?: DEFAULT_BRANCH}'")
+            getLog().debug(
+                "[{}] create repository '{}' branch '{}' from parent '{}'",
+                vcsUrlHost,
+                repository,
+                branch,
+                parent ?: DEFAULT_BRANCH
+            )
             parent?.let { parentValue ->
                 gitCheckout(git, parentValue)
             }

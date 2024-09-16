@@ -10,6 +10,6 @@ interface TestClient {
     fun tag(vcsUrl: String, commitId: String, tag: String)
     fun exportRepository(vcsUrl: String, zip: File)
     fun importRepository(vcsUrl: String, zip: File)
-    fun getCommits(vcsUrl: String, branch: String? = null): List<ChangeSet>
+    fun getCommits(vcsUrl: String, branch: String): List<ChangeSet>
     fun clearData()
 }
