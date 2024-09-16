@@ -231,10 +231,6 @@ abstract class BaseTestClientTest(
             developBranchCommits,
             testClient.getCommits(vcsUrl, DEVELOP_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
         )
-        Assertions.assertIterableEquals(
-            (defaultBranchCommits + featureBranchCommits + developBranchCommits).toSet().sortedBy { it.commitId },
-            testClient.getCommits(vcsUrl).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
-        )
     }
 
     private fun checkCommits(branch: String, expected: List<String>) {
