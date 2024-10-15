@@ -6,8 +6,9 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.condition.DisabledIf
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
-
+import org.octopusden.octopus.infrastructure.gitea.test.GiteaTestClient
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseTestClientTest(
@@ -121,6 +122,7 @@ abstract class BaseTestClientTest(
     }
 
     @Test
+    @DisabledIf("isGiteaTestClient")
     fun testTag() {
         val tag1 = TestTag("test-0.1", testClient.commit(NewChangeSet("tag commit 1", vcsUrl, BaseTestClient.DEFAULT_BRANCH)).id)
         val tag2 = TestTag("test-0.2", testClient.commit(NewChangeSet("tag commit 2", vcsUrl, BaseTestClient.DEFAULT_BRANCH)).id)
@@ -232,6 +234,8 @@ abstract class BaseTestClientTest(
             testClient.getCommits(vcsUrl, DEVELOP_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
         )
     }
+
+    private fun isGiteaTestClient(): Boolean = testClient is GiteaTestClient
 
     private fun checkCommits(branch: String, expected: List<String>) {
         Assertions.assertIterableEquals(
