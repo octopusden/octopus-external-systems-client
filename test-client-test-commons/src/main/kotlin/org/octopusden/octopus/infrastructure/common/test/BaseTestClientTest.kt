@@ -7,7 +7,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
+import org.octopusden.octopus.infrastructure.common.util.RetryOperation
+import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
+private const val RETRY_INTERVAL_SEC: Long = 60
+private const val RETRY_COUNT = 3
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseTestClientTest(
@@ -33,6 +40,7 @@ abstract class BaseTestClientTest(
         index: Long
     ): TestPullRequest
 
+    private val _log: Logger = LoggerFactory.getLogger(BaseTestClientTest::class.java)
     protected val vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
 
     @AfterEach
@@ -129,7 +137,21 @@ abstract class BaseTestClientTest(
         Assertions.assertIterableEquals(listOf(tag1, tag2), getTags(PROJECT, REPOSITORY).sortedBy { it.displayId })
         Assertions.assertEquals(tag1, getTag(PROJECT, REPOSITORY, tag1.displayId))
         Assertions.assertEquals(tag2, getTag(PROJECT, REPOSITORY, tag2.displayId))
-        deleteTag(PROJECT, REPOSITORY, tag1.displayId)
+        RetryOperation.configure<Unit> {
+            attempts = RETRY_COUNT
+            failureException { e ->
+                NotFoundException::class.java == e.javaClass
+            }
+            onException { e, a ->
+                val message = "attempt=$a ($RETRY_COUNT) is failed on $e"
+                _log.warn(message)
+                message
+            }
+            executeOnFail {
+                _log.warn("Waiting $RETRY_INTERVAL_SEC seconds before retry")
+                TimeUnit.SECONDS.sleep(RETRY_INTERVAL_SEC)
+            }
+        }.execute { deleteTag(PROJECT, REPOSITORY, tag1.displayId) }
         Assertions.assertIterableEquals(listOf(tag2), getTags(PROJECT, REPOSITORY))
     }
 
