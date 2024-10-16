@@ -5,7 +5,6 @@ java {
 
 dependencies {
     api(project(":test-client-commons"))
-    api(project(":gitea-client"))
     api("org.junit.jupiter:junit-jupiter-engine:${project.properties["junit-jupiter.version"]}")
     api("org.junit.jupiter:junit-jupiter-params:${project.properties["junit-jupiter.version"]}")
     api("ch.qos.logback:logback-core:1.2.3")

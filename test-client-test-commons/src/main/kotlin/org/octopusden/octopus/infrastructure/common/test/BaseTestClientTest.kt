@@ -8,7 +8,6 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.octopusden.octopus.infrastructure.common.util.RetryOperation
-import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.TimeUnit
@@ -139,9 +138,6 @@ abstract class BaseTestClientTest(
         Assertions.assertEquals(tag2, getTag(PROJECT, REPOSITORY, tag2.displayId))
         RetryOperation.configure<Unit> {
             attempts = RETRY_COUNT
-            failureException { e ->
-                NotFoundException::class.java == e.javaClass
-            }
             onException { e, a ->
                 val message = "attempt=$a ($RETRY_COUNT) is failed on $e"
                 _log.warn(message)
