@@ -138,6 +138,9 @@ abstract class BaseTestClientTest(
         Assertions.assertEquals(tag2, getTag(PROJECT, REPOSITORY, tag2.displayId))
         RetryOperation.configure<Unit> {
             attempts = RETRY_COUNT
+            failureException { e ->
+                RuntimeException::class.java == e.javaClass
+            }
             onException { e, a ->
                 val message = "attempt=$a ($RETRY_COUNT) is failed on $e"
                 _log.warn(message)
