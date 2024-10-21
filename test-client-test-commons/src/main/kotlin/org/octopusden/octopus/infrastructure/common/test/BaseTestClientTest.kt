@@ -8,6 +8,7 @@ import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseTestClientTest(
     protected val testClient: TestClient, protected val vcsFormatter: String

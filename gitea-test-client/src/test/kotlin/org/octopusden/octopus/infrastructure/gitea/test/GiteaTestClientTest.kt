@@ -34,8 +34,8 @@ import java.util.concurrent.TimeUnit
 private const val HOST = "localhost:3000"
 private const val USER = "test-admin"
 private const val PASSWORD = "test-admin"
-private const val RETRY_INTERVAL_SEC: Long = 60
-private const val RETRY_COUNT = 3
+private const val RETRY_INTERVAL_SEC: Long = 1
+private const val RETRY_COUNT = 10
 
 class GiteaTestClientTest :
     BaseTestClientTest(GiteaTestClient("http://$HOST", USER, PASSWORD), "ssh://git@$HOST:%s/%s.git") {
