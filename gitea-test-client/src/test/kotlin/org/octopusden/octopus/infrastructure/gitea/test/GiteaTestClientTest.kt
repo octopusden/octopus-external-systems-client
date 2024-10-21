@@ -93,7 +93,7 @@ class GiteaTestClientTest :
             }
             onException { e, a ->
                 val message = "attempt=$a ($RETRY_COUNT) is failed on $e"
-                log.warn(message)
+                log.warn(message, e)
                 message
             }
             executeOnFail {
