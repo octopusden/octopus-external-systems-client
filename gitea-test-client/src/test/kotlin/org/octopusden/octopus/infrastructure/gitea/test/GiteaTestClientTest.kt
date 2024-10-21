@@ -40,7 +40,7 @@ private const val RETRY_COUNT = 3
 class GiteaTestClientTest :
     BaseTestClientTest(GiteaTestClient("http://$HOST", USER, PASSWORD), "ssh://git@$HOST:%s/%s.git") {
 
-    private val _log: Logger = LoggerFactory.getLogger(GiteaTestClientTest::class.java)
+    private val log: Logger = LoggerFactory.getLogger(GiteaTestClientTest::class.java)
     private val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = "http://$HOST"
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
@@ -93,11 +93,11 @@ class GiteaTestClientTest :
             }
             onException { e, a ->
                 val message = "attempt=$a ($RETRY_COUNT) is failed on $e"
-                _log.warn(message)
+                log.warn(message)
                 message
             }
             executeOnFail {
-                _log.warn("Waiting $RETRY_INTERVAL_SEC seconds before retry")
+                log.warn("Waiting $RETRY_INTERVAL_SEC seconds before retry")
                 TimeUnit.SECONDS.sleep(RETRY_INTERVAL_SEC)
             }
         }.execute(retryFunction)
