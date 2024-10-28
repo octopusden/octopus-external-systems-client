@@ -88,16 +88,16 @@ class GiteaTestClientTest :
     private fun doWithRetries(retryFunction: () -> Unit) {
         return RetryOperation.configure<Unit> {
             attempts = RETRY_COUNT
-            failureException { e ->
-                NotFoundException::class.java == e.javaClass
+            failureException { exception ->
+                NotFoundException::class.java == exception.javaClass
             }
-            onException { e, a ->
-                val message = "attempt=$a ($RETRY_COUNT) is failed on $e"
-                log.warn(message, e)
+            onException { exception, attempt ->
+                val message = "attempt=$attempt ($RETRY_COUNT) is failed on $exception"
+                log.warn(message, exception)
                 message
             }
             executeOnFail {
-                log.warn("Waiting $RETRY_INTERVAL_SEC seconds before retry")
+                log.info("Waiting $RETRY_INTERVAL_SEC seconds before retry")
                 TimeUnit.SECONDS.sleep(RETRY_INTERVAL_SEC)
             }
         }.execute(retryFunction)
