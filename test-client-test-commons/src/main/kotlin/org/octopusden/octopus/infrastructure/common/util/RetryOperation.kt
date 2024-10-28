@@ -3,17 +3,6 @@ package org.octopusden.octopus.infrastructure.common.util
 import org.slf4j.LoggerFactory
 
 class RetryOperation<T> {
-    companion object {
-        private val logger by lazy { LoggerFactory.getLogger(RetryOperation::class.java) }
-
-        @JvmStatic
-        fun <T> configure(init: RetryOperation<T>.() -> Unit): RetryOperation<T> {
-            val retryOperation = RetryOperation<T>()
-            retryOperation.init()
-            return retryOperation
-        }
-    }
-
     var attempts: Int = 0
     private var failureExceptions: (exception: Exception) -> Boolean = { false }
     private var failureConditions: (response: T) -> Boolean = { false }
@@ -69,6 +58,17 @@ class RetryOperation<T> {
                 }
             }
             a++
+        }
+    }
+
+    companion object {
+        private val logger by lazy { LoggerFactory.getLogger(RetryOperation::class.java) }
+
+        @JvmStatic
+        fun <T> configure(init: RetryOperation<T>.() -> Unit): RetryOperation<T> {
+            val retryOperation = RetryOperation<T>()
+            retryOperation.init()
+            return retryOperation
         }
     }
 }
