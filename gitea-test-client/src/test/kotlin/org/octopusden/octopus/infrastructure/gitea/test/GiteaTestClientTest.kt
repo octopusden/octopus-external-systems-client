@@ -9,6 +9,7 @@ import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCre
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
+import org.octopusden.octopus.infrastructure.common.util.RetryOperation
 import org.octopusden.octopus.infrastructure.gitea.client.GiteaClassicClient
 import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.createPullRequestWithDefaultReviewers
@@ -19,20 +20,27 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
+import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
 import org.octopusden.octopus.infrastructure.gitea.client.getBranches
 import org.octopusden.octopus.infrastructure.gitea.client.getBranchesCommitGraph
 import org.octopusden.octopus.infrastructure.gitea.client.getCommit
 import org.octopusden.octopus.infrastructure.gitea.client.getCommits
 import org.octopusden.octopus.infrastructure.gitea.client.getTags
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.util.concurrent.TimeUnit
 
 
 private const val HOST = "localhost:3000"
 private const val USER = "test-admin"
 private const val PASSWORD = "test-admin"
+private const val RETRY_INTERVAL_SEC: Long = 1
+private const val RETRY_COUNT = 10
 
 class GiteaTestClientTest :
     BaseTestClientTest(GiteaTestClient("http://$HOST", USER, PASSWORD), "ssh://git@$HOST:%s/%s.git") {
 
+    private val log: Logger = LoggerFactory.getLogger(GiteaTestClientTest::class.java)
     private val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = "http://$HOST"
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
@@ -44,8 +52,9 @@ class GiteaTestClientTest :
     override fun getTag(project: String, repository: String, tag: String) =
         client.getTag(project, repository, tag).toTestTag()
 
-    override fun deleteTag(project: String, repository: String, tag: String) =
-        client.deleteTag(project, repository, tag)
+    override fun deleteTag(project: String, repository: String, tag: String) {
+        doWithRetries { client.deleteTag(project, repository, tag)  }
+    }
 
     override fun createTag(project: String, repository: String, commitId: String, tag: String) {
         client.createTag(project, repository, GiteaCreateTag(tag, commitId, "test"))
@@ -76,6 +85,23 @@ class GiteaTestClientTest :
     private fun GiteaTag.toTestTag() = TestTag(name, commit.sha)
     private fun GiteaCommit.toTestCommit() = TestCommit(sha, commit.message)
     private fun GiteaPullRequest.toTestPullRequest() = TestPullRequest(number, title, body, head.label, base.label)
+    private fun doWithRetries(retryFunction: () -> Unit) {
+        return RetryOperation.configure<Unit> {
+            attempts = RETRY_COUNT
+            failureException { exception ->
+                NotFoundException::class.java == exception.javaClass
+            }
+            onException { exception, attempt ->
+                val message = "attempt=$attempt ($RETRY_COUNT) is failed on $exception"
+                log.warn(message, exception)
+                message
+            }
+            executeOnFail {
+                log.info("Waiting $RETRY_INTERVAL_SEC seconds before retry")
+                TimeUnit.SECONDS.sleep(RETRY_INTERVAL_SEC)
+            }
+        }.execute(retryFunction)
+    }
 
     @Test
     fun testUpdateRepositoryConfiguration() {
