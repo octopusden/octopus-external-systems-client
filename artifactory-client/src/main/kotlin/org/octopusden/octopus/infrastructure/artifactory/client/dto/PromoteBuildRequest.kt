@@ -3,7 +3,7 @@ package org.octopusden.octopus.infrastructure.artifactory.client.dto
 import java.util.Date
 
 @Suppress("unused")
-class PromoteBuild(
+class PromoteBuildRequest(
     val user: String,
     val targetRepo: String,
     val status: String,

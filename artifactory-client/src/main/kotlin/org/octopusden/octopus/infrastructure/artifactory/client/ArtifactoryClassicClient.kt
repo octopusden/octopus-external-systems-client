@@ -11,8 +11,10 @@ import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfoResponse
-import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteBuild
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteBuildRequest
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDockerImageRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.Tokens
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 
 @Suppress("unused")
@@ -34,9 +36,16 @@ class ArtifactoryClassicClient(
 
     override fun getVersion(): SystemVersion = client.getVersion()
 
-    override fun getBuildInfo(buildName: String, buildNumber: String): BuildInfoResponse = client.getBuildInfo(buildName, buildNumber)
+    override fun getTokens(): Tokens = client.getTokens()
 
-    override fun promoteBuild(buildName: String, buildNumber: String, promoteBuild: PromoteBuild) = client.promoteBuild(buildName, buildNumber, promoteBuild)
+    override fun getBuildInfo(buildName: String, buildNumber: String): BuildInfoResponse =
+        client.getBuildInfo(buildName, buildNumber)
+
+    override fun promoteBuild(buildName: String, buildNumber: String, request: PromoteBuildRequest) =
+        client.promoteBuild(buildName, buildNumber, request)
+
+    override fun promoteDockerImage(repoKey: String, request: PromoteDockerImageRequest) =
+        client.promoteDockerImage(repoKey, request)
 
     companion object {
         private fun getMapper(): ObjectMapper {
