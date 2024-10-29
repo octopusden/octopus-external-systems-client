@@ -28,7 +28,7 @@ nexusPublishing {
 
 allprojects {
     group = "org.octopusden.octopus.octopus-external-systems-clients"
-    version = "1.0-SNAPSHOT"
+    version = "2.0-SNAPSHOT"
 }
 
 subprojects {
