@@ -19,15 +19,19 @@ const val DOCKER_PATH = "$ARTIFACTORY_PATH/docker"
 
 interface ArtifactoryClient {
     @RequestLine("GET $TOKENS_PATH")
+    @Headers("Accept: application/json")
     fun getTokens(): Tokens
 
     @RequestLine("GET $SYSTEM_PATH/version")
+    @Headers("Accept: application/json")
     fun getVersion(): SystemVersion
 
     @RequestLine("GET $BUILD_PATH/{buildName}/{buildNumber}")
+    @Headers("Accept: application/json")
     fun getBuildInfo(@Param("buildName") buildName: String, @Param("buildNumber") buildNumber: String): BuildInfoResponse
 
     @RequestLine("POST $BUILD_PATH/promote/{buildName}/{buildNumber}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
     fun promoteBuild(@Param("buildName") buildName: String, @Param("buildNumber") buildNumber: String, request: PromoteBuildRequest): ArtifactoryResponse
 
     @RequestLine("POST $DOCKER_PATH/{repoKey}/v2/promote")
