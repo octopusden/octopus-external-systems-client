@@ -15,14 +15,16 @@ class ArtifactoryClientErrorDecoder(private val objectMapper: ObjectMapper) : Er
             val message = closableResponse.body()
                 .asInputStream()
                 .use { inputStream ->
-                    val targetResponse =
-                        errorResponseTypes.getOrDefault(methodKey, ArtifactoryErrorsResponse::class.java)
                     inputStream.readBytes().let { bytes ->
-                        try {
-                            objectMapper.readValue(bytes, targetResponse).toString()
-                        } catch (e: Exception) {
-                            String(bytes)
+                        var deserializedErrors: String? = null
+                        for (type in arrayOf(ArtifactoryErrorsResponse::class, ArtifactoryResponse::class)) {
+                            try {
+                                deserializedErrors = objectMapper.readValue(bytes, type.java).toString()
+                                break
+                            } catch (_: Exception) {
+                            }
                         }
+                        deserializedErrors ?: String(bytes)
                     }
                 }
             when (closableResponse.status()) {
@@ -30,10 +32,5 @@ class ArtifactoryClientErrorDecoder(private val objectMapper: ObjectMapper) : Er
                 else -> InternalServerError(message)
             }
         }
-    }
-
-    companion object {
-        private val errorResponseTypes =
-            mapOf<String, Class<*>>("ArtifactoryClient#promoteBuild(String,String,PromoteBuildRequest)" to ArtifactoryResponse::class.java)
     }
 }
