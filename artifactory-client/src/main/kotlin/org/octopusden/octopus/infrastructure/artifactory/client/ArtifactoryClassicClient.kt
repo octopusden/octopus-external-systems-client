@@ -1,7 +1,10 @@
 package org.octopusden.octopus.infrastructure.artifactory.client
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
 import feign.Logger
@@ -16,6 +19,7 @@ import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDocke
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.Tokens
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
+
 
 @Suppress("unused")
 class ArtifactoryClassicClient(
@@ -51,6 +55,9 @@ class ArtifactoryClassicClient(
         private fun getMapper(): ObjectMapper {
             val objectMapper = jacksonObjectMapper()
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
+            objectMapper.setDateFormat(StdDateFormat().withColonInTimeZone(false))
+            objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
             return objectMapper
         }
 
