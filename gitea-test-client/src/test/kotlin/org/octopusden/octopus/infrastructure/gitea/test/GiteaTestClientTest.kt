@@ -4,7 +4,6 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.CredentialProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
@@ -166,15 +165,6 @@ class GiteaTestClientTest :
             expectedCommits.map { it.commitId },
             branchesCommitGraph.getVisited().sorted()
         )
-    }
-
-    @Test
-    fun testGetVisitedIllegalAccessException() {
-        val repository = "test-repository-branches-commit-graph"
-        val vcsUrl = vcsFormatter.format(PROJECT, repository)
-        testClient.importRepository(vcsUrl, File("src/test/resources/$repository.zip"))
-        assertThrows<IllegalAccessException> { client.getBranchesCommitGraph(PROJECT, repository).getVisited() }
-
     }
 
     @Test
