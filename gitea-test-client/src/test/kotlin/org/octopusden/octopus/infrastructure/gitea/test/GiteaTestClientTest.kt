@@ -1,8 +1,10 @@
 package org.octopusden.octopus.infrastructure.gitea.test
 
 import java.io.File
+import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.CredentialProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
@@ -11,14 +13,13 @@ import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.octopusden.octopus.infrastructure.common.util.RetryOperation
 import org.octopusden.octopus.infrastructure.gitea.client.GiteaClassicClient
-import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.createPullRequestWithDefaultReviewers
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
-import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
 import org.octopusden.octopus.infrastructure.gitea.client.getBranches
@@ -26,9 +27,9 @@ import org.octopusden.octopus.infrastructure.gitea.client.getBranchesCommitGraph
 import org.octopusden.octopus.infrastructure.gitea.client.getCommit
 import org.octopusden.octopus.infrastructure.gitea.client.getCommits
 import org.octopusden.octopus.infrastructure.gitea.client.getTags
+import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.concurrent.TimeUnit
 
 
 private const val HOST = "localhost:3000"
@@ -148,14 +149,32 @@ class GiteaTestClientTest :
         val repository = "test-repository-branches-commit-graph"
         val vcsUrl = vcsFormatter.format(PROJECT, repository)
         testClient.importRepository(vcsUrl, File("src/test/resources/$repository.zip"))
+        val branchesCommitGraph = client.getBranchesCommitGraph(PROJECT, repository)
+
+        val expectedCommits = mutableSetOf<TestCommit>().apply {
+            client.getBranches(PROJECT, repository).forEach { branch ->
+                addAll(testClient.getCommits(vcsUrl, branch.name).map { TestCommit(it.id, it.message) })
+            }
+        }.sortedBy { it.commitId }
+
         Assertions.assertIterableEquals(
-            mutableSetOf<TestCommit>().apply {
-                client.getBranches(PROJECT, repository).forEach { branch ->
-                    addAll(testClient.getCommits(vcsUrl, branch.name).map { TestCommit(it.id, it.message) })
-                }
-            }.sortedBy { it.commitId },
-            client.getBranchesCommitGraph(PROJECT, repository).map { it.toTestCommit() }.sortedBy { it.commitId }
+            expectedCommits,
+            branchesCommitGraph.map { it.toTestCommit() }.sortedBy { it.commitId }
+                .sortedBy { it.commitId }.toList()
         )
+        Assertions.assertIterableEquals(
+            expectedCommits.map { it.commitId },
+            branchesCommitGraph.getVisited().sorted()
+        )
+    }
+
+    @Test
+    fun testGetVisitedIllegalAccessException() {
+        val repository = "test-repository-branches-commit-graph"
+        val vcsUrl = vcsFormatter.format(PROJECT, repository)
+        testClient.importRepository(vcsUrl, File("src/test/resources/$repository.zip"))
+        assertThrows<IllegalAccessException> { client.getBranchesCommitGraph(PROJECT, repository).getVisited() }
+
     }
 
     @Test
