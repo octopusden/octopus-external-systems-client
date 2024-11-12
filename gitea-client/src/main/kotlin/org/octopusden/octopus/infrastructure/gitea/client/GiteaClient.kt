@@ -270,22 +270,23 @@ class GiteaCommitGraphSequence(
         branches: Collection<GiteaBranch>,
         private val pageRequest: (branchSha: String, page: Int) -> GiteaEntityList<GiteaCommit>
     ) : Iterator<GiteaCommit> {
-        private var commitPage: Int = 0
         private val branchBuffer = LinkedList(branches)
         private val commitBuffer = LinkedList<GiteaCommit>()
         private val visited = mutableSetOf<String>()
 
-        private var currentBranch: GiteaBranch? = branchBuffer.poll()
+        private var commitPage: Int = 0
+        private var currentBranch = branchBuffer.poll()
         private var orphanedCommits = emptyList<GiteaCommit>()
 
         init {
             fetch()
         }
 
-        override fun hasNext(): Boolean = synchronized(commitBuffer as Any) { commitBuffer.isNotEmpty() }
+        override fun hasNext() = synchronized(this) { commitBuffer.isNotEmpty() }
 
-        override fun next(): GiteaCommit =
-            synchronized(this as Any) { commitBuffer.pop().also { if (commitBuffer.isEmpty()) fetch() } }
+        override fun next(): GiteaCommit = synchronized(this) {
+            commitBuffer.pop().also { if (commitBuffer.isEmpty()) fetch() }
+        }
 
         private fun fetch() {
             while (currentBranch != null && commitBuffer.isEmpty()) {
