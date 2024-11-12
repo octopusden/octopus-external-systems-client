@@ -250,7 +250,7 @@ fun GiteaClient.getCommits(
 }
 
 fun GiteaClient.getBranchesCommitGraph(organization: String, repository: String, files: Boolean = false)
-        : GiteaCommitGraphSequence {
+        : Sequence<GiteaCommit> {
     val parameters = mapOf("limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to files)
     return GiteaCommitGraphSequence(getBranches(organization, repository)) { branch, page ->
         getCommits(organization, repository, parameters + mapOf<String, Any>("sha" to branch, "page" to page))
