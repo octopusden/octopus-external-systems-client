@@ -5,6 +5,8 @@ import feign.Param
 import feign.QueryMap
 import feign.RequestLine
 import java.util.Date
+import java.util.LinkedList
+import java.util.concurrent.atomic.AtomicReference
 import org.octopusden.octopus.infrastructure.gitea.client.dto.BaseGiteaEntity
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaBranch
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
@@ -168,7 +170,7 @@ interface GiteaClient {
 fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {
     return execute({ parameters: Map<String, Any> -> getOrganizations(parameters) })
 }
-
+@Suppress("unused")
 fun GiteaClient.getRepositories(organization: String): Collection<GiteaRepository> =
     execute({ parameters: Map<String, Any> -> getRepositories(organization, parameters) })
 
@@ -197,6 +199,7 @@ fun GiteaClient.getCommits(
     )
 }, { commit: GiteaCommit -> sinceDate == null || commit.created > sinceDate })
 
+@Suppress("unused")
 fun GiteaClient.getCommits(
     organization: String,
     repository: String,
@@ -246,29 +249,64 @@ fun GiteaClient.getCommits(
     return commits.map { it.value }
 }
 
-fun GiteaClient.getBranchesCommitGraph(
-    organization: String,
-    repository: String,
-    files: Boolean = false
-): List<GiteaCommit> {
+fun GiteaClient.getBranchesCommitGraph(organization: String, repository: String, files: Boolean = false)
+        : Sequence<GiteaCommit> {
     val parameters = mapOf("limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to files)
-    val commits = mutableMapOf<String, GiteaCommit>()
-    var page: Int
-    getBranches(organization, repository).forEach { branch ->
-        var orphanedCommits = listOf<GiteaCommit>()
-        page = 0
-        do {
-            val giteaResponse =
-                getCommits(organization, repository, parameters + mapOf("sha" to branch.commit.id, "page" to ++page))
-            val includedCommits = giteaResponse.values.filter { !commits.containsKey(it.sha) }
-            commits.putAll(includedCommits.associateBy { it.sha })
-            orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
-                commit.parents.any { !commits.containsKey(it.sha) }
-            }
-        } while ((giteaResponse.hasMore ?: (giteaResponse.values.isNotEmpty())) && orphanedCommits.isNotEmpty())
-        _log.debug("Pages retrieved: $page")
+    return GiteaCommitGraphSequence(getBranches(organization, repository)) { branch, page ->
+        getCommits(organization, repository, parameters + mapOf<String, Any>("sha" to branch, "page" to page))
     }
-    return commits.values.sortedByDescending { it.created }
+}
+
+class GiteaCommitGraphSequence(
+    branches: Collection<GiteaBranch>,
+    pageRequest: (branchSha: String, page: Int) -> GiteaEntityList<GiteaCommit>
+) : Sequence<GiteaCommit> {
+    private val iteratorRef = AtomicReference(GiteaCommitGraphIterator(branches, pageRequest))
+
+    override operator fun iterator() =
+        iteratorRef.getAndSet(null) ?: throw IllegalStateException("This iterator can be consumed only once")
+
+    class GiteaCommitGraphIterator(
+        branches: Collection<GiteaBranch>,
+        private val pageRequest: (branchSha: String, page: Int) -> GiteaEntityList<GiteaCommit>
+    ) : Iterator<GiteaCommit> {
+        private val branchBuffer = LinkedList(branches)
+        private val commitBuffer = LinkedList<GiteaCommit>()
+        private val visited = mutableSetOf<String>()
+
+        private var commitPage: Int = 0
+        private var currentBranch = branchBuffer.poll()
+        private var orphanedCommits = emptyList<GiteaCommit>()
+
+        init {
+            fetch()
+        }
+
+        override fun hasNext() = synchronized(this) { commitBuffer.isNotEmpty() }
+
+        override fun next(): GiteaCommit = synchronized(this) {
+            commitBuffer.pop().also { if (commitBuffer.isEmpty()) fetch() }
+        }
+
+        private fun fetch() {
+            while (currentBranch != null && commitBuffer.isEmpty()) {
+                val currentBranchSha = currentBranch!!.commit.id
+                val giteaResponse = pageRequest(currentBranchSha, ++commitPage)
+                val includedCommits = giteaResponse.values.filter { !visited.contains(it.sha) }
+                visited.addAll(includedCommits.map { it.sha })
+                commitBuffer.addAll(includedCommits)
+                orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
+                    commit.parents.any { !visited.contains(it.sha) }
+                }
+                if (giteaResponse.hasMore == false || giteaResponse.values.isEmpty() || orphanedCommits.isEmpty()) {
+                    _log.debug("Branch commits pages retrieved: ${currentBranch!!.name}:$commitPage")
+                    currentBranch = branchBuffer.poll()
+                    orphanedCommits = emptyList()
+                    commitPage = 0
+                }
+            }
+        }
+    }
 }
 
 fun GiteaClient.getTags(
@@ -301,6 +339,7 @@ fun GiteaClient.createPullRequestWithDefaultReviewers(
     )
 }
 
+@Suppress("unused")
 fun GiteaClient.getPullRequests(
     organization: String,
     repository: String
@@ -308,6 +347,7 @@ fun GiteaClient.getPullRequests(
     getPullRequests(organization, repository, parameters)
 })
 
+@Suppress("unused")
 fun GiteaClient.getPullRequestReviews(
     organization: String,
     repository: String,

@@ -1,8 +1,11 @@
 package org.octopusden.octopus.infrastructure.gitea.test
 
 import java.io.File
+import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.CredentialProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
@@ -11,14 +14,13 @@ import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.octopusden.octopus.infrastructure.common.util.RetryOperation
 import org.octopusden.octopus.infrastructure.gitea.client.GiteaClassicClient
-import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.createPullRequestWithDefaultReviewers
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
-import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
 import org.octopusden.octopus.infrastructure.gitea.client.getBranches
@@ -26,9 +28,9 @@ import org.octopusden.octopus.infrastructure.gitea.client.getBranchesCommitGraph
 import org.octopusden.octopus.infrastructure.gitea.client.getCommit
 import org.octopusden.octopus.infrastructure.gitea.client.getCommits
 import org.octopusden.octopus.infrastructure.gitea.client.getTags
+import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.concurrent.TimeUnit
 
 
 private const val HOST = "localhost:3000"
@@ -111,7 +113,7 @@ class GiteaTestClientTest :
         client.createOrganization(GiteaCreateOrganization(organizationName))
         client.createRepository(organizationName, GiteaCreateRepository("test-edit-repo"))
         client.updateRepositoryConfiguration(organizationName, repositoryName, GiteaEditRepoOption(name = newRepositoryName))
-        Assertions.assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
+        assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
     }
 
     @Test
@@ -140,7 +142,7 @@ class GiteaTestClientTest :
         )
         client.updateRepositoryConfiguration(organizationName, repositoryName, giteaRepositoryConfig)
         val giteaRepositoryConfigResult = client.getRepository(organizationName, repositoryName).toGiteaEditRepoOption()
-        Assertions.assertEquals(giteaRepositoryConfigResult.toString(), giteaRepositoryConfig.toString())
+        assertEquals(giteaRepositoryConfigResult.toString(), giteaRepositoryConfig.toString())
     }
 
     @Test
@@ -148,14 +150,23 @@ class GiteaTestClientTest :
         val repository = "test-repository-branches-commit-graph"
         val vcsUrl = vcsFormatter.format(PROJECT, repository)
         testClient.importRepository(vcsUrl, File("src/test/resources/$repository.zip"))
+        val branchesCommitGraphSequence = client.getBranchesCommitGraph(PROJECT, repository)
+
         Assertions.assertIterableEquals(
             mutableSetOf<TestCommit>().apply {
                 client.getBranches(PROJECT, repository).forEach { branch ->
                     addAll(testClient.getCommits(vcsUrl, branch.name).map { TestCommit(it.id, it.message) })
                 }
             }.sortedBy { it.commitId },
-            client.getBranchesCommitGraph(PROJECT, repository).map { it.toTestCommit() }.sortedBy { it.commitId }
+            branchesCommitGraphSequence.map { it.toTestCommit() }.sortedBy { it.commitId }
+                .sortedBy { it.commitId }.toList()
         )
+
+        val exception = assertThrows<IllegalStateException> {
+            branchesCommitGraphSequence.iterator()
+
+        }
+        assertEquals("This iterator can be consumed only once", exception.message)
     }
 
     @Test
@@ -168,9 +179,9 @@ class GiteaTestClientTest :
             )
         )
         val commit = client.getCommit(PROJECT, REPOSITORY, changeSet.id, true)
-        Assertions.assertEquals(1, commit.files!!.size)
-        Assertions.assertEquals(GiteaCommit.GiteaCommitAffectedFileStatus.ADDED, commit.files!!.first().status)
+        assertEquals(1, commit.files!!.size)
+        assertEquals(GiteaCommit.GiteaCommitAffectedFileStatus.ADDED, commit.files!!.first().status)
         Assertions.assertTrue(commit.files!!.first().filename.endsWith(".commit"))
-        Assertions.assertEquals(commit, client.getCommits(PROJECT, REPOSITORY, changeSet.id, null, true).first())
+        assertEquals(commit, client.getCommits(PROJECT, REPOSITORY, changeSet.id, null, true).first())
     }
 }
