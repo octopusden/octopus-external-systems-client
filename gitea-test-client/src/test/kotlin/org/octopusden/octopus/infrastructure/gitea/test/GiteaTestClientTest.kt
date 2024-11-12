@@ -3,7 +3,9 @@ package org.octopusden.octopus.infrastructure.gitea.test
 import java.io.File
 import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.CredentialProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
@@ -111,7 +113,7 @@ class GiteaTestClientTest :
         client.createOrganization(GiteaCreateOrganization(organizationName))
         client.createRepository(organizationName, GiteaCreateRepository("test-edit-repo"))
         client.updateRepositoryConfiguration(organizationName, repositoryName, GiteaEditRepoOption(name = newRepositoryName))
-        Assertions.assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
+        assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
     }
 
     @Test
@@ -140,7 +142,7 @@ class GiteaTestClientTest :
         )
         client.updateRepositoryConfiguration(organizationName, repositoryName, giteaRepositoryConfig)
         val giteaRepositoryConfigResult = client.getRepository(organizationName, repositoryName).toGiteaEditRepoOption()
-        Assertions.assertEquals(giteaRepositoryConfigResult.toString(), giteaRepositoryConfig.toString())
+        assertEquals(giteaRepositoryConfigResult.toString(), giteaRepositoryConfig.toString())
     }
 
     @Test
@@ -148,23 +150,23 @@ class GiteaTestClientTest :
         val repository = "test-repository-branches-commit-graph"
         val vcsUrl = vcsFormatter.format(PROJECT, repository)
         testClient.importRepository(vcsUrl, File("src/test/resources/$repository.zip"))
-        val branchesCommitGraph = client.getBranchesCommitGraph(PROJECT, repository)
-
-        val expectedCommits = mutableSetOf<TestCommit>().apply {
-            client.getBranches(PROJECT, repository).forEach { branch ->
-                addAll(testClient.getCommits(vcsUrl, branch.name).map { TestCommit(it.id, it.message) })
-            }
-        }.sortedBy { it.commitId }
+        val branchesCommitGraphSequence = client.getBranchesCommitGraph(PROJECT, repository)
 
         Assertions.assertIterableEquals(
-            expectedCommits,
-            branchesCommitGraph.map { it.toTestCommit() }.sortedBy { it.commitId }
+            mutableSetOf<TestCommit>().apply {
+                client.getBranches(PROJECT, repository).forEach { branch ->
+                    addAll(testClient.getCommits(vcsUrl, branch.name).map { TestCommit(it.id, it.message) })
+                }
+            }.sortedBy { it.commitId },
+            branchesCommitGraphSequence.map { it.toTestCommit() }.sortedBy { it.commitId }
                 .sortedBy { it.commitId }.toList()
         )
-        Assertions.assertIterableEquals(
-            expectedCommits.map { it.commitId },
-            branchesCommitGraph.getVisited().sorted()
-        )
+
+        val exception = assertThrows<IllegalStateException> {
+            branchesCommitGraphSequence.iterator()
+
+        }
+        assertEquals("This iterator can be consumed only once", exception.message)
     }
 
     @Test
@@ -177,9 +179,9 @@ class GiteaTestClientTest :
             )
         )
         val commit = client.getCommit(PROJECT, REPOSITORY, changeSet.id, true)
-        Assertions.assertEquals(1, commit.files!!.size)
-        Assertions.assertEquals(GiteaCommit.GiteaCommitAffectedFileStatus.ADDED, commit.files!!.first().status)
+        assertEquals(1, commit.files!!.size)
+        assertEquals(GiteaCommit.GiteaCommitAffectedFileStatus.ADDED, commit.files!!.first().status)
         Assertions.assertTrue(commit.files!!.first().filename.endsWith(".commit"))
-        Assertions.assertEquals(commit, client.getCommits(PROJECT, REPOSITORY, changeSet.id, null, true).first())
+        assertEquals(commit, client.getCommits(PROJECT, REPOSITORY, changeSet.id, null, true).first())
     }
 }

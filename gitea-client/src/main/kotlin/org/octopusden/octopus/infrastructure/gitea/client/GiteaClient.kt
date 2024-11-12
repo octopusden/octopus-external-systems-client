@@ -6,6 +6,7 @@ import feign.QueryMap
 import feign.RequestLine
 import java.util.Date
 import java.util.LinkedList
+import java.util.concurrent.atomic.AtomicReference
 import org.octopusden.octopus.infrastructure.gitea.client.dto.BaseGiteaEntity
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaBranch
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
@@ -256,37 +257,35 @@ fun GiteaClient.getBranchesCommitGraph(organization: String, repository: String,
     }
 }
 
-/**
- * Non Thread Safe implementation
- */
 class GiteaCommitGraphSequence(
     branches: Collection<GiteaBranch>,
-    pageRequest: (branch: String, page: Int) -> GiteaEntityList<GiteaCommit>
+    pageRequest: (branchSha: String, page: Int) -> GiteaEntityList<GiteaCommit>
 ) : Sequence<GiteaCommit> {
-    private val iterator = GiteaCommitGraphIterator(branches, pageRequest)
+    private val iteratorRef = AtomicReference(GiteaCommitGraphIterator(branches, pageRequest))
 
-    override operator fun iterator() = iterator
-
-    fun getVisited(): Set<String> = iterator.visited
+    override operator fun iterator() =
+        iteratorRef.getAndSet(null) ?: throw IllegalStateException("This iterator can be consumed only once")
 
     class GiteaCommitGraphIterator(
         branches: Collection<GiteaBranch>,
-        private val pageRequest: (branch: String, page: Int) -> GiteaEntityList<GiteaCommit>
+        private val pageRequest: (branchSha: String, page: Int) -> GiteaEntityList<GiteaCommit>
     ) : Iterator<GiteaCommit> {
         private var commitPage: Int = 0
         private val branchBuffer = LinkedList(branches)
         private val commitBuffer = LinkedList<GiteaCommit>()
+        private val visited = mutableSetOf<String>()
+
         private var currentBranch: GiteaBranch? = branchBuffer.poll()
         private var orphanedCommits = emptyList<GiteaCommit>()
-        val visited = mutableSetOf<String>()
 
         init {
             fetch()
         }
 
-        override fun hasNext(): Boolean = commitBuffer.isNotEmpty()
+        override fun hasNext(): Boolean = synchronized(commitBuffer as Any) { commitBuffer.isNotEmpty() }
 
-        override fun next(): GiteaCommit = commitBuffer.pop().also { if (commitBuffer.isEmpty()) fetch() }
+        override fun next(): GiteaCommit =
+            synchronized(this as Any) { commitBuffer.pop().also { if (commitBuffer.isEmpty()) fetch() } }
 
         private fun fetch() {
             while (currentBranch != null && commitBuffer.isEmpty()) {
