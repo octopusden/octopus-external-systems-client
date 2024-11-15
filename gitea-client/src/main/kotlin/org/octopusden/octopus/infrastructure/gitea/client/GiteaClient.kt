@@ -276,7 +276,7 @@ class GiteaCommitGraphSequence(
 
         private var commitPage: Int = 0
         private var currentBranch = branchBuffer.poll()
-        private var orphanedCommits = emptyList<GiteaCommit>()
+        private var notVisitedParents = emptyList<String>()
 
         init {
             fetch()
@@ -295,13 +295,12 @@ class GiteaCommitGraphSequence(
                 val includedCommits = giteaResponse.values.filter { !visited.contains(it.sha) }
                 visited.addAll(includedCommits.map { it.sha })
                 commitBuffer.addAll(includedCommits)
-                orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
-                    commit.parents.any { !visited.contains(it.sha) }
-                }
-                if (giteaResponse.hasMore == false || giteaResponse.values.isEmpty() || orphanedCommits.isEmpty()) {
+                notVisitedParents = (notVisitedParents + includedCommits.flatMap { it.parents }.map { it.sha })
+                    .filter { parentSha -> !visited.contains(parentSha) }
+                if (giteaResponse.hasMore == false || giteaResponse.values.isEmpty() || notVisitedParents.isEmpty()) {
                     _log.debug("Branch commits pages retrieved: ${currentBranch!!.name}:$commitPage")
                     currentBranch = branchBuffer.poll()
-                    orphanedCommits = emptyList()
+                    notVisitedParents = emptyList()
                     commitPage = 0
                 }
             }
