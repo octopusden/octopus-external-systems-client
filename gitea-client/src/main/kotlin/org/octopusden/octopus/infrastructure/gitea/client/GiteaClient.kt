@@ -170,6 +170,7 @@ interface GiteaClient {
 fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {
     return execute({ parameters: Map<String, Any> -> getOrganizations(parameters) })
 }
+
 @Suppress("unused")
 fun GiteaClient.getRepositories(organization: String): Collection<GiteaRepository> =
     execute({ parameters: Map<String, Any> -> getRepositories(organization, parameters) })
@@ -273,10 +274,10 @@ class GiteaCommitGraphSequence(
         private val branchBuffer = LinkedList(branches)
         private val commitBuffer = LinkedList<GiteaCommit>()
         private val visited = mutableSetOf<String>()
+        private val notVisitedParents = mutableSetOf<String>()
 
         private var commitPage: Int = 0
         private var currentBranch = branchBuffer.poll()
-        private var notVisitedParents = emptyList<String>()
 
         init {
             fetch()
@@ -292,15 +293,18 @@ class GiteaCommitGraphSequence(
             while (currentBranch != null && commitBuffer.isEmpty()) {
                 val currentBranchSha = currentBranch!!.commit.id
                 val giteaResponse = pageRequest(currentBranchSha, ++commitPage)
-                val includedCommits = giteaResponse.values.filter { !visited.contains(it.sha) }
-                visited.addAll(includedCommits.map { it.sha })
-                commitBuffer.addAll(includedCommits)
-                notVisitedParents = (notVisitedParents + includedCommits.flatMap { it.parents }.map { it.sha })
-                    .filter { parentSha -> !visited.contains(parentSha) }
+                giteaResponse.values.filter { commit -> commit.sha !in visited }.forEach { commit ->
+                    commitBuffer.add(commit)
+                    visited.add(commit.sha)
+                    commit.parents.forEach { parent ->
+                        notVisitedParents.add(parent.sha)
+                    }
+                }
+                notVisitedParents.removeAll(visited)
                 if (giteaResponse.hasMore == false || giteaResponse.values.isEmpty() || notVisitedParents.isEmpty()) {
                     _log.debug("Branch commits pages retrieved: ${currentBranch!!.name}:$commitPage")
                     currentBranch = branchBuffer.poll()
-                    notVisitedParents = emptyList()
+                    notVisitedParents.clear()
                     commitPage = 0
                 }
             }
