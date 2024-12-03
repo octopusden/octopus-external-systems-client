@@ -10,6 +10,7 @@ import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateHook
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreatePullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
@@ -33,6 +34,12 @@ class GiteaClassicClient(
         getMapper()
     )
 
+    override fun createDefaultHook(dto: GiteaCreateHook) = client.createDefaultHook(dto)
+
+    override fun getDefaultHook(id: Long) = client.getDefaultHook(id)
+
+    override fun deleteDefaultHook(id: Long) = client.deleteDefaultHook(id)
+
     override fun getOrganizations(requestParams: Map<String, Any>) =
         client.getOrganizations(requestParams)
 
@@ -51,6 +58,9 @@ class GiteaClassicClient(
 
     override fun deleteRepository(organization: String, repository: String) =
         client.deleteRepository(organization, repository)
+
+    override fun createRepositoryWebHook(organization: String, repository: String, dto: GiteaCreateHook) =
+        client.createRepositoryWebHook(organization, repository, dto)
 
     override fun getCommits(organization: String, repository: String, requestParams: Map<String, Any>) =
         client.getCommits(organization, repository, requestParams)

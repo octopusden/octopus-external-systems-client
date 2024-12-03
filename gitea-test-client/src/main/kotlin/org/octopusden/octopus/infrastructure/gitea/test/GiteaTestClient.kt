@@ -5,8 +5,11 @@ import org.octopusden.octopus.infrastructure.client.commons.CredentialProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.octopusden.octopus.infrastructure.gitea.client.GiteaClassicClient
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateHook
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaHookEvent
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaHookType
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
 import org.octopusden.octopus.infrastructure.gitea.client.getCommits
 import org.octopusden.octopus.infrastructure.gitea.client.getOrganizations
@@ -14,19 +17,44 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class GiteaTestClient : BaseTestClient {
-    constructor(url: String, username: String, password: String) : super(url, username, password)
+    private val vcsFacadeUrl: String?
+    private val serviceId: String?
+    private val webHookSecret: String?
 
     constructor(
         url: String,
         username: String,
         password: String,
-        externalHost: String
-    ) : super(url, username, password, externalHost)
+        vcsFacadeUrl: String? = null,
+        serviceId: String? = null,
+        webHookSecret: String? = null
+    ) : super(url, username, password) {
+        this.vcsFacadeUrl = vcsFacadeUrl
+        this.serviceId = serviceId
+        this.webHookSecret = webHookSecret
+    }
 
     constructor(
         url: String,
         username: String,
         password: String,
+        externalHost: String,
+        vcsFacadeUrl: String? = null,
+        serviceId: String? = null,
+        webHookSecret: String? = null
+    ) : super(url, username, password, externalHost) {
+        this.vcsFacadeUrl = vcsFacadeUrl
+        this.serviceId = serviceId
+        this.webHookSecret = webHookSecret
+    }
+
+    constructor(
+        url: String,
+        username: String,
+        password: String,
+        vcsFacadeUrl: String?,
+        serviceId: String?,
+        webHookSecret: String?,
         commitRetries: Int,
         commitPingInterval: Long,
         commitRaiseException: Boolean
@@ -37,19 +65,38 @@ class GiteaTestClient : BaseTestClient {
         commitRetries = commitRetries,
         commitPingInterval = commitPingInterval,
         commitRaiseException = commitRaiseException
-    )
+    ) {
+        this.vcsFacadeUrl = vcsFacadeUrl
+        this.serviceId = serviceId
+        this.webHookSecret = webHookSecret
+    }
 
     constructor(
         url: String,
         username: String,
         password: String,
         externalHost: String,
+        vcsFacadeUrl: String?,
+        serviceId: String?,
+        webHookSecret: String?,
         commitRetries: Int,
         commitPingInterval: Long,
         commitRaiseException: Boolean
-    ) : super(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException)
+    ) : super(
+        url,
+        username,
+        password,
+        externalHost,
+        commitRetries,
+        commitPingInterval,
+        commitRaiseException
+    ) {
+        this.vcsFacadeUrl = vcsFacadeUrl
+        this.serviceId = serviceId
+        this.webHookSecret = webHookSecret
+    }
 
-    private val client = GiteaClassicClient(object : ClientParametersProvider {
+    val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = apiUrl
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(username, password)
     })
@@ -72,6 +119,22 @@ class GiteaTestClient : BaseTestClient {
             client.createOrganization(GiteaCreateOrganization(repository.group))
         }
         client.createRepository(repository.group, GiteaCreateRepository(repository.name))
+
+        vcsFacadeUrl?.let { vcsFacadeUrlValue ->
+            serviceId?.let { serviceIdValue ->
+                webHookSecret?.let { webHookSecretValue ->
+                    log.debug("[$vcsUrlHost] create webhook '$repository'")
+                    client.createRepositoryWebHook(
+                        repository.group, repository.name, GiteaCreateHook(
+                            GiteaHookType.GITEA, true, "*", GiteaCreateHook.Config(
+                                "$vcsFacadeUrlValue/rest/api/1/indexer/gitea/webhook?vcsServiceId=$serviceIdValue",
+                                webHookSecretValue
+                            ), listOf(GiteaHookEvent.PUSH)
+                        )
+                    )
+                }
+            }
+        }
     }
 
     override fun deleteRepository(repository: Repository) {
