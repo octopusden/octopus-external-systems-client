@@ -124,7 +124,7 @@ class GiteaTestClient : BaseTestClient {
             serviceId?.let { serviceIdValue ->
                 webHookSecret?.let { webHookSecretValue ->
                     log.debug("[$vcsUrlHost] create webhook '$repository'")
-                    client.createRepositoryWebHook(
+                    client.createRepositoryHook(
                         repository.group, repository.name, GiteaCreateHook(
                             GiteaHookType.GITEA, true, "*", GiteaCreateHook.Config(
                                 "$vcsFacadeUrlValue/rest/api/1/indexer/gitea/webhook?vcsServiceId=$serviceIdValue",

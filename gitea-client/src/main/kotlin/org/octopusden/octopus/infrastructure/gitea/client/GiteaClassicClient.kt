@@ -59,8 +59,11 @@ class GiteaClassicClient(
     override fun deleteRepository(organization: String, repository: String) =
         client.deleteRepository(organization, repository)
 
-    override fun createRepositoryWebHook(organization: String, repository: String, dto: GiteaCreateHook) =
-        client.createRepositoryWebHook(organization, repository, dto)
+    override fun getRepositoryHooks(organization: String, repository: String, requestParams: Map<String, Any>)
+    = client.getRepositoryHooks(organization, repository, requestParams)
+
+    override fun createRepositoryHook(organization: String, repository: String, dto: GiteaCreateHook) =
+        client.createRepositoryHook(organization, repository, dto)
 
     override fun getCommits(organization: String, repository: String, requestParams: Map<String, Any>) =
         client.getCommits(organization, repository, requestParams)

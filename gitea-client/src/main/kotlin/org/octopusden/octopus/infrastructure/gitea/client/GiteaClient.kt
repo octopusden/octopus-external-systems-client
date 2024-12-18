@@ -80,9 +80,16 @@ interface GiteaClient {
         @Param("repository") repository: String,
     )
 
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}/hooks")
+    fun getRepositoryHooks(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        @QueryMap requestParams: Map<String, Any>
+    ): GiteaEntityList<GiteaHook>
+
     @RequestLine("POST $REPO_PATH/{organization}/{repository}/hooks")
     @Headers("Content-Type: application/json")
-    fun createRepositoryWebHook(
+    fun createRepositoryHook(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
         dto: GiteaCreateHook
@@ -279,6 +286,9 @@ fun GiteaClient.getBranchesCommitGraph(organization: String, repository: String,
         getCommits(organization, repository, parameters + mapOf<String, Any>("sha" to branch, "page" to page))
     }
 }
+
+fun GiteaClient.getRepositoryHooks(organization: String, repository: String): List<GiteaHook> =
+    execute({ parameters: Map<String, Any> -> getRepositoryHooks(organization, repository, parameters) })
 
 class GiteaCommitGraphSequence(
     branches: Collection<GiteaBranch>,
