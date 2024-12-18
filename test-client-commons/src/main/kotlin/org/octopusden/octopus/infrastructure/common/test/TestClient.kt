@@ -11,5 +11,5 @@ interface TestClient {
     fun exportRepository(vcsUrl: String, zip: File)
     fun importRepository(vcsUrl: String, zip: File)
     fun getCommits(vcsUrl: String, branch: String): List<ChangeSet>
-    fun clearData()
+    fun clearData(): Collection<String>
 }

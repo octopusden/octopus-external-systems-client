@@ -34,7 +34,7 @@ abstract class BaseTestClient(
     protected abstract val vcsUrlRegex: Regex
 
     private fun parseUrl(vcsUrl: String) = vcsUrlRegex.find(vcsUrl.lowercase())?.let { result ->
-        result.destructured.let { Repository(it.component1().trimEnd('/'), it.component2()) }
+        result.destructured.let { Repository(it.component1().trimEnd('/'), it.component2(), vcsUrl) }
     } ?: throw IllegalArgumentException("VCS URL '$vcsUrl' is not supported by ${javaClass.simpleName}($vcsUrlHost)")
 
     protected abstract fun Repository.getUrl(): String
@@ -173,14 +173,16 @@ abstract class BaseTestClient(
         }
     }
 
-    override fun clearData() {
+    override fun clearData(): Collection<String> {
         getLog().info("[$vcsUrlHost] clear all data")
         repositories.entries.forEach { (repository, git) ->
             getLog().debug("[{}] delete directory '{}'", vcsUrlHost, git.repository.directory)
             git.repository.directory.deleteRecursively()
             deleteRepository(repository)
         }
+        val repositoryUrls = repositories.keys.map { repository -> repository.sshUrl }
         repositories.clear()
+        return repositoryUrls
     }
 
     private fun checkout(repository: Repository, branch: String, parent: String?): Git {
@@ -302,7 +304,7 @@ abstract class BaseTestClient(
     }
 
     protected data class Repository(
-        val group: String, val name: String
+        val group: String, val name: String, val sshUrl: String
     ) {
         val path = "$group/$name"
 

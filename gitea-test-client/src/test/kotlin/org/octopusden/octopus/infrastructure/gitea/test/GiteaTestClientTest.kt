@@ -4,6 +4,7 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -20,6 +21,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganiz
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaHookEvent
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
@@ -27,6 +29,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.getBranches
 import org.octopusden.octopus.infrastructure.gitea.client.getBranchesCommitGraph
 import org.octopusden.octopus.infrastructure.gitea.client.getCommit
 import org.octopusden.octopus.infrastructure.gitea.client.getCommits
+import org.octopusden.octopus.infrastructure.gitea.client.getRepositoryHooks
 import org.octopusden.octopus.infrastructure.gitea.client.getTags
 import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.slf4j.Logger
@@ -40,7 +43,10 @@ private const val RETRY_INTERVAL_SEC: Long = 1
 private const val RETRY_COUNT = 10
 
 class GiteaTestClientTest :
-    BaseTestClientTest(GiteaTestClient("http://$HOST", USER, PASSWORD), "ssh://git@$HOST:%s/%s.git") {
+    BaseTestClientTest(
+        GiteaTestClient("http://$HOST", USER, PASSWORD, vcsFacadeUrl = "http://vcs-facade", "test-gitea", "secret"),
+        "ssh://git@$HOST:%s/%s.git"
+    ) {
 
     private val log: Logger = LoggerFactory.getLogger(GiteaTestClientTest::class.java)
     private val client = GiteaClassicClient(object : ClientParametersProvider {
@@ -111,7 +117,7 @@ class GiteaTestClientTest :
         val repositoryName = "test-edit-repo"
         val newRepositoryName = "test-edit-repository"
         client.createOrganization(GiteaCreateOrganization(organizationName))
-        client.createRepository(organizationName, GiteaCreateRepository("test-edit-repo"))
+        client.createRepository(organizationName, GiteaCreateRepository(repositoryName))
         client.updateRepositoryConfiguration(organizationName, repositoryName, GiteaEditRepoOption(name = newRepositoryName))
         assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
     }
@@ -170,7 +176,7 @@ class GiteaTestClientTest :
     }
 
     @Test
-    fun getCommitWithFiles() {
+    fun testGetCommitWithFiles() {
         val changeSet = testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit 1",
@@ -181,7 +187,22 @@ class GiteaTestClientTest :
         val commit = client.getCommit(PROJECT, REPOSITORY, changeSet.id, true)
         assertEquals(1, commit.files!!.size)
         assertEquals(GiteaCommit.GiteaCommitAffectedFileStatus.ADDED, commit.files!!.first().status)
-        Assertions.assertTrue(commit.files!!.first().filename.endsWith(".commit"))
+        assertTrue(commit.files!!.first().filename.endsWith(".commit"))
         assertEquals(commit, client.getCommits(PROJECT, REPOSITORY, changeSet.id, null, true).first())
+    }
+
+    @Test
+    fun testCreateWebHook() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit 1",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+        val hooks = client.getRepositoryHooks(PROJECT, REPOSITORY)
+        assertEquals(1, hooks.size)
+        assertEquals(listOf(GiteaHookEvent.PUSH), hooks.first().events)
+        assertTrue(hooks.first().active)
     }
 }

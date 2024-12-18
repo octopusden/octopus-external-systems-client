@@ -10,12 +10,14 @@ import java.util.concurrent.atomic.AtomicReference
 import org.octopusden.octopus.infrastructure.gitea.client.dto.BaseGiteaEntity
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaBranch
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateHook
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreatePullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaHook
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequestReview
@@ -28,10 +30,22 @@ import org.slf4j.LoggerFactory
 private val _log: Logger = LoggerFactory.getLogger(GiteaClient::class.java)
 
 const val ORG_PATH = "api/v1/orgs"
+const val HOOK_PATH = "api/v1/admin/hooks"
 const val REPO_PATH = "api/v1/repos"
 const val ENTITY_LIMIT = 50
 
 interface GiteaClient {
+
+    @RequestLine("POST $HOOK_PATH")
+    @Headers("Content-Type: application/json")
+    fun createDefaultHook(dto: GiteaCreateHook): GiteaHook
+
+    @RequestLine("GET $HOOK_PATH/{id}")
+    fun getDefaultHook(@Param("id") id: Long): GiteaHook
+
+    @RequestLine("DELETE $HOOK_PATH/{id}")
+    fun deleteDefaultHook(@Param("id") id: Long)
+
     @RequestLine("GET $ORG_PATH")
     fun getOrganizations(@QueryMap requestParams: Map<String, Any>): GiteaEntityList<GiteaOrganization>
 
@@ -65,6 +79,21 @@ interface GiteaClient {
         @Param("organization") organization: String,
         @Param("repository") repository: String,
     )
+
+    @RequestLine("GET $REPO_PATH/{organization}/{repository}/hooks")
+    fun getRepositoryHooks(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        @QueryMap requestParams: Map<String, Any>
+    ): GiteaEntityList<GiteaHook>
+
+    @RequestLine("POST $REPO_PATH/{organization}/{repository}/hooks")
+    @Headers("Content-Type: application/json")
+    fun createRepositoryHook(
+        @Param("organization") organization: String,
+        @Param("repository") repository: String,
+        dto: GiteaCreateHook
+    ): GiteaHook
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/commits")
     fun getCommits(
@@ -257,6 +286,9 @@ fun GiteaClient.getBranchesCommitGraph(organization: String, repository: String,
         getCommits(organization, repository, parameters + mapOf<String, Any>("sha" to branch, "page" to page))
     }
 }
+
+fun GiteaClient.getRepositoryHooks(organization: String, repository: String): List<GiteaHook> =
+    execute({ parameters: Map<String, Any> -> getRepositoryHooks(organization, repository, parameters) })
 
 class GiteaCommitGraphSequence(
     branches: Collection<GiteaBranch>,
