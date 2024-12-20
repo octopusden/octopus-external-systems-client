@@ -33,9 +33,11 @@ abstract class BaseTestClient(
     protected val vcsUrlHost = externalHost?.lowercase() ?: apiUrl.lowercase().replace("^(https|http)://".toRegex(), "")
     protected abstract val vcsUrlRegex: Regex
 
-    private fun parseUrl(vcsUrl: String) = vcsUrlRegex.find(vcsUrl.lowercase())?.let { result ->
-        result.destructured.let { Repository(it.component1().trimEnd('/'), it.component2(), vcsUrl) }
-    } ?: throw IllegalArgumentException("VCS URL '$vcsUrl' is not supported by ${javaClass.simpleName}($vcsUrlHost)")
+    private fun parseUrl(vcsUrl: String) = vcsUrl.lowercase().let { loweredVcsUrl ->
+        vcsUrlRegex.find(loweredVcsUrl)?.let { result ->
+            result.destructured.let { Repository(it.component1().trimEnd('/'), it.component2(), loweredVcsUrl) }
+        } ?: throw IllegalArgumentException("VCS URL '$vcsUrl' is not supported by ${javaClass.simpleName}($vcsUrlHost)")
+    }
 
     protected abstract fun Repository.getUrl(): String
     protected abstract fun getLog(): Logger
