@@ -16,6 +16,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreat
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntityList
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntityString
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketJiraCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
@@ -167,6 +168,23 @@ interface BitbucketClient {
         @Param("repository") repository: String,
         @Param("id") id: Long
     ): BitbucketPullRequest
+
+    @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/files?start={start}&limit={limit}")
+    @Throws(NotFoundException::class)
+    fun getRepositoryFiles(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        @Param("start") start: Int?,
+        @Param("limit") limit: Int?
+    ): BitbucketEntityString
+
+    @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/raw/{filePath}")
+    @Throws(NotFoundException::class)
+    fun getRepositoryRawFileContent(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        @Param("filePath") filePath: String
+    ): String
 }
 
 fun BitbucketClient.getProjects() = execute(

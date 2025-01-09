@@ -7,7 +7,6 @@ import feign.Feign
 import feign.Logger
 import feign.RequestInterceptor
 import feign.httpclient.ApacheHttpClient
-import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateProject
@@ -88,6 +87,12 @@ class BitbucketClassicClient(
     override fun getPullRequest(projectKey: String, repository: String, id: Long) =
         client.getPullRequest(projectKey, repository, id)
 
+    override fun getRepositoryFiles(projectKey: String, repository: String, start: Int?, limit: Int?) =
+        client.getRepositoryFiles(projectKey, repository, start, limit)
+
+    override fun getRepositoryRawFileContent(projectKey: String, repository: String, filePath: String) =
+        client.getRepositoryRawFileContent(projectKey, repository, filePath)
+
     companion object {
         private fun getMapper(): ObjectMapper {
             val objectMapper = jacksonObjectMapper()
@@ -103,10 +108,10 @@ class BitbucketClassicClient(
             return Feign.builder()
                 .client(ApacheHttpClient())
                 .encoder(JacksonEncoder(objectMapper))
-                .decoder(JacksonDecoder(objectMapper))
+                .decoder(BitbucketClientResponseDecoder(objectMapper))
                 .errorDecoder(BitbucketClientErrorDecoder(objectMapper))
                 .encoder(JacksonEncoder(objectMapper))
-                .decoder(JacksonDecoder(objectMapper))
+                .decoder(BitbucketClientResponseDecoder(objectMapper))
                 .requestInterceptor(interceptor)
                 .logger(Slf4jLogger(BitbucketClient::class.java))
                 .logLevel(Logger.Level.FULL)
