@@ -73,7 +73,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
     fun testGetRepositoryFiles() {
         val filesName = listOf("dummy.json", "dummy.txt")
         val paths: List<Path> = filesName.map { getTestResourceFile(it) }
-        testClient.commit(
+        val changeSet = testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} add dummy files",
                 vcsUrl,
@@ -81,7 +81,9 @@ class BitbucketTestClientTest : BaseTestClientTest(
             ), null, paths
         )
         println("commit is successful!")
-        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, null, 100)
+        println("repo url ${changeSet.repository} project $PROJECT repo $REPOSITORY branch ${changeSet.branch}")
+        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, 1, 100)
+        println("responseee")
         println(response.values)
         Assertions.assertTrue(response.values.containsAll(filesName))
     }
