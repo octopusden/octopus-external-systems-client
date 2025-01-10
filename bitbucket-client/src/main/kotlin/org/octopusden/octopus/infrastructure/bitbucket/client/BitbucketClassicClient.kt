@@ -110,8 +110,6 @@ class BitbucketClassicClient(
                 .encoder(JacksonEncoder(objectMapper))
                 .decoder(BitbucketClientResponseDecoder(objectMapper))
                 .errorDecoder(BitbucketClientErrorDecoder(objectMapper))
-                .encoder(JacksonEncoder(objectMapper))
-                .decoder(BitbucketClientResponseDecoder(objectMapper))
                 .requestInterceptor(interceptor)
                 .logger(Slf4jLogger(BitbucketClient::class.java))
                 .logLevel(Logger.Level.FULL)
