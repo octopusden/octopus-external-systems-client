@@ -16,6 +16,7 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.octopusden.octopus.infrastructure.common.test.dto.ChangeSet
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.slf4j.Logger
+import java.nio.file.Path
 
 abstract class BaseTestClient(
     url: String,
@@ -46,15 +47,34 @@ abstract class BaseTestClient(
     protected abstract fun deleteRepository(repository: Repository)
     protected abstract fun checkCommit(repository: Repository, sha: String)
 
-    override fun commit(newChangeSet: NewChangeSet, parent: String?): ChangeSet {
+    override fun commit(newChangeSet: NewChangeSet, parent: String?, filesToCommit: List<Path>?): ChangeSet {
         val repository = parseUrl(newChangeSet.repository)
         getLog().info(
             "[$vcsUrlHost] commit into repository '$repository' branch '${newChangeSet.branch}'" + if (parent != null) " (parent '$parent')" else ""
         )
         val git = checkout(repository, newChangeSet.branch, parent)
-        git.repository.directory.toPath().parent.resolve("${UUID.randomUUID()}.${"commit"}").toFile().createNewFile()
+
+        val updatedFilesToCommit = if (filesToCommit.isNullOrEmpty()) {
+            val placeholderFile = git.repository.directory.toPath().parent
+                .resolve("${UUID.randomUUID()}.commit")
+                .toFile()
+            placeholderFile.createNewFile() // Create a new file
+            listOf(placeholderFile.toPath()) // Use the created file as the files to commit
+        } else {
+            filesToCommit
+        }
+        updatedFilesToCommit.forEach { path ->
+            val file = path.toFile()
+            if (!file.exists() || !file.isFile) {
+                throw IllegalArgumentException("File at path $path does not exist or is not a valid file.")
+            }
+            println("there is file to commit ${path}")
+        }
+
         retryableExecution {
-            git.add().addFilepattern(".").call()
+            updatedFilesToCommit.forEach { path ->
+                git.add().addFilepattern(path.toString()).call()
+            }
         }
         val commit = retryableExecution {
             git.commit().setMessage(newChangeSet.message).call()

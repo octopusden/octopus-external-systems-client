@@ -21,6 +21,8 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.getTags
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
+import java.nio.file.Path
+import java.nio.file.Paths
 
 private const val HOST = "localhost:7990"
 private const val USER = "admin"
@@ -67,6 +69,23 @@ class BitbucketTestClientTest : BaseTestClientTest(
         description
     ).toTestPullRequest()
 
+    @Test
+    fun testGetRepositoryFiles() {
+        val filesName = listOf("dummy.json", "dummy.txt")
+        val paths: List<Path> = filesName.map { getTestResourceFile(it) }
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} add dummy files",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            ), null, paths
+        )
+        println("commit is successful!")
+        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, null, 100)
+        println(response.values)
+        Assertions.assertTrue(response.values.containsAll(filesName))
+    }
+
     override fun getPullRequest(project: String, repository: String, index: Long) =
         client.getPullRequest(project, repository, index).toTestPullRequest()
 
@@ -95,4 +114,13 @@ class BitbucketTestClientTest : BaseTestClientTest(
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)
     private fun BitbucketCommit.toTestCommit() = TestCommit(id, message)
     private fun BitbucketPullRequest.toTestPullRequest() = TestPullRequest(id, title, description ?: "", fromRef.displayId, toRef.displayId)
+
+    private fun getTestResourceFile(fileName: String): Path {
+        val resource = javaClass.getResource("/$fileName") // Note the leading slash
+        return if (resource != null) {
+            Paths.get(resource.toURI())  // Returns Path directly
+        } else {
+            throw IllegalArgumentException("Resource file not found: $fileName")
+        }
+    }
 }
