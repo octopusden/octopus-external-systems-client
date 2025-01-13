@@ -80,9 +80,8 @@ class BitbucketTestClientTest : BaseTestClientTest(
                 BaseTestClient.DEFAULT_BRANCH
             ), null, paths
         )
-        println("commit is successful!")
-        println("repo url ${changeSet.repository} project $PROJECT repo $REPOSITORY branch ${changeSet.branch}")
-        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, 1, 100)
+        println("commit is successful! ${changeSet.id} ${changeSet.author} ${changeSet.authorDate} ${changeSet.repository} project $PROJECT repo $REPOSITORY branch ${changeSet.branch}")
+        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, BaseTestClient.DEFAULT_BRANCH,1, 100)
         println("responseee")
         println(response.values)
         Assertions.assertTrue(response.values.containsAll(filesName))
