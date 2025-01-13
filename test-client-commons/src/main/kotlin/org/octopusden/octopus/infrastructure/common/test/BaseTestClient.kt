@@ -17,6 +17,7 @@ import org.octopusden.octopus.infrastructure.common.test.dto.ChangeSet
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.slf4j.Logger
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 
 abstract class BaseTestClient(
     url: String,
@@ -54,27 +55,19 @@ abstract class BaseTestClient(
         )
         val git = checkout(repository, newChangeSet.branch, parent)
 
-        val updatedFilesToCommit = if (filesToCommit.isNullOrEmpty()) {
-            val placeholderFile = git.repository.directory.toPath().parent
-                .resolve("${UUID.randomUUID()}.commit")
-                .toFile()
-            placeholderFile.createNewFile() // Create a new file
-            listOf(placeholderFile.toPath()) // Use the created file as the files to commit
-        } else {
-            filesToCommit
-        }
-        updatedFilesToCommit.forEach { path ->
-            val file = path.toFile()
-            if (!file.exists() || !file.isFile) {
-                throw IllegalArgumentException("File at path $path does not exist or is not a valid file.")
-            }
-            println("there is file to commit ${path}")
-        }
+        val gitTargetDirectory = git.repository.directory.toPath()
 
-        retryableExecution {
-            updatedFilesToCommit.forEach { path ->
-                git.add().addFilepattern(path.toString()).call()
+        if (filesToCommit.isNullOrEmpty()) {
+            val newFile = gitTargetDirectory.parent.resolve(UUID.randomUUID().toString() + ".commit")
+            Files.createFile(newFile)
+        } else {
+            for (sourceFile in filesToCommit) {
+                val destinationFile = gitTargetDirectory.parent.resolve(sourceFile.fileName)
+                Files.copy(sourceFile, destinationFile, StandardCopyOption.REPLACE_EXISTING)
             }
+        }
+        retryableExecution {
+            git.add().addFilepattern(".").call()
         }
         val commit = retryableExecution {
             git.commit().setMessage(newChangeSet.message).call()

@@ -169,7 +169,7 @@ interface BitbucketClient {
         @Param("id") id: Long
     ): BitbucketPullRequest
 
-    @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/files?at={at}start={start}&limit={limit}")
+    @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/files?at={at}&start={start}&limit={limit}")
     @Throws(NotFoundException::class)
     fun getRepositoryFiles(
         @Param("projectKey") projectKey: String,

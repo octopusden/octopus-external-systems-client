@@ -21,6 +21,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.getTags
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -71,20 +72,61 @@ class BitbucketTestClientTest : BaseTestClientTest(
 
     @Test
     fun testGetRepositoryFiles() {
-        val filesName = listOf("dummy.json", "dummy.txt")
+        val filesName = listOf("sample-data.json", "test-document.txt")
         val paths: List<Path> = filesName.map { getTestResourceFile(it) }
-        val changeSet = testClient.commit(
+        testClient.commit(
             NewChangeSet(
-                "${BaseTestClient.DEFAULT_BRANCH} add dummy files",
+                "${BaseTestClient.DEFAULT_BRANCH} add test resource files",
                 vcsUrl,
-                BaseTestClient.DEFAULT_BRANCH
+                BaseTestClient.DEFAULT_BRANCH,
             ), null, paths
         )
-        println("commit is successful! ${changeSet.id} ${changeSet.author} ${changeSet.authorDate} ${changeSet.repository} project $PROJECT repo $REPOSITORY branch ${changeSet.branch}")
-        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, BaseTestClient.DEFAULT_BRANCH,1, 100)
-        println("responseee")
-        println(response.values)
+        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, BaseTestClient.DEFAULT_BRANCH,0, filesName.size)
+        Assertions.assertEquals(filesName.size, response.values.size)
         Assertions.assertTrue(response.values.containsAll(filesName))
+    }
+
+    @Test
+    fun testGetRepositoryFilesForInvalidBranch() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} add test resource file for invalid branch",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH,
+            ), null, null
+        )
+        Assertions.assertThrowsExactly(NotFoundException::class.java, {
+            client.getRepositoryFiles(PROJECT, REPOSITORY, "other_branch",0, 10)
+        }, "Object \"other_branch\" does not exist in repository 'test-repository'")
+    }
+
+    @Test
+    fun testGetRepositoryRawFileContent() {
+        val fileName = "test-document.txt"
+        val filePath = getTestResourceFile(fileName)
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} add $fileName",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH,
+            ), null, listOf(filePath)
+        )
+        val response = client.getRepositoryRawFileContent(PROJECT, REPOSITORY, fileName)
+        Assertions.assertEquals(Files.readString(filePath), response)
+    }
+
+    @Test
+    fun testGetRepositoryFilesForInvalidFile() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} add test resource file for invalid file",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH,
+            ), null, null
+        )
+        Assertions.assertThrowsExactly(NotFoundException::class.java, {
+            client.getRepositoryRawFileContent(PROJECT, REPOSITORY, "wrong_file_path")
+        }, "The path \"wrong_file_path\" does not exist at revision \"refs/heads/master\"")
     }
 
     override fun getPullRequest(project: String, repository: String, index: Long) =
@@ -117,9 +159,9 @@ class BitbucketTestClientTest : BaseTestClientTest(
     private fun BitbucketPullRequest.toTestPullRequest() = TestPullRequest(id, title, description ?: "", fromRef.displayId, toRef.displayId)
 
     private fun getTestResourceFile(fileName: String): Path {
-        val resource = javaClass.getResource("/$fileName") // Note the leading slash
+        val resource = javaClass.getResource("/$fileName")
         return if (resource != null) {
-            Paths.get(resource.toURI())  // Returns Path directly
+            Paths.get(resource.toURI())
         } else {
             throw IllegalArgumentException("Resource file not found: $fileName")
         }
