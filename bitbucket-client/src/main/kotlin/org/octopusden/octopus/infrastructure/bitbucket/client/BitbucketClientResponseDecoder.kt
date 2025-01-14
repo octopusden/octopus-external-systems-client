@@ -5,6 +5,7 @@ import feign.codec.Decoder
 import java.lang.reflect.Type
 import com.fasterxml.jackson.databind.ObjectMapper
 import feign.jackson.JacksonDecoder
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPlainTextResponse
 import java.io.ByteArrayInputStream
 
 class BitbucketClientResponseDecoder(objectMapper: ObjectMapper) : Decoder {
@@ -14,8 +15,8 @@ class BitbucketClientResponseDecoder(objectMapper: ObjectMapper) : Decoder {
         val bodyBytes = response.body()?.asInputStream()?.readBytes()
             ?: throw IllegalStateException("Empty response body while decoding")
 
-        return if (type == String::class.java) {
-            String(bodyBytes, Charsets.UTF_8)
+        return if (type == BitbucketPlainTextResponse::class.java) {
+            BitbucketPlainTextResponse(String(bodyBytes, Charsets.UTF_8))
         } else {
             val bufferedResponse = response.toBuilder()
                 .body(ByteArrayInputStream(bodyBytes), bodyBytes.size)

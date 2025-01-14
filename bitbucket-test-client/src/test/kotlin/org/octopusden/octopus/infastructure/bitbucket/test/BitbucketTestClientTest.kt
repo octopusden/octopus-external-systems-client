@@ -112,7 +112,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
             ), null, listOf(filePath)
         )
         val response = client.getRepositoryRawFileContent(PROJECT, REPOSITORY, fileName)
-        Assertions.assertEquals(Files.readString(filePath), response)
+        Assertions.assertEquals(Files.readString(filePath), response.value)
     }
 
     @Test

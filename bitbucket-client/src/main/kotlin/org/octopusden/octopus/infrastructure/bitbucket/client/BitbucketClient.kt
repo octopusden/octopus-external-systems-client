@@ -20,6 +20,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketJiraCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPlainTextResponse
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
@@ -185,7 +186,7 @@ interface BitbucketClient {
         @Param("projectKey") projectKey: String,
         @Param("repository") repository: String,
         @Param("filePath") filePath: String
-    ): String
+    ): BitbucketPlainTextResponse
 }
 
 fun BitbucketClient.getProjects() = execute(
