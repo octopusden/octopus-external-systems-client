@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class BitbucketEntityList<T : BaseBitbucketEntity<*>> @JsonCreator constructor(
+data class BitbucketEntityList<T> @JsonCreator constructor(
     val values: List<T>,
     val size: Int,
     val isLastPage: Boolean,

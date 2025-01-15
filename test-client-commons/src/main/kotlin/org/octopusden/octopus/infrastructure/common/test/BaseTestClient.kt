@@ -16,6 +16,8 @@ import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.octopusden.octopus.infrastructure.common.test.dto.ChangeSet
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import org.slf4j.Logger
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
 
 abstract class BaseTestClient(
     url: String,
@@ -46,13 +48,24 @@ abstract class BaseTestClient(
     protected abstract fun deleteRepository(repository: Repository)
     protected abstract fun checkCommit(repository: Repository, sha: String)
 
-    override fun commit(newChangeSet: NewChangeSet, parent: String?): ChangeSet {
+    override fun commit(newChangeSet: NewChangeSet, parent: String?, filesToCommit: List<Path>?): ChangeSet {
         val repository = parseUrl(newChangeSet.repository)
         getLog().info(
             "[$vcsUrlHost] commit into repository '$repository' branch '${newChangeSet.branch}'" + if (parent != null) " (parent '$parent')" else ""
         )
         val git = checkout(repository, newChangeSet.branch, parent)
-        git.repository.directory.toPath().parent.resolve("${UUID.randomUUID()}.${"commit"}").toFile().createNewFile()
+
+        val gitTargetDirectory = git.repository.directory.toPath()
+
+        if (filesToCommit.isNullOrEmpty()) {
+            val newFile = gitTargetDirectory.parent.resolve(UUID.randomUUID().toString() + ".commit")
+            Files.createFile(newFile)
+        } else {
+            for (sourceFile in filesToCommit) {
+                val destinationFile = gitTargetDirectory.parent.resolve(sourceFile.fileName)
+                Files.copy(sourceFile, destinationFile, StandardCopyOption.REPLACE_EXISTING)
+            }
+        }
         retryableExecution {
             git.add().addFilepattern(".").call()
         }

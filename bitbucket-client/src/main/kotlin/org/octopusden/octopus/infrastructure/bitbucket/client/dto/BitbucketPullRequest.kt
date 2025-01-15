@@ -3,7 +3,7 @@ package org.octopusden.octopus.infrastructure.bitbucket.client.dto
 import java.util.Date
 
 class BitbucketPullRequest(
-    id: Long,
+    val id: Long,
     val title: String,
     val description: String? = null,
     val author: BitbucketPullRequestUser,
@@ -13,6 +13,6 @@ class BitbucketPullRequest(
     val state: BitbucketPullRequestState,
     val createdDate: Date,
     val updatedDate: Date
-) : BaseBitbucketEntity<Long>(id) {
+) {
     class BitbucketPullRequestUser(val user: BitbucketUser, val approved: Boolean)
 }

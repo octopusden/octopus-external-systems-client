@@ -5,7 +5,6 @@ import feign.Param
 import feign.QueryMap
 import feign.RequestLine
 import java.util.Date
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BaseBitbucketEntity
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
@@ -19,6 +18,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketJiraCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPlainTextResponse
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
@@ -167,6 +167,24 @@ interface BitbucketClient {
         @Param("repository") repository: String,
         @Param("id") id: Long
     ): BitbucketPullRequest
+
+    @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/files?at={at}&start={start}&limit={limit}")
+    @Throws(NotFoundException::class)
+    fun getRepositoryFiles(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        @Param("at") at: String?,
+        @Param("start") start: Int?,
+        @Param("limit") limit: Int?
+    ): BitbucketEntityList<String>
+
+    @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/raw/{filePath}")
+    @Throws(NotFoundException::class)
+    fun getRepositoryRawFileContent(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        @Param("filePath") filePath: String
+    ): BitbucketPlainTextResponse
 }
 
 fun BitbucketClient.getProjects() = execute(
@@ -299,7 +317,7 @@ fun BitbucketClient.createPullRequestWithDefaultReviewers(
     )
 }
 
-private fun <T : BaseBitbucketEntity<*>> execute(
+private fun <T> execute(
     function: (Map<String, Any>) -> BitbucketEntityList<T>,
     filter: (element: T) -> Boolean = { true }
 ): List<T> {

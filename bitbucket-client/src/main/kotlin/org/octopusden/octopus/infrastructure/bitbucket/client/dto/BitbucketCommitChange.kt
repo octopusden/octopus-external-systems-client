@@ -7,7 +7,7 @@ data class BitbucketCommitChange(
     val type: BitbucketCommitChangeType,
     val path: BitbucketCommitChangePath,
     val srcPath: BitbucketCommitChangePath?
-) : BaseBitbucketEntity<String>(contentId) {
+) {
     data class BitbucketCommitChangePath(
         @JsonProperty("toString")
         val value: String

@@ -1,3 +1,5 @@
 package org.octopusden.octopus.infrastructure.bitbucket.client.dto
 
-abstract class BaseBitbucketEntity<T>(val id: T)
+data class BitbucketPlainTextResponse (
+    val value: String
+)
