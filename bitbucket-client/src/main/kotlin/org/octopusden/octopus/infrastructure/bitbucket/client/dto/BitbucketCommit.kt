@@ -6,9 +6,9 @@ import java.util.Date
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 class BitbucketCommit @JsonCreator constructor(
-    id: String,
+    val id: String,
     val message: String,
     val author: BitbucketUser,
     val authorTimestamp: Date,
     val parents: List<BitbucketParent>
-) : BaseBitbucketEntity<String>(id)
+)

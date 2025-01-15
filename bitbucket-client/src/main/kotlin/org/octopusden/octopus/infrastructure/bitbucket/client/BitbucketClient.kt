@@ -5,7 +5,6 @@ import feign.Param
 import feign.QueryMap
 import feign.RequestLine
 import java.util.Date
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BaseBitbucketEntity
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
@@ -16,7 +15,6 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreat
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntityList
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntityString
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketJiraCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
@@ -178,7 +176,7 @@ interface BitbucketClient {
         @Param("at") at: String?,
         @Param("start") start: Int?,
         @Param("limit") limit: Int?
-    ): BitbucketEntityString
+    ): BitbucketEntityList<String>
 
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/raw/{filePath}")
     @Throws(NotFoundException::class)
@@ -319,7 +317,7 @@ fun BitbucketClient.createPullRequestWithDefaultReviewers(
     )
 }
 
-private fun <T : BaseBitbucketEntity<*>> execute(
+private fun <T> execute(
     function: (Map<String, Any>) -> BitbucketEntityList<T>,
     filter: (element: T) -> Boolean = { true }
 ): List<T> {

@@ -4,10 +4,11 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class BitbucketCommitChange(
     val contentId: String,
+    val id: String = contentId,
     val type: BitbucketCommitChangeType,
     val path: BitbucketCommitChangePath,
     val srcPath: BitbucketCommitChangePath?
-) : BaseBitbucketEntity<String>(contentId) {
+) {
     data class BitbucketCommitChangePath(
         @JsonProperty("toString")
         val value: String

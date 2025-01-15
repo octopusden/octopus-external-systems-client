@@ -14,11 +14,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     JsonSubTypes.Type(BitbucketBranch::class, name = "BRANCH")
 )
 abstract class BitbucketRef(
-    id: String,
+    val id: String,
     val displayId: String,
     val latestCommit: String,
     val type: BitbucketRefType
-) : BaseBitbucketEntity<String>(id) {
+) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is BitbucketRef) return false
