@@ -2,7 +2,7 @@ version: "3"
 
 services:
   gitea:
-    image: ${DOCKER_REGISTRY}/gitea/gitea:1.22.5
+    image: ${DOCKER_REGISTRY}/gitea/gitea:1.22.6
     container_name: gitea-test-client-ft-gitea
     environment:
       - USER_UID=1000
