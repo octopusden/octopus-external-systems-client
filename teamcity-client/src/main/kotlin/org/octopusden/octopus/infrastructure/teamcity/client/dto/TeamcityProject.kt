@@ -3,7 +3,7 @@ package org.octopusden.octopus.infrastructure.teamcity.client.dto
 data class TeamcityProject(
     val id: String,
     val name: String,
-    val parentProjectId: String,
+    val parentProjectId: String? = null,
 //    val parentProjectName: String? = null,
 //    val archived: Boolean? = null,
 //    val virtual: Boolean? = null,
