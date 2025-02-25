@@ -31,7 +31,7 @@ configure<ComposeExtension> {
     environment.putAll(
         mapOf(
             "DOCKER_REGISTRY" to project.properties["docker.registry"],
-            "TEAMCITY_VERSION" to "2021.1.4",
+            "TEAMCITY_VERSION" to "2022.04.7",
         )
     )
 }

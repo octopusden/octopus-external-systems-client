@@ -63,7 +63,7 @@ class TeamcityClassicClientTest {
 
     @Test
     fun testServer() {
-        assertEquals("2021.1.4 (build 92954)", client.getServer().version)
+        assertEquals("2022.04.7 (build 109063)", client.getServer().version)
     }
 
     @Test
