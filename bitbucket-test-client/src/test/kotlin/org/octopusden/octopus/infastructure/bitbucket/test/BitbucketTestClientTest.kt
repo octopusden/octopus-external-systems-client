@@ -133,6 +133,43 @@ class BitbucketTestClientTest : BaseTestClientTest(
         client.getPullRequest(project, repository, index).toTestPullRequest()
 
     @Test
+    fun testGetPullRequestByUser(){
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+
+        val prBranches = listOf("first-pr", "second-pr")
+        prBranches.forEach { branch ->
+            testClient.commit(NewChangeSet("$branch commit", vcsUrl, branch))
+        }
+        Thread.sleep(5000)
+
+        val createdPullRequests = prBranches.map { branch ->
+            val pr = createPullRequestWithDefaultReviewers(
+                PROJECT,
+                REPOSITORY,
+                branch,
+                BaseTestClient.DEFAULT_BRANCH,
+                "PR Title $branch",
+                "PR Description"
+            )
+            Thread.sleep(5000)
+            pr
+        }
+
+        val pullRequests = client.getPullRequestsByUser(USER, null, null, "OLDEST")
+
+        Assertions.assertEquals(prBranches.size, pullRequests.size)
+        Assertions.assertEquals(prBranches.size, pullRequests.values.size)
+        Assertions.assertEquals(createdPullRequests[0], pullRequests.values[0].toTestPullRequest())
+        Assertions.assertEquals(createdPullRequests[1], pullRequests.values[1].toTestPullRequest())
+    }
+
+    @Test
     fun testGetCommitInvalidId() {
         Assertions.assertThrowsExactly(NotFoundException::class.java, {
             client.getCommit(PROJECT, REPOSITORY, "bug/fix")
