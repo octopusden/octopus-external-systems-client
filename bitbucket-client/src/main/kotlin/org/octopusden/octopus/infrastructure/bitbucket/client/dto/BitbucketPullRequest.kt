@@ -14,5 +14,5 @@ class BitbucketPullRequest(
     val createdDate: Date,
     val updatedDate: Date
 ) {
-    class BitbucketPullRequestUser(val user: BitbucketUser, val approved: Boolean)
+    class BitbucketPullRequestUser(val user: BitbucketUser, val approved: Boolean, val status: BitbucketPullRequestUserStatus)
 }

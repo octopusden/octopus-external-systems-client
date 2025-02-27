@@ -17,7 +17,8 @@ abstract class BitbucketRef(
     val id: String,
     val displayId: String,
     val latestCommit: String,
-    val type: BitbucketRefType
+    val type: BitbucketRefType,
+    val repository: BitbucketRepository? = null
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -26,6 +27,7 @@ abstract class BitbucketRef(
         if (displayId != other.displayId) return false
         if (latestCommit != other.latestCommit) return false
         if (type != other.type) return false
+        if (repository != other.repository) return false
         return true
     }
 
@@ -34,6 +36,7 @@ abstract class BitbucketRef(
         result = 31 * result + displayId.hashCode()
         result = 31 * result + latestCommit.hashCode()
         result = 31 * result + type.hashCode()
+        result = 31 * result + repository.hashCode()
         return result
     }
 }

@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory
 
 private val _log: Logger = LoggerFactory.getLogger(BitbucketClient::class.java)
 
+const val DASHBOARD_PATH = "rest/api/1.0/dashboard"
 const val PROJECT_PATH = "rest/api/1.0/projects"
 const val REPO_PATH = "rest/api/1.0/repos"
 const val GIT_PROJECT_PATH = "/rest/git/1.0/projects"
@@ -167,6 +168,15 @@ interface BitbucketClient {
         @Param("repository") repository: String,
         @Param("id") id: Long
     ): BitbucketPullRequest
+
+    @RequestLine("GET $DASHBOARD_PATH/pull-requests?user={user}&start={start}&limit={limit}&order={order}")
+    @Headers("Content-Type: application/json")
+    fun getPullRequestsByUser(
+        @Param("user") user: String?,
+        @Param("start") start: Int?,
+        @Param("limit") limit: Int?,
+        @Param("order") order: String?,
+    ): BitbucketEntityList<BitbucketPullRequest>
 
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/files?at={at}&start={start}&limit={limit}")
     @Throws(NotFoundException::class)
