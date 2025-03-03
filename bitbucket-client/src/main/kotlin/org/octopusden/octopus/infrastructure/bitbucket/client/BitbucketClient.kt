@@ -180,9 +180,7 @@ interface BitbucketClient {
     fun getRepositoryFiles(
         @Param("projectKey") projectKey: String,
         @Param("repository") repository: String,
-        @Param("at") at: String?,
-        @Param("start") start: Int?,
-        @Param("limit") limit: Int?
+        @QueryMap requestParams: Map<String, Any>
     ): BitbucketEntityList<String>
 
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/raw/{filePath}")

@@ -81,7 +81,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
                 BaseTestClient.DEFAULT_BRANCH,
             ), null, paths
         )
-        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, BaseTestClient.DEFAULT_BRANCH,0, filesName.size)
+        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, mapOf("at" to BaseTestClient.DEFAULT_BRANCH, "start" to 0, "limit" to filesName.size))
         Assertions.assertEquals(filesName.size, response.values.size)
         Assertions.assertTrue(response.values.containsAll(filesName))
     }
@@ -96,7 +96,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
             ), null, null
         )
         Assertions.assertThrowsExactly(NotFoundException::class.java, {
-            client.getRepositoryFiles(PROJECT, REPOSITORY, "other_branch",0, 10)
+            client.getRepositoryFiles(PROJECT, REPOSITORY, mapOf("at" to "other_branch", "start" to 0, "limit" to 0))
         }, "Object \"other_branch\" does not exist in repository 'test-repository'")
     }
 
