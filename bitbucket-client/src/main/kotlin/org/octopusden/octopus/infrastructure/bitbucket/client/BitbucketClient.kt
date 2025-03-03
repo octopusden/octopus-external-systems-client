@@ -169,13 +169,10 @@ interface BitbucketClient {
         @Param("id") id: Long
     ): BitbucketPullRequest
 
-    @RequestLine("GET $DASHBOARD_PATH/pull-requests?user={user}&start={start}&limit={limit}&order={order}")
+    @RequestLine("GET $DASHBOARD_PATH/pull-requests")
     @Headers("Content-Type: application/json")
-    fun getPullRequestsByUser(
-        @Param("user") user: String?,
-        @Param("start") start: Int?,
-        @Param("limit") limit: Int?,
-        @Param("order") order: String?,
+    fun getPullRequests(
+        @QueryMap requestParams: Map<String, Any>
     ): BitbucketEntityList<BitbucketPullRequest>
 
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/files?at={at}&start={start}&limit={limit}")
@@ -308,6 +305,10 @@ fun BitbucketClient.getBranches(projectKey: String, repository: String) = execut
 fun BitbucketClient.getBranch(projectKey: String, repository: String, branch: String) =
     findBranch(projectKey, repository, branch)
         ?: throw NotFoundException("Branch '$branch' is not found in '$projectKey:$repository'")
+
+fun BitbucketClient.getPullRequests() = execute(
+    { parameters: Map<String, Any> -> getPullRequests(parameters) }
+)
 
 fun BitbucketClient.createPullRequestWithDefaultReviewers(
     projectKey: String,

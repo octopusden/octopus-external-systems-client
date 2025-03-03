@@ -133,7 +133,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
         client.getPullRequest(project, repository, index).toTestPullRequest()
 
     @Test
-    fun testGetPullRequestByUser(){
+    fun testGetPullRequests(){
         testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit",
@@ -161,7 +161,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
             pr
         }
 
-        val pullRequests = client.getPullRequestsByUser(USER, null, null, "OLDEST")
+        val pullRequests = client.getPullRequests(mapOf("order" to "OLDEST"))
 
         Assertions.assertEquals(prBranches.size, pullRequests.size)
         Assertions.assertEquals(prBranches.size, pullRequests.values.size)
