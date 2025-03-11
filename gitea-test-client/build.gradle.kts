@@ -28,7 +28,7 @@ tasks["composeUp"].doLast {
     logger.info("Create test-admin in Gitea")
     val process = ProcessBuilder(
         "docker", "exec", "gitea-test-client-ft-gitea",
-        "/tmp/add_admin.sh"
+        "/script/add_admin.sh"
     ).start()
     process.waitFor(10, TimeUnit.SECONDS)
 

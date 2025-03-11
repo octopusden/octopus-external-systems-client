@@ -231,7 +231,18 @@ abstract class BaseTestClientTest(
             developBranchCommits,
             testClient.getCommits(vcsUrl, DEVELOP_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
         )
+        assertNotFoundException {
+            getCommits(PROJECT, "absent-repository", BaseTestClient.DEFAULT_BRANCH)
+        }
+        assertNotFoundException {
+            getCommits(PROJECT, REPOSITORY, "absent-ref")
+        }
     }
+
+    private fun assertNotFoundException(block: () -> Any) = Assertions.assertEquals(
+        "NotFoundException",
+        try { block.invoke(); "" } catch (e: Exception) { e.javaClass.simpleName }
+    )
 
     private fun checkCommits(branch: String, expected: List<String>) {
         Assertions.assertIterableEquals(
