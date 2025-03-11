@@ -9,17 +9,17 @@ import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundExce
 
 class GiteaClientErrorDecoder(private val objectMapper: ObjectMapper) : ErrorDecoder {
     override fun decode(methodKey: String?, response: Response): Exception {
-        val errorResponse = response.body().use { body ->
+        val message = response.body().use { body ->
             body.asInputStream()
                 .use { inputStream -> objectMapper.readValue(inputStream, GiteaExceptionResponse::class.java) }
-        }
+        }?.message ?: ""
         return if (response.status() == HttpStatus.SC_NOT_FOUND ||
             (response.status() == HttpStatus.SC_INTERNAL_SERVER_ERROR &&
-                    errorResponse.message.contains("object does not exist", true))
+                    message.contains("object does not exist", true))
         ) {
-            NotFoundException(errorResponse.message)
+            NotFoundException(message)
         } else {
-            IllegalStateException(errorResponse.message)
+            IllegalStateException(message)
         }
     }
 }
