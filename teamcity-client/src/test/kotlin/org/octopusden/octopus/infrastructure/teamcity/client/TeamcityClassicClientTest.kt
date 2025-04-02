@@ -26,6 +26,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityPropert
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
@@ -279,6 +280,7 @@ class TeamcityClassicClientTest {
             href = ""
         ))
         assertEquals(requirement.name, client.getAgentRequirements(buildType.id).agentRequirements.first().name)
+        client.deleteAgentRequirement(BuildTypeLocator(id = buildType.id), AgentRequirementLocator(id = requirement.id))
         client.deleteProject(project.id)
     }
 
