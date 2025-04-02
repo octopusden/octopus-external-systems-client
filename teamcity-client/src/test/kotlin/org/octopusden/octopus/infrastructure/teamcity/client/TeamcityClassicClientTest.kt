@@ -8,6 +8,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -271,16 +272,20 @@ class TeamcityClassicClientTest {
             )
         )
         val requirement = client.addAgentRequirementToBuildType(BuildTypeLocator(id = buildType.id), null,  TeamcityAgentRequirement(
-            id = "requirement",
+            id = null,
             type = "matches",
             properties = properties,
-            name = "requirement",
+            name = "requirementName",
             disabled = false,
             inherited = false,
             href = ""
         ))
-        val actual = client.getAgentRequirements(buildType.id).agentRequirements.first()
-        assertEquals("requirement", actual.name)
+        val actualResponse = client.getAgentRequirements(buildType.id)
+        assertEquals(1, actualResponse.count)
+        val actual = actualResponse.agentRequirements.first()
+        assertEquals(requirement.id, actual.id)
+        assertEquals("matches", actual.type)
+        assertIterableEquals(properties.properties, actual.properties.properties)
         assertEquals(requirement, actual)
         client.deleteAgentRequirement(BuildTypeLocator(id = buildType.id), AgentRequirementLocator(id = requirement.id))
         client.deleteProject(project.id)
