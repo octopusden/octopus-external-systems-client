@@ -279,7 +279,9 @@ class TeamcityClassicClientTest {
             inherited = false,
             href = ""
         ))
-        assertEquals(requirement.name, client.getAgentRequirements(buildType.id).agentRequirements.first().name)
+        val actual = client.getAgentRequirements(buildType.id).agentRequirements.first()
+        assertEquals("requirement", actual.name)
+        assertEquals(requirement, actual)
         client.deleteAgentRequirement(BuildTypeLocator(id = buildType.id), AgentRequirementLocator(id = requirement.id))
         client.deleteProject(project.id)
     }
