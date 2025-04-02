@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
@@ -25,6 +26,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityPropert
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
@@ -255,6 +257,28 @@ class TeamcityClassicClientTest {
         val project = createProject("TestProjectBuildTypes")
         val buildType = client.createBuildType(project.id, "ProjectBuildType")
         assertEquals(buildType.name, client.getBuildTypes(project.id).buildTypes.first().name)
+        client.deleteProject(project.id)
+    }
+
+    @Test
+    fun testBuildTypesAgentRequirements() {
+        val project = createProject("TestProjectBuildTypes")
+        val buildType = client.createBuildType(project.id, "ProjectBuildType")
+        val properties = TeamcityProperties(
+            listOf(
+                TeamcityProperty("property-name", "property-value")
+            )
+        )
+        val requirement = client.addAgentRequirementToBuildType(BuildTypeLocator(id = buildType.id), null,  TeamcityAgentRequirement(
+            id = "requirement",
+            type = "matches",
+            properties = properties,
+            name = "requirement",
+            disabled = false,
+            inherited = false,
+            href = ""
+        ))
+        assertEquals(requirement.name, client.getAllAgentRequirements(buildType.id).agentRequirements.first().name)
         client.deleteProject(project.id)
     }
 
