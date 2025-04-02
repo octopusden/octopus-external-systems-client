@@ -101,7 +101,7 @@ interface TeamcityClient {
     fun addAgentRequirementToBuildType(
         @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("fields") fields: String?,
-        body: TeamcityAgentRequirement?
+        body: TeamcityAgentRequirement
     ): TeamcityAgentRequirement
 
     /**
