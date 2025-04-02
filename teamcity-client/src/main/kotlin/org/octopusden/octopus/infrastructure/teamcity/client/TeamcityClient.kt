@@ -126,7 +126,7 @@ interface TeamcityClient {
      */
     @RequestLine("GET $REST/buildTypes/{locator}/agent-requirements?fields={fields}")
     @Headers("Accept: application/json,application/xml")
-    fun getAllAgentRequirements(
+    fun getAgentRequirements(
         @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
         @Param("fields") fields: String?
     ): TeamcityAgentRequirements
@@ -390,8 +390,8 @@ fun TeamcityClient.addAgentRequirementToBuildType(buildTypeId: String, requireme
 fun TeamcityClient.deleteAgentRequirement(buildTypeId: String, agentRequirementLocator: String) =
     deleteAgentRequirement(BuildTypeLocator(id = buildTypeId), AgentRequirementLocator(id = agentRequirementLocator))
 
-fun TeamcityClient.getAllAgentRequirements(buildTypeId: String, fields: String? = null) =
-    getAllAgentRequirements(BuildTypeLocator(id = buildTypeId), fields)
+fun TeamcityClient.getAgentRequirements(buildTypeId: String, fields: String? = null) =
+    getAgentRequirements(BuildTypeLocator(id = buildTypeId), fields)
 
 fun TeamcityClient.addBuildTypeFeature(buildTypeId: String, feature: TeamcityLinkFeature) =
     addBuildTypeFeature(BuildTypeLocator(id = buildTypeId), feature)

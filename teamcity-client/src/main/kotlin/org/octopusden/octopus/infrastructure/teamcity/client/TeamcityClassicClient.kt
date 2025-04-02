@@ -7,7 +7,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
 import feign.Logger
-import feign.Param
 import feign.RequestInterceptor
 import feign.form.FormData
 import feign.form.FormEncoder
@@ -16,7 +15,6 @@ import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
-import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirements
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
@@ -70,7 +68,7 @@ class TeamcityClassicClient(
         body: TeamcityAgentRequirement?
     ): TeamcityAgentRequirement = client.addAgentRequirementToBuildType(buildType, fields, body)
 
-    override fun getAllAgentRequirements(buildType: BuildTypeLocator, fields: String?) = client.getAllAgentRequirements(
+    override fun getAgentRequirements(buildType: BuildTypeLocator, fields: String?) = client.getAgentRequirements(
         buildType, fields
     )
 

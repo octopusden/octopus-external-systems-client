@@ -278,7 +278,7 @@ class TeamcityClassicClientTest {
             inherited = false,
             href = ""
         ))
-        assertEquals(requirement.name, client.getAllAgentRequirements(buildType.id).agentRequirements.first().name)
+        assertEquals(requirement.name, client.getAgentRequirements(buildType.id).agentRequirements.first().name)
         client.deleteProject(project.id)
     }
 
