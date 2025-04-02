@@ -271,7 +271,7 @@ class TeamcityClassicClientTest {
                 TeamcityProperty("property-name", "property-value")
             )
         )
-        val requirement = client.addAgentRequirementToBuildType(BuildTypeLocator(id = buildType.id), null,  TeamcityAgentRequirement(
+        val requirement = client.addAgentRequirementToBuildType(BuildTypeLocator(id = buildType.id),  TeamcityAgentRequirement(
             id = null,
             type = "matches",
             properties = properties,

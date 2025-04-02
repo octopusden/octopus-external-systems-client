@@ -64,12 +64,11 @@ class TeamcityClassicClient(
 
     override fun addAgentRequirementToBuildType(
         buildType: BuildTypeLocator,
-        fields: String?,
         body: TeamcityAgentRequirement
-    ): TeamcityAgentRequirement = client.addAgentRequirementToBuildType(buildType, fields, body)
+    ): TeamcityAgentRequirement = client.addAgentRequirementToBuildType(buildType, body)
 
-    override fun getAgentRequirements(buildType: BuildTypeLocator, fields: String?) = client.getAgentRequirements(
-        buildType, fields
+    override fun getAgentRequirements(buildType: BuildTypeLocator) = client.getAgentRequirements(
+        buildType
     )
 
     override fun addBuildTypeFeature(buildType: BuildTypeLocator, feature: TeamcityLinkFeature) =
