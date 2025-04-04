@@ -14,6 +14,7 @@ import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
@@ -24,6 +25,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapsho
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
@@ -57,6 +59,17 @@ class TeamcityClassicClient(
     override fun getBuildTypes() = client.getBuildTypes()
 
     override fun getBuildTypes(project: ProjectLocator) = client.getBuildTypes(project)
+    override fun deleteAgentRequirement(buildType: BuildTypeLocator, agentRequirementLocator: AgentRequirementLocator) =
+        client.deleteAgentRequirement(buildType, agentRequirementLocator)
+
+    override fun addAgentRequirementToBuildType(
+        buildType: BuildTypeLocator,
+        body: TeamcityAgentRequirement
+    ): TeamcityAgentRequirement = client.addAgentRequirementToBuildType(buildType, body)
+
+    override fun getAgentRequirements(buildType: BuildTypeLocator) = client.getAgentRequirements(
+        buildType
+    )
 
     override fun addBuildTypeFeature(buildType: BuildTypeLocator, feature: TeamcityLinkFeature) =
         client.addBuildTypeFeature(buildType, feature)

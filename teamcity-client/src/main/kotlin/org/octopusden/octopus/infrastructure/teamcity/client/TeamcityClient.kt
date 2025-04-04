@@ -6,6 +6,8 @@ import feign.Headers
 import feign.Param
 import feign.RequestLine
 import feign.form.FormData
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirements
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
@@ -28,6 +30,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootInstances
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoots
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
@@ -81,6 +84,48 @@ interface TeamcityClient {
     @RequestLine("GET $REST/projects/{locator}/buildTypes")
     @Headers("Accept: application/json")
     fun getBuildTypes(@Param("locator", expander = Locator::class) project: ProjectLocator): TeamcityBuildTypes
+
+    /**
+     * Add an agent requirement to the matching build configuration.
+     *
+     * Note, this is equivalent to the other `addAgentRequirementToBuildType` that receives the query parameters as a map,
+     * but this one also exposes the Http response headers
+     * @param buildType  (required)
+     * @param body  (optional)
+     *
+     * @return TeamcityAgentRequirement
+     */
+    @RequestLine("POST $REST/buildTypes/{locator}/agent-requirements")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun addAgentRequirementToBuildType(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
+        body: TeamcityAgentRequirement
+    ): TeamcityAgentRequirement
+
+    /**
+     * Remove an agent requirement of the matching build configuration.
+     *
+     * @param buildType  (required)
+     * @param agentRequirementLocator  (required)
+     */
+    @RequestLine("DELETE /app/rest/buildTypes/{locator}/agent-requirements/{agentRequirementLocator}")
+    @Headers("Accept: application/json")
+    fun deleteAgentRequirement(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator,
+        @Param("agentRequirementLocator", expander = Locator::class) agentRequirementLocator: AgentRequirementLocator
+    )
+
+    /**
+     * Get all agent requirements of the matching build configuration.
+     *
+     * @param buildType  (required)
+     * @return TeamcityAgentRequirements
+     */
+    @RequestLine("GET $REST/buildTypes/{locator}/agent-requirements")
+    @Headers("Accept: application/json")
+    fun getAgentRequirements(
+        @Param("locator", expander = Locator::class) buildType: BuildTypeLocator
+    ): TeamcityAgentRequirements
 
     @RequestLine("POST $REST/buildTypes/{locator}/features")
     @Headers("Content-Type: application/json")
@@ -333,6 +378,15 @@ fun TeamcityClient.getBuildType(id: String) = getBuildType(BuildTypeLocator(id =
 fun TeamcityClient.deleteBuildType(id: String) = deleteBuildType(BuildTypeLocator(id = id))
 
 fun TeamcityClient.getBuildTypes(projectId: String) = getBuildTypes(ProjectLocator(id = projectId))
+
+fun TeamcityClient.addAgentRequirementToBuildType(buildTypeId: String, requirement: TeamcityAgentRequirement) =
+    addAgentRequirementToBuildType(BuildTypeLocator(id = buildTypeId), requirement)
+
+fun TeamcityClient.deleteAgentRequirement(buildTypeId: String, agentRequirementLocator: String) =
+    deleteAgentRequirement(BuildTypeLocator(id = buildTypeId), AgentRequirementLocator(id = agentRequirementLocator))
+
+fun TeamcityClient.getAgentRequirements(buildTypeId: String) =
+    getAgentRequirements(BuildTypeLocator(id = buildTypeId))
 
 fun TeamcityClient.addBuildTypeFeature(buildTypeId: String, feature: TeamcityLinkFeature) =
     addBuildTypeFeature(BuildTypeLocator(id = buildTypeId), feature)
