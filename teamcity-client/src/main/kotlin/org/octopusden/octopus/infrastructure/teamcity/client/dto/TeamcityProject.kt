@@ -5,7 +5,7 @@ data class TeamcityProject(
     val name: String,
     val parentProjectId: String? = null,
 //    val parentProjectName: String? = null,
-//    val archived: Boolean? = null,
+    val archived: Boolean? = null,
 //    val virtual: Boolean? = null,
 //    val description: String? = null,
     val href: String,
