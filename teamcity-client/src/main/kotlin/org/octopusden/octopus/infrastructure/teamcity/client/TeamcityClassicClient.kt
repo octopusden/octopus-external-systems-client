@@ -58,6 +58,8 @@ class TeamcityClassicClient(
 
     override fun getBuildTypes() = client.getBuildTypes()
 
+    override fun getBuildTypesWithFields(fields: String) = client.getBuildTypesWithFields(fields)
+
     override fun getBuildTypes(project: ProjectLocator) = client.getBuildTypes(project)
     override fun deleteAgentRequirement(buildType: BuildTypeLocator, agentRequirementLocator: AgentRequirementLocator) =
         client.deleteAgentRequirement(buildType, agentRequirementLocator)

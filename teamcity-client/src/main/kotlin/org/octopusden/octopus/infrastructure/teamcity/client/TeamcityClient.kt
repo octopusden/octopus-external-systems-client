@@ -81,6 +81,16 @@ interface TeamcityClient {
     @Headers("Accept: application/json")
     fun getBuildTypes(): TeamcityBuildTypes
 
+    /**
+     * Get all build types with the specified fields.
+     * Example: `fields=id,name,project(id,name),vcs-root-entries(id,name)`
+     */
+    @RequestLine("GET $REST/buildTypes?fields={fields}")
+    @Headers("Accept: application/json")
+    fun getBuildTypesWithFields(
+        @Param("fields") fields: String
+    ): TeamcityBuildTypes
+
     @RequestLine("GET $REST/projects/{locator}/buildTypes")
     @Headers("Accept: application/json")
     fun getBuildTypes(@Param("locator", expander = Locator::class) project: ProjectLocator): TeamcityBuildTypes
