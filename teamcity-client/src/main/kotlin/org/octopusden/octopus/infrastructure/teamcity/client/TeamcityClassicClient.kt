@@ -7,6 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
 import feign.Logger
+import feign.Param
 import feign.RequestInterceptor
 import feign.form.FormData
 import feign.form.FormEncoder
@@ -15,6 +16,7 @@ import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
@@ -61,6 +63,9 @@ class TeamcityClassicClient(
     override fun getBuildTypesWithFields(fields: String) = client.getBuildTypesWithFields(fields)
 
     override fun getBuildTypes(project: ProjectLocator) = client.getBuildTypes(project)
+
+    override fun getBuildTypesProjectWithFields(project: ProjectLocator,fields: String) = client.getBuildTypesProjectWithFields(project, fields)
+
     override fun deleteAgentRequirement(buildType: BuildTypeLocator, agentRequirementLocator: AgentRequirementLocator) =
         client.deleteAgentRequirement(buildType, agentRequirementLocator)
 

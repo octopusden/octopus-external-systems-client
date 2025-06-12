@@ -96,6 +96,14 @@ interface TeamcityClient {
     fun getBuildTypes(@Param("locator", expander = Locator::class) project: ProjectLocator): TeamcityBuildTypes
 
     /**
+     * Get all build types of the specified project with the specified fields.
+     * Example: `fields=buildType(id,name,template(id,name))`
+     */
+    @RequestLine("GET $REST/projects/{locator}/buildTypes?fields={fields}")
+    @Headers("Accept: application/json")
+    fun getBuildTypesProjectWithFields(@Param("locator", expander = Locator::class) project: ProjectLocator, @Param("fields") fields: String): TeamcityBuildTypes
+
+    /**
      * Add an agent requirement to the matching build configuration.
      *
      * Note, this is equivalent to the other `addAgentRequirementToBuildType` that receives the query parameters as a map,
