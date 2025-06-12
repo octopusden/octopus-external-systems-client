@@ -16,6 +16,7 @@ data class TeamcityBuildType(
     val templateFlag: Boolean? = null,
     val project: TeamcityProject? = null,
     val templates: TeamcityBuildTypes? = null,
+    val template: TeamcityBuildType? = null,
     val settings: TeamcityProperties? = null,
     val steps: TeamcitySteps? = null,
     val features: TeamcityFeatures? = null,
