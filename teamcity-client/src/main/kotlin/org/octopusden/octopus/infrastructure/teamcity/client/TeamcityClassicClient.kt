@@ -168,6 +168,9 @@ class TeamcityClassicClient(
     override fun uploadMetarunner(fileName: String, file: FormData, action: String, projectId: String) =
         client.uploadMetarunner(fileName, file, action, projectId)
 
+    override fun uploadRecipe(fileName: String, file: FormData, action: String, projectId: String) =
+        client.uploadRecipe(fileName, file, action, projectId)
+
     companion object {
         private fun getMapper() = jacksonObjectMapper().apply {
             this.registerModule(JavaTimeModule())

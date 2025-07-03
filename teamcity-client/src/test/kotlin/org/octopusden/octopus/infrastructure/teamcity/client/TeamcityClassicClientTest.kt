@@ -35,6 +35,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRoot
 
 
 private const val HOST = "localhost:8111"
+private const val HOST_V25 = "localhost:8112"
 private const val USER = "admin"
 private const val PASSWORD = "admin"
 
@@ -44,6 +45,15 @@ class TeamcityClassicClientTest {
         TeamcityClassicClient(
             object : ClientParametersProvider {
                 override fun getApiUrl() = "http://$HOST"
+                override fun getAuth() = StandardBasicCredCredentialProvider(USER, PASSWORD)
+            }
+        )
+    }
+
+    private val clientV25 by lazy {
+        TeamcityClassicClient(
+            object : ClientParametersProvider {
+                override fun getApiUrl() = "http://$HOST_V25"
                 override fun getAuth() = StandardBasicCredCredentialProvider(USER, PASSWORD)
             }
         )
@@ -365,6 +375,39 @@ class TeamcityClassicClientTest {
         val testMetarunnerEditContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${metarunnerId}Edit.xml")!!.readBytes()
         client.uploadMetarunner(projectId, testMetarunnerName, testMetarunnerEditContent)
+        check.invoke(String(testMetarunnerEditContent))
+    }
+
+    @Test
+    fun testUploadRecipe() {
+        val projectId = "RDDepartment"
+        val recipeId = "TestMetarunner"
+        val recipeName = "$recipeId.xml"
+        val check = { recipeContent: String ->
+            htmlDocument(
+                HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder()
+                        .uri(URI("http://$HOST/admin/editProject.html?projectId=$projectId&tab=recipe&editRecipeId=$recipeId"))
+                        .header("Origin", "http://$HOST").header("Authorization", "Basic YWRtaW46YWRtaW4=")
+                        .method("GET", HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString()
+                ).body()
+            ) {
+                textarea {
+                    withId = "recipeContent"
+                    findAll {
+                        size toBe 1
+                        this[0].text toBe recipeContent
+                    }
+                }
+            }
+        }
+        val testRecipeCreateContent = TeamcityClassicClientTest::class.java.classLoader
+            .getResourceAsStream("${recipeId}Create.xml")!!.readBytes()
+        clientV25.uploadRecipe(projectId, recipeName, testRecipeCreateContent)
+        check.invoke(String(testRecipeCreateContent))
+        val testMetarunnerEditContent = TeamcityClassicClientTest::class.java.classLoader
+            .getResourceAsStream("${recipeId}Edit.xml")!!.readBytes()
+        clientV25.uploadRecipe(projectId, recipeName, testMetarunnerEditContent)
         check.invoke(String(testMetarunnerEditContent))
     }
 }
