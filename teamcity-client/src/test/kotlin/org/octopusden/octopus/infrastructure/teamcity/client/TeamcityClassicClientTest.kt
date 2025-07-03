@@ -405,9 +405,9 @@ class TeamcityClassicClientTest {
             .getResourceAsStream("${recipeId}Create.xml")!!.readBytes()
         clientV25.uploadRecipe(projectId, recipeName, testRecipeCreateContent)
         check.invoke(String(testRecipeCreateContent))
-        val testMetarunnerEditContent = TeamcityClassicClientTest::class.java.classLoader
+        val testRecipeEditContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${recipeId}Edit.xml")!!.readBytes()
-        clientV25.uploadRecipe(projectId, recipeName, testMetarunnerEditContent)
-        check.invoke(String(testMetarunnerEditContent))
+        clientV25.uploadRecipe(projectId, recipeName, testRecipeEditContent)
+        check.invoke(String(testRecipeEditContent))
     }
 }
