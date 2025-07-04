@@ -43,7 +43,7 @@ tasks.register<Sync>("prepareTeamcityServerData") {
 }
 
 tasks.register<Sync>("prepareTeamcityServerDataV25") {
-    from(zipTree(layout.projectDirectory.file("docker/data.zip")))
+    from(zipTree(layout.projectDirectory.file("docker/dataV25.zip")))
     into(layout.buildDirectory.dir("teamcity-server-2025"))
 }
 
