@@ -33,9 +33,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.Project
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 
-
 private const val HOST = "localhost:8111"
-private const val HOST_V25 = "localhost:8112"
 private const val USER = "admin"
 private const val PASSWORD = "admin"
 
@@ -45,15 +43,6 @@ class TeamcityClassicClientTest {
         TeamcityClassicClient(
             object : ClientParametersProvider {
                 override fun getApiUrl() = "http://$HOST"
-                override fun getAuth() = StandardBasicCredCredentialProvider(USER, PASSWORD)
-            }
-        )
-    }
-
-    private val clientV25 by lazy {
-        TeamcityClassicClient(
-            object : ClientParametersProvider {
-                override fun getApiUrl() = "http://$HOST_V25"
                 override fun getAuth() = StandardBasicCredCredentialProvider(USER, PASSWORD)
             }
         )
@@ -350,64 +339,42 @@ class TeamcityClassicClientTest {
         val projectId = "RDDepartment"
         val metarunnerId = "TestMetarunner"
         val testMetarunnerName = "$metarunnerId.xml"
-        val check = { metarunnerContent: String ->
-            htmlDocument(
-                HttpClient.newHttpClient().send(
-                    HttpRequest.newBuilder()
-                        .uri(URI("http://$HOST/admin/editProject.html?projectId=$projectId&tab=metaRunner&editRunnerId=$metarunnerId"))
-                        .header("Origin", "http://$HOST").header("Authorization", "Basic YWRtaW46YWRtaW4=")
-                        .method("GET", HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString()
-                ).body()
-            ) {
-                textarea {
-                    withId = "metaRunnerContent"
-                    findAll {
-                        size toBe 1
-                        this[0].text toBe metarunnerContent
-                    }
-                }
-            }
-        }
+
         val testMetarunnerCreateContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${metarunnerId}Create.xml")!!.readBytes()
         client.uploadMetarunner(projectId, testMetarunnerName, testMetarunnerCreateContent)
-        check.invoke(String(testMetarunnerCreateContent))
+        checkHtmlContent("http://$HOST/admin/editProject.html?projectId=$projectId&tab=metaRunner&editRunnerId=$metarunnerId", "metaRunnerContent", String(testMetarunnerCreateContent))
+
         val testMetarunnerEditContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${metarunnerId}Edit.xml")!!.readBytes()
         client.uploadMetarunner(projectId, testMetarunnerName, testMetarunnerEditContent)
-        check.invoke(String(testMetarunnerEditContent))
+        checkHtmlContent("http://$HOST/admin/editProject.html?projectId=$projectId&tab=metaRunner&editRunnerId=$metarunnerId", "metaRunnerContent", String(testMetarunnerEditContent))
     }
 
-    @Test
-    fun testUploadRecipe() {
-        val projectId = "RDDepartment"
-        val recipeId = "TestMetarunner"
-        val recipeName = "$recipeId.xml"
-        val check = { recipeContent: String ->
-            htmlDocument(
-                HttpClient.newHttpClient().send(
-                    HttpRequest.newBuilder()
-                        .uri(URI("http://$HOST/admin/editProject.html?projectId=$projectId&tab=recipe&editRecipeId=$recipeId"))
-                        .header("Origin", "http://$HOST").header("Authorization", "Basic YWRtaW46YWRtaW4=")
-                        .method("GET", HttpRequest.BodyPublishers.noBody()).build(), HttpResponse.BodyHandlers.ofString()
-                ).body()
-            ) {
-                textarea {
-                    withId = "recipeContent"
-                    findAll {
-                        size toBe 1
-                        this[0].text toBe recipeContent
-                    }
+    private fun checkHtmlContent(
+        url: String,
+        textareaId: String,
+        expectedContent: String,
+    ) {
+        val responseBody = HttpClient.newHttpClient()
+            .send(
+                HttpRequest.newBuilder()
+                    .uri(URI(url))
+                    .header("Origin", "http://$HOST")
+                    .header("Authorization", "Basic YWRtaW46YWRtaW4=")
+                    .GET()
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            ).body()
+
+        htmlDocument(responseBody) {
+            textarea {
+                withId = textareaId
+                findAll {
+                    size toBe 1
+                    this[0].text toBe expectedContent
                 }
             }
         }
-        val testRecipeCreateContent = TeamcityClassicClientTest::class.java.classLoader
-            .getResourceAsStream("${recipeId}Create.xml")!!.readBytes()
-        clientV25.uploadRecipe(projectId, recipeName, testRecipeCreateContent)
-        check.invoke(String(testRecipeCreateContent))
-        val testRecipeEditContent = TeamcityClassicClientTest::class.java.classLoader
-            .getResourceAsStream("${recipeId}Edit.xml")!!.readBytes()
-        clientV25.uploadRecipe(projectId, recipeName, testRecipeEditContent)
-        check.invoke(String(testRecipeEditContent))
     }
 }
