@@ -14,7 +14,7 @@ services:
       timeout: 10s
       retries: 5
   teamcity-2025:
-    image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:2025.03.2
+    image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:2025.03.3
     ports:
       - "8112:8111"
     volumes:
