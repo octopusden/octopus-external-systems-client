@@ -35,15 +35,14 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRoot
 
 abstract class BaseTeamcityClientTest {
     abstract val host: String
-    abstract fun serverTest()
-    abstract fun uploadTest()
+    abstract val tcVersion: String
 
     companion object {
         const val USER = "admin"
         const val PASSWORD = "admin"
     }
 
-    val client by lazy {
+    private val client by lazy {
         TeamcityClassicClient(
             object : ClientParametersProvider {
                 override fun getApiUrl() = "http://$host"
@@ -69,7 +68,9 @@ abstract class BaseTeamcityClientTest {
         )
 
     @Test
-    fun testServer() { serverTest() }
+    fun testServer() {
+        assertEquals(tcVersion, client.getServer().version)
+    }
 
     @Test
     fun testProject() {
@@ -339,10 +340,28 @@ abstract class BaseTeamcityClientTest {
     }
 
     @Test
-    fun testUpload() { uploadTest() }
+    fun testUploadPreConfiguredStep() {
+        val projectId = "RDDepartment"
+        val preConfiguredStepId = "TestMetarunner"
+        val preConfiguredStepName = "$preConfiguredStepId.xml"
 
-    protected fun checkHtmlContent(
-        host: String,
+        val (tabName, editQueryId, textAreaId) = when {
+            tcVersion.startsWith("2025") -> Triple("recipe", "editRecipeId", "recipeContent")
+            else -> Triple("metaRunner", "editRunnerId", "metaRunnerContent")
+        }
+
+        val testCreateContent = TeamcityClassicClientTest::class.java.classLoader
+            .getResourceAsStream("${preConfiguredStepId}Create.xml")!!.readBytes()
+        client.uploadPreconfiguredStep(projectId, preConfiguredStepName, testCreateContent)
+        checkHtmlContent("http://$host/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testCreateContent))
+
+        val testEditContent = TeamcityClassicClientTest::class.java.classLoader
+            .getResourceAsStream("${preConfiguredStepId}Edit.xml")!!.readBytes()
+        client.uploadPreconfiguredStep(projectId, preConfiguredStepName, testEditContent)
+        checkHtmlContent( "http://$host/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testEditContent))
+    }
+
+    private fun checkHtmlContent(
         url: String,
         textareaId: String,
         expectedContent: String,
