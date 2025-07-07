@@ -369,6 +369,15 @@ interface TeamcityClient {
         @Param(value = "action") action: String,
         @Param(value = "projectId") projectId: String
     )
+
+    @RequestLine("POST /plugins/recipes/upload.html")
+    @Headers("Content-Type: multipart/form-data")
+    fun uploadRecipe(
+        @Param(value = "fileName") fileName: String,
+        @Param(value = "file:fileToUpload") file: FormData,
+        @Param(value = "action") action: String,
+        @Param(value = "projectId") projectId: String
+    )
 }
 
 enum class ConfigurationType(
@@ -471,3 +480,10 @@ fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileCon
     uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
 }
 
+fun TeamcityClient.uploadPreconfiguredStep(projectId: String, fileName: String, fileContent: ByteArray) {
+    if (getServer().version.startsWith("2025")) {
+        uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
+    } else {
+        uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
+    }
+}

@@ -32,6 +32,7 @@ configure<ComposeExtension> {
         mapOf(
             "DOCKER_REGISTRY" to project.properties["docker.registry"],
             "TEAMCITY_VERSION" to "2022.04.7",
+            "TEAMCITY_V25_VERSION" to "2025.03.3"
         )
     )
 }
@@ -43,6 +44,12 @@ tasks.register<Sync>("prepareTeamcityServerData") {
     into(layout.buildDirectory.dir("teamcity-server"))
 }
 
+tasks.register<Sync>("prepareTeamcityServerDataV25") {
+    from(zipTree(layout.projectDirectory.file("docker/dataV25.zip")))
+    into(layout.buildDirectory.dir("teamcity-server-2025"))
+}
+
 tasks.named("composeUp") {
     dependsOn("prepareTeamcityServerData")
+    dependsOn("prepareTeamcityServerDataV25")
 }
