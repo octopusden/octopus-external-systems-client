@@ -369,6 +369,15 @@ interface TeamcityClient {
         @Param(value = "action") action: String,
         @Param(value = "projectId") projectId: String
     )
+
+    @RequestLine("POST /plugins/recipes/upload.html")
+    @Headers("Content-Type: multipart/form-data")
+    fun uploadRecipe(
+        @Param(value = "fileName") fileName: String,
+        @Param(value = "file:fileToUpload") file: FormData,
+        @Param(value = "action") action: String,
+        @Param(value = "projectId") projectId: String
+    )
 }
 
 enum class ConfigurationType(
@@ -468,6 +477,10 @@ fun TeamcityClient.detachTemplatesFromBuildType(buildTypeId: String) =
     detachTemplatesFromBuildType(BuildTypeLocator(id = buildTypeId))
 
 fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileContent: ByteArray) {
-    uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
+    val majorVersion = getServer().version.substringBefore(".").toInt()
+    if (majorVersion < 2025) {
+        uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
+    } else {
+        uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
+    }
 }
-
