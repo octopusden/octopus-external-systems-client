@@ -34,7 +34,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.Project
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 
-class BaseTeamcityClientTest {
+class TeamcityClassicClientTest {
     companion object {
         const val USER = "admin"
         const val PASSWORD = "admin"
@@ -42,12 +42,12 @@ class BaseTeamcityClientTest {
         @JvmStatic
         fun teamcityConfigurations(): List<TeamcityTestConfiguration> = listOf(
             TeamcityTestConfiguration(
-                name = "Classic",
+                name = "v22",
                 host = "localhost:8111",
                 version = "2022.04.7 (build 109063)"
             ),
             TeamcityTestConfiguration(
-                name = "V25",
+                name = "v25",
                 host = "localhost:8112",
                 version = "2025.03.3 (build 186370)"
             )
@@ -313,14 +313,14 @@ class BaseTeamcityClientTest {
         )
         val requirement = client.addAgentRequirementToBuildType(
             BuildTypeLocator(id = buildType.id),  TeamcityAgentRequirement(
-            id = null,
-            type = "matches",
-            properties = properties,
-            name = "requirementName",
-            disabled = false,
-            inherited = false,
-            href = ""
-        )
+                id = null,
+                type = "matches",
+                properties = properties,
+                name = "requirementName",
+                disabled = false,
+                inherited = false,
+                href = ""
+            )
         )
         val actualResponse = client.getAgentRequirements(buildType.id)
         assertEquals(1, actualResponse.count)
@@ -394,12 +394,12 @@ class BaseTeamcityClientTest {
             else -> Triple("metaRunner", "editRunnerId", "metaRunnerContent")
         }
 
-        val testCreateContent = BaseTeamcityClientTest::class.java.classLoader
+        val testCreateContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${preConfiguredStepId}Create.xml")!!.readBytes()
         client.uploadPreconfiguredStep(projectId, preConfiguredStepName, testCreateContent)
         checkHtmlContent("http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testCreateContent))
 
-        val testEditContent = BaseTeamcityClientTest::class.java.classLoader
+        val testEditContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${preConfiguredStepId}Edit.xml")!!.readBytes()
         client.uploadPreconfiguredStep(projectId, preConfiguredStepName, testEditContent)
         checkHtmlContent( "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testEditContent))
