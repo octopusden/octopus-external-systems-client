@@ -476,10 +476,11 @@ fun TeamcityClient.attachTemplateToBuildType(buildTypeId: String, template: Stri
 fun TeamcityClient.detachTemplatesFromBuildType(buildTypeId: String) =
     detachTemplatesFromBuildType(BuildTypeLocator(id = buildTypeId))
 
-fun TeamcityClient.uploadPreconfiguredStep(projectId: String, fileName: String, fileContent: ByteArray) {
-    if (getServer().version.startsWith("2025")) {
-        uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
-    } else {
+fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileContent: ByteArray) {
+    val majorVersion = getServer().version.substringBefore(".").toInt()
+    if (majorVersion < 2025) {
         uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
+    } else {
+        uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
     }
 }

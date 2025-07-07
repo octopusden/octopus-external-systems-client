@@ -383,11 +383,11 @@ class TeamcityClassicClientTest {
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
-    fun testUploadPreConfiguredStep(config: TeamcityTestConfiguration) {
+    fun testUploadMetarunner(config: TeamcityTestConfiguration) {
         val client = createClient(config)
         val projectId = "RDDepartment"
-        val preConfiguredStepId = "TestMetarunner"
-        val preConfiguredStepName = "$preConfiguredStepId.xml"
+        val metarunnerId = "TestMetarunner"
+        val metarunnerName = "$metarunnerId.xml"
 
         val (tabName, editQueryId, textAreaId) = when {
             config.version.startsWith("2025") -> Triple("recipe", "editRecipeId", "recipeContent")
@@ -395,14 +395,14 @@ class TeamcityClassicClientTest {
         }
 
         val testCreateContent = TeamcityClassicClientTest::class.java.classLoader
-            .getResourceAsStream("${preConfiguredStepId}Create.xml")!!.readBytes()
-        client.uploadPreconfiguredStep(projectId, preConfiguredStepName, testCreateContent)
-        checkHtmlContent("http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testCreateContent))
+            .getResourceAsStream("${metarunnerId}Create.xml")!!.readBytes()
+        client.uploadMetarunner(projectId, metarunnerName, testCreateContent)
+        checkHtmlContent("http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId", textAreaId, String(testCreateContent))
 
         val testEditContent = TeamcityClassicClientTest::class.java.classLoader
-            .getResourceAsStream("${preConfiguredStepId}Edit.xml")!!.readBytes()
-        client.uploadPreconfiguredStep(projectId, preConfiguredStepName, testEditContent)
-        checkHtmlContent( "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testEditContent))
+            .getResourceAsStream("${metarunnerId}Edit.xml")!!.readBytes()
+        client.uploadMetarunner(projectId, metarunnerName, testEditContent)
+        checkHtmlContent( "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId", textAreaId, String(testEditContent))
     }
 
     private fun checkHtmlContent(
