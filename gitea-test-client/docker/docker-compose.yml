@@ -2,7 +2,7 @@ version: "3"
 
 services:
   gitea:
-    image: ${DOCKER_REGISTRY}/gitea/gitea:1.24.1-rootless
+    image: ${DOCKER_REGISTRY}/gitea/gitea:1.24.2-rootless
     container_name: gitea-test-client-ft-gitea
     environment:
       - "GITEA__server__OFFLINE_MODE=false"
