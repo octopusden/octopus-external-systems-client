@@ -30,7 +30,9 @@ configure<ComposeExtension> {
     captureContainersOutputToFiles.set(layout.buildDirectory.dir("docker-logs"))
     environment.putAll(
         mapOf(
-            "DOCKER_REGISTRY" to project.properties["docker.registry"]
+            "DOCKER_REGISTRY" to project.properties["docker.registry"],
+            "TEAMCITY_VERSION" to "2022.04.7",
+            "TEAMCITY_V25_VERSION" to "2025.03.3"
         )
     )
 }

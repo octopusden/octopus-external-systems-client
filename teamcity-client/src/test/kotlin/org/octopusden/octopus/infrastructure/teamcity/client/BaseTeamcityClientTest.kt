@@ -10,7 +10,8 @@ import java.net.http.HttpResponse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
@@ -33,25 +34,40 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.Project
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 
-abstract class BaseTeamcityClientTest {
-    abstract val host: String
-    abstract val tcVersion: String
-
+class BaseTeamcityClientTest {
     companion object {
         const val USER = "admin"
         const val PASSWORD = "admin"
+
+        @JvmStatic
+        fun teamcityConfigurations(): List<TeamcityTestConfiguration> = listOf(
+            TeamcityTestConfiguration(
+                name = "Classic",
+                host = "localhost:8111",
+                version = "2022.04.7 (build 109063)"
+            ),
+            TeamcityTestConfiguration(
+                name = "V25",
+                host = "localhost:8112",
+                version = "2025.03.3 (build 186370)"
+            )
+        )
+
+        @JvmStatic
+        fun teamcityContexts(): List<TeamcityTestConfiguration> =
+            teamcityConfigurations().map { TeamcityTestConfiguration(it.name, it.host, it.version) }
     }
 
-    private val client by lazy {
-        TeamcityClassicClient(
+    private fun createClient(config: TeamcityTestConfiguration): TeamcityClassicClient {
+        return TeamcityClassicClient(
             object : ClientParametersProvider {
-                override fun getApiUrl() = "http://$host"
+                override fun getApiUrl() = "http://${config.host}"
                 override fun getAuth() = StandardBasicCredCredentialProvider(USER, PASSWORD)
             }
         )
     }
 
-    private fun createProject(projectName: String, parentId: String = "RDDepartment") =
+    private fun createProject(client: TeamcityClient, projectName: String, parentId: String = "RDDepartment") =
         client.createProject(
             TeamcityCreateProject(
                 name = projectName,
@@ -59,7 +75,7 @@ abstract class BaseTeamcityClientTest {
             )
         )
 
-    private fun createBuildType(buildName: String, projectId: String) =
+    private fun createBuildType(client: TeamcityClient, buildName: String, projectId: String) =
         client.createBuildType(
             TeamcityCreateBuildType(
                 name = buildName,
@@ -67,40 +83,50 @@ abstract class BaseTeamcityClientTest {
             )
         )
 
-    @Test
-    fun testServer() {
-        assertEquals(tcVersion, client.getServer().version)
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testServer(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        assertEquals(config.version, client.getServer().version)
     }
 
-    @Test
-    fun testProject() {
-        val project = createProject("TestCreateProject")
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testProject(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestCreateProject")
         assertEquals(project, client.getProject(project.id))
         assertEquals(project, client.getProject(ProjectLocator(name = project.name)))
-        val subProject = createProject("SubProject", project.id)
+        val subProject = createProject(client, "SubProject", project.id)
         assertEquals(subProject.parentProjectId, project.id)
         assertEquals(subProject.parentProject?.name, project.name)
         client.deleteProject(project.id)
     }
 
-    @Test
-    fun getBuildTypes() {
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun getBuildTypes(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
         assertEquals(client.getBuildTypes(), TeamcityBuildTypes())
     }
 
-    @Test
-    fun createBuildType() {
-        val project = createProject("TestCreateBuildType")
-        val buildType = createBuildType("TestCreateBuildType", project.id)
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun createBuildType(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestCreateBuildType")
+        val buildType = createBuildType(client, "TestCreateBuildType", project.id)
         client.setBuildCounter(buildType.id, "21")
         assertEquals(buildType.name, "TestCreateBuildType")
         client.deleteProject(project.id)
     }
 
-    @Test
-    fun testBuildTypeFeature() {
-        val project = createProject("TestBuildTypeFeature")
-        val buildType = createBuildType("TestBuildTypeFeature", project.id)
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testBuildTypeFeature(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestBuildTypeFeature")
+        val buildType = createBuildType(client, "TestBuildTypeFeature", project.id)
         client.addBuildTypeFeature(
             buildType.id, TeamcityLinkFeature(
                 type = "VcsLabeling",
@@ -126,11 +152,13 @@ abstract class BaseTeamcityClientTest {
         client.deleteProject(project.id)
     }
 
-    @Test
-    fun testSnapshotDependencies() {
-        val project = createProject("TestSnapshotDependencies")
-        val sourceBuildType = createBuildType("SourceBuild", project.id)
-        val buildType = createBuildType("TestSnapshotDependencies", project.id)
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testSnapshotDependencies(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestSnapshotDependencies")
+        val sourceBuildType = createBuildType(client, "SourceBuild", project.id)
+        val buildType = createBuildType(client, "TestSnapshotDependencies", project.id)
         client.createSnapshotDependency(
             buildType.id,
             TeamcitySnapshotDependency(
@@ -156,10 +184,12 @@ abstract class BaseTeamcityClientTest {
         assertEquals(sourceBuildType.id, dependency.sourceBuildType.id)
     }
 
-    @Test
-    fun testBuildSteps() {
-        val project = createProject("TestBuildSteps")
-        val buildType = createBuildType("TestBuildSteps", project.id)
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testBuildSteps(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestBuildSteps")
+        val buildType = createBuildType(client, "TestBuildSteps", project.id)
         val step = TeamcityStep(
             id = "RUNNER_1",
             name = "cmd",
@@ -184,10 +214,12 @@ abstract class BaseTeamcityClientTest {
         assertEquals(step.name, steps.first().name)
     }
 
-    @Test
-    fun testBuildVcsRoots() {
-        val project = createProject("TestBuildVcsRoots")
-        val buildType = createBuildType("TestBuildVcsRoots", project.id)
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testBuildVcsRoots(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestBuildVcsRoots")
+        val buildType = createBuildType(client, "TestBuildVcsRoots", project.id)
         val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
         val vcsRoot = client.createVcsRoot(
             TeamcityCreateVcsRoot(
@@ -235,10 +267,12 @@ abstract class BaseTeamcityClientTest {
         assertEquals(btVcsRootEntry.vcsRoot.href, btVcsRoot.vcsRoot.href)
     }
 
-    @Test
-    fun testTemplates() {
-        val project = createProject("TestTemplates")
-        val buildType = createBuildType("TestTemplates", project.id)
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testTemplates(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestTemplates")
+        val buildType = createBuildType(client, "TestTemplates", project.id)
         val template = client.createBuildType(
             TeamcityCreateBuildType(
                 name = "Template",
@@ -256,17 +290,21 @@ abstract class BaseTeamcityClientTest {
         client.deleteProject(project.id)
     }
 
-    @Test
-    fun testProjectBuildTypes() {
-        val project = createProject("TestProjectBuildTypes")
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testProjectBuildTypes(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestProjectBuildTypes")
         val buildType = client.createBuildType(project.id, "ProjectBuildType")
         assertEquals(buildType.name, client.getBuildTypes(project.id).buildTypes.first().name)
         client.deleteProject(project.id)
     }
 
-    @Test
-    fun testBuildTypesAgentRequirements() {
-        val project = createProject("TestProjectBuildTypes")
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testBuildTypesAgentRequirements(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestProjectBuildTypes")
         val buildType = client.createBuildType(project.id, "ProjectBuildType")
         val properties = TeamcityProperties(
             listOf(
@@ -295,10 +333,12 @@ abstract class BaseTeamcityClientTest {
         client.deleteProject(project.id)
     }
 
-    @Test
-    fun testParameters() {
-        val project = createProject("TestParameters")
-        val buildType = createBuildType("TestParameters", project.id)
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testParameters(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestParameters")
+        val buildType = createBuildType(client, "TestParameters", project.id)
         listOf(
             Pair(ConfigurationType.PROJECT, project.id),
             Pair(ConfigurationType.BUILD_TYPE, buildType.id)
@@ -317,10 +357,12 @@ abstract class BaseTeamcityClientTest {
         client.deleteProject(project.id)
     }
 
-    @Test
-    fun testProjectLocator() {
-        val project = createProject("TestProjectLocator")
-        val secondProject = createProject("AnotherTestProjectLocator")
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testProjectLocator(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestProjectLocator")
+        val secondProject = createProject(client, "AnotherTestProjectLocator")
         client.createParameter(ConfigurationType.PROJECT, project.id, "ParameterName", "ParameterValue")
         val projects = client.getProjects(
             ProjectLocator(
@@ -339,26 +381,28 @@ abstract class BaseTeamcityClientTest {
         client.deleteProject(project.id)
     }
 
-    @Test
-    fun testUploadPreConfiguredStep() {
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testUploadPreConfiguredStep(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
         val projectId = "RDDepartment"
         val preConfiguredStepId = "TestMetarunner"
         val preConfiguredStepName = "$preConfiguredStepId.xml"
 
         val (tabName, editQueryId, textAreaId) = when {
-            tcVersion.startsWith("2025") -> Triple("recipe", "editRecipeId", "recipeContent")
+            config.version.startsWith("2025") -> Triple("recipe", "editRecipeId", "recipeContent")
             else -> Triple("metaRunner", "editRunnerId", "metaRunnerContent")
         }
 
-        val testCreateContent = TeamcityClassicClientTest::class.java.classLoader
+        val testCreateContent = BaseTeamcityClientTest::class.java.classLoader
             .getResourceAsStream("${preConfiguredStepId}Create.xml")!!.readBytes()
         client.uploadPreconfiguredStep(projectId, preConfiguredStepName, testCreateContent)
-        checkHtmlContent("http://$host/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testCreateContent))
+        checkHtmlContent("http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testCreateContent))
 
-        val testEditContent = TeamcityClassicClientTest::class.java.classLoader
+        val testEditContent = BaseTeamcityClientTest::class.java.classLoader
             .getResourceAsStream("${preConfiguredStepId}Edit.xml")!!.readBytes()
         client.uploadPreconfiguredStep(projectId, preConfiguredStepName, testEditContent)
-        checkHtmlContent( "http://$host/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testEditContent))
+        checkHtmlContent( "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$preConfiguredStepId", textAreaId, String(testEditContent))
     }
 
     private fun checkHtmlContent(
@@ -370,7 +414,6 @@ abstract class BaseTeamcityClientTest {
             .send(
                 HttpRequest.newBuilder()
                     .uri(URI(url))
-                    .header("Origin", "http://$host")
                     .header("Authorization", "Basic YWRtaW46YWRtaW4=")
                     .GET()
                     .build(),

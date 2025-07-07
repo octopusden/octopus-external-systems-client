@@ -2,7 +2,7 @@ version: '3'
 
 services:
   teamcity:
-    image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:2022.04.7
+    image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:${TEAMCITY_VERSION}
     ports:
       - "8111:8111"
     volumes:
@@ -14,7 +14,7 @@ services:
       timeout: 10s
       retries: 5
   teamcity-2025:
-    image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:2025.03.3
+    image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:${TEAMCITY_V25_VERSION}
     ports:
       - "8112:8111"
     volumes:
