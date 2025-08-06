@@ -20,6 +20,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFea
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityServer
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
@@ -378,6 +379,10 @@ interface TeamcityClient {
         @Param(value = "action") action: String,
         @Param(value = "projectId") projectId: String
     )
+
+    @RequestLine("POST $REST/buildQueue")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun queueBuild(build: TeamcityQueuedBuild): TeamcityQueuedBuild
 }
 
 enum class ConfigurationType(

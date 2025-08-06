@@ -10,6 +10,7 @@ import java.net.http.HttpResponse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -26,6 +27,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkPro
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperties
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
@@ -404,6 +406,24 @@ class TeamcityClassicClientTest {
         client.uploadMetarunner(projectId, metarunnerName, testEditContent)
         checkHtmlContent( "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId", textAreaId, String(testEditContent))
     }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testQueueBuild(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestQueueBuild")
+        val buildType = createBuildType(client, "TestQueueBuildType", project.id)
+        val request = TeamcityQueuedBuild(
+            buildType = BuildTypeLocator(id = buildType.id),
+            branchName = "master",
+            comment = null,
+            properties = null
+        )
+        val queued = client.queueBuild(request)
+        assertNotNull(queued.id)
+        assertEquals(buildType.id, queued.buildType.id)
+        assertEquals("queued", queued.state)
+}
 
     private fun checkHtmlContent(
         url: String,
