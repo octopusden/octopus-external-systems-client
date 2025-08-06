@@ -20,6 +20,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateP
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
@@ -171,6 +172,8 @@ class TeamcityClassicClient(
         client.uploadRecipe(fileName, file, action, projectId)
 
     override fun queueBuild(build: TeamcityQueuedBuild): TeamcityQueuedBuild = client.queueBuild(build)
+
+    override fun getProjectsWithFields(locator: ProjectLocator, fields: String): TeamcityProjects = client.getProjectsWithFields(locator, fields)
 
     companion object {
         private fun getMapper() = jacksonObjectMapper().apply {

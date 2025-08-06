@@ -383,6 +383,10 @@ interface TeamcityClient {
     @RequestLine("POST $REST/buildQueue")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun queueBuild(build: TeamcityQueuedBuild): TeamcityQueuedBuild
+
+    @RequestLine("GET $REST/projects?locator={locator}&fields={fields}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getProjectsWithFields(@Param("locator", expander = Locator::class) locator: ProjectLocator, @Param("fields") fields: String): TeamcityProjects
 }
 
 enum class ConfigurationType(

@@ -412,18 +412,52 @@ class TeamcityClassicClientTest {
     fun testQueueBuild(config: TeamcityTestConfiguration) {
         val client = createClient(config)
         val project = createProject(client, "TestQueueBuild")
-        val buildType = createBuildType(client, "TestQueueBuildType", project.id)
-        val request = TeamcityQueuedBuild(
-            buildType = BuildTypeLocator(id = buildType.id),
-            branchName = "master",
-            comment = null,
-            properties = null
-        )
-        val queued = client.queueBuild(request)
-        assertNotNull(queued.id)
-        assertEquals(buildType.id, queued.buildType.id)
-        assertEquals("queued", queued.state)
-}
+        try {
+            val buildType = createBuildType(client, "TestQueueBuildType", project.id)
+            val request = TeamcityQueuedBuild(
+                buildType = BuildTypeLocator(id = buildType.id),
+                branchName = "master"
+            )
+            val queued = client.queueBuild(request)
+            assertNotNull(queued.id)
+            assertEquals(buildType.id, queued.buildType.id)
+            assertEquals("queued", queued.state)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetProjectsWithFields(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "testGetProjectsWithFields")
+        try {
+            val subProject = createProject(client, "SubProject_WithFields", project.id)
+            val buildType = createBuildType(client, "testGetProjectsWithFieldsBuildType", project.id)
+            val fields = "project(id,name,webUrl,archived,href," +
+                    "buildTypes(buildType(id,name,projectId,projectName,href,template,vcs-root-entries))," +
+                    "projects(project(id,name,webUrl,archived,href)))"
+            val locator = ProjectLocator(name = project.name)
+            val actualProject = client.getProjectsWithFields(locator, fields).projects.first()
+            val expectedProject = client.getProject(project.id)
+
+            assertEquals(expectedProject.id, actualProject.id)
+            assertEquals(expectedProject.name, actualProject.name)
+
+            val actualBuildTypes = actualProject.buildTypes
+            assertNotNull(actualBuildTypes)
+            assertEquals(expectedProject.buildTypes!!.buildTypes.size, actualBuildTypes!!.buildTypes.size)
+            assertEquals(buildType.id, actualBuildTypes.buildTypes.first().id)
+
+            val actualInnerProjects = actualProject.projects
+            assertNotNull(actualInnerProjects)
+            assertEquals(expectedProject.projects!!.projects.size, actualInnerProjects!!.projects.size)
+            assertEquals(subProject.id, actualInnerProjects.projects.first().id)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
 
     private fun checkHtmlContent(
         url: String,
