@@ -386,7 +386,17 @@ interface TeamcityClient {
 
     @RequestLine("GET $REST/projects?locator={locator}&fields={fields}")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun getProjectsWithFields(@Param("locator", expander = Locator::class) locator: ProjectLocator, @Param("fields") fields: String): TeamcityProjects
+    fun getProjectsWithLocatorAndFields(
+        @Param("locator", expander = Locator::class) locator: ProjectLocator,
+        @Param("fields") fields: String
+    ): TeamcityProjects
+
+    @RequestLine("GET $REST/buildTypes?locator=vcsRootInstance({locator})&fields={fields}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuildTypesWithLocatorAndFields(
+        @Param("locator", expander = Locator::class) locator: VcsRootInstanceLocator,
+        @Param("fields") fields: String
+    ): TeamcityBuildTypes
 }
 
 enum class ConfigurationType(

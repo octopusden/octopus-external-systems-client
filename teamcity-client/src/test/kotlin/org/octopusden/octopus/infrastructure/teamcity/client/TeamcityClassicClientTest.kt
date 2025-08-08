@@ -34,6 +34,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRe
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 
 class TeamcityClassicClientTest {
@@ -429,7 +430,7 @@ class TeamcityClassicClientTest {
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
-    fun testGetProjectsWithFields(config: TeamcityTestConfiguration) {
+    fun testGetProjectsWithLocatorAndFields(config: TeamcityTestConfiguration) {
         val client = createClient(config)
         val project = createProject(client, "testGetProjectsWithFields")
         try {
@@ -439,7 +440,7 @@ class TeamcityClassicClientTest {
                     "buildTypes(buildType(id,name,projectId,projectName,href,template,vcs-root-entries))," +
                     "projects(project(id,name,webUrl,archived,href)))"
             val locator = ProjectLocator(name = project.name)
-            val actualProject = client.getProjectsWithFields(locator, fields).projects.first()
+            val actualProject = client.getProjectsWithLocatorAndFields(locator, fields).projects.first()
             val expectedProject = client.getProject(project.id)
 
             assertEquals(expectedProject.id, actualProject.id)
@@ -454,6 +455,56 @@ class TeamcityClassicClientTest {
             assertNotNull(actualInnerProjects)
             assertEquals(expectedProject.projects!!.projects.size, actualInnerProjects!!.projects.size)
             assertEquals(subProject.id, actualInnerProjects.projects.first().id)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetBuildTypesWithLocatorAndFields(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetBuildTypesWithLocatorAndFields")
+        try {
+            val buildType = createBuildType(client, "TestGetBuildTypesWithLocatorAndFieldsBT", project.id)
+            val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
+            val vcsRoot = client.createVcsRoot(
+                TeamcityCreateVcsRoot(
+                    name = "${project.name}_VCS_ROOT",
+                    vcsName = TeamcityVCSType.GIT.value,
+                    projectLocator = project.id,
+                    properties = TeamcityProperties(
+                        listOf(
+                            TeamcityProperty("url", url),
+                            TeamcityProperty("branch", "master"),
+                            TeamcityProperty("authMethod", "PRIVATE_KEY_DEFAULT"),
+                            TeamcityProperty("userForTags", "tcagent"),
+                            TeamcityProperty("username", "git"),
+                            TeamcityProperty("ignoreKnownHosts", "true")
+                        )
+                    )
+                )
+            )
+            client.createBuildTypeVcsRootEntry(
+                buildType.id,
+                TeamcityCreateVcsRootEntry(
+                    id = vcsRoot.id,
+                    vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)
+                )
+            )
+            val locator = VcsRootInstanceLocator(
+                property = listOf(PropertyLocator("url", url, PropertyLocator.MatchType.EQUALS, ignoreCase = true)),
+                count = 2000
+            )
+            val fields = "buildType(id,name,projectId,projectName,href)"
+            val result = client.getBuildTypesWithLocatorAndFields(locator, fields)
+            val found = result.buildTypes
+            assertNotNull(found)
+            assertEquals(1, found.size)
+            val actual = found.first()
+            assertEquals(buildType.id, actual.id)
+            assertEquals(buildType.name, actual.name)
+
         } finally {
             client.deleteProject(project.id)
         }

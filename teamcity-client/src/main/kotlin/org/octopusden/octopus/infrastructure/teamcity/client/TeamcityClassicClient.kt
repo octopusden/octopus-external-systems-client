@@ -15,6 +15,7 @@ import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
@@ -173,7 +174,11 @@ class TeamcityClassicClient(
 
     override fun queueBuild(build: TeamcityQueuedBuild): TeamcityQueuedBuild = client.queueBuild(build)
 
-    override fun getProjectsWithFields(locator: ProjectLocator, fields: String): TeamcityProjects = client.getProjectsWithFields(locator, fields)
+    override fun getProjectsWithLocatorAndFields(locator: ProjectLocator, fields: String): TeamcityProjects =
+        client.getProjectsWithLocatorAndFields(locator, fields)
+
+    override fun getBuildTypesWithLocatorAndFields(locator: VcsRootInstanceLocator, fields: String): TeamcityBuildTypes =
+        client.getBuildTypesWithLocatorAndFields(locator, fields)
 
     companion object {
         private fun getMapper() = jacksonObjectMapper().apply {
