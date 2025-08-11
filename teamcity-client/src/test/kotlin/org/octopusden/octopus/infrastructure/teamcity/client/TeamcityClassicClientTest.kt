@@ -462,11 +462,11 @@ class TeamcityClassicClientTest {
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
-    fun testGetBuildTypesWithLocatorAndFields(config: TeamcityTestConfiguration) {
+    fun testGetBuildTypesWithVcsRootInstanceLocatorAndFields(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestGetBuildTypesWithLocatorAndFields")
+        val project = createProject(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFields")
         try {
-            val buildType = createBuildType(client, "TestGetBuildTypesWithLocatorAndFieldsBT", project.id)
+            val buildType = createBuildType(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFieldsBuildType", project.id)
             val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
             val vcsRoot = client.createVcsRoot(
                 TeamcityCreateVcsRoot(
@@ -497,7 +497,7 @@ class TeamcityClassicClientTest {
                 count = 2000
             )
             val fields = "buildType(id,name,projectId,projectName,href)"
-            val result = client.getBuildTypesWithLocatorAndFields(locator, fields)
+            val result = client.getBuildTypesWithVcsRootInstanceLocatorAndFields(locator, fields)
             val found = result.buildTypes
             assertNotNull(found)
             assertEquals(1, found.size)

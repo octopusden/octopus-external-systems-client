@@ -393,7 +393,7 @@ interface TeamcityClient {
 
     @RequestLine("GET $REST/buildTypes?locator=vcsRootInstance({locator})&fields={fields}")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun getBuildTypesWithLocatorAndFields(
+    fun getBuildTypesWithVcsRootInstanceLocatorAndFields(
         @Param("locator", expander = Locator::class) locator: VcsRootInstanceLocator,
         @Param("fields") fields: String
     ): TeamcityBuildTypes

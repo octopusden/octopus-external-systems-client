@@ -177,8 +177,8 @@ class TeamcityClassicClient(
     override fun getProjectsWithLocatorAndFields(locator: ProjectLocator, fields: String): TeamcityProjects =
         client.getProjectsWithLocatorAndFields(locator, fields)
 
-    override fun getBuildTypesWithLocatorAndFields(locator: VcsRootInstanceLocator, fields: String): TeamcityBuildTypes =
-        client.getBuildTypesWithLocatorAndFields(locator, fields)
+    override fun getBuildTypesWithVcsRootInstanceLocatorAndFields(locator: VcsRootInstanceLocator, fields: String): TeamcityBuildTypes =
+        client.getBuildTypesWithVcsRootInstanceLocatorAndFields(locator, fields)
 
     companion object {
         private fun getMapper() = jacksonObjectMapper().apply {
