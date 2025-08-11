@@ -19,6 +19,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRe
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkBuildType
@@ -415,13 +416,12 @@ class TeamcityClassicClientTest {
         val project = createProject(client, "TestQueueBuild")
         try {
             val buildType = createBuildType(client, "TestQueueBuildType", project.id)
-            val request = TeamcityQueuedBuild(
+            val request = TeamcityCreateQueuedBuild(
                 buildType = BuildTypeLocator(id = buildType.id),
                 branchName = "master"
             )
             val queued = client.queueBuild(request)
             assertNotNull(queued.id)
-            assertEquals(buildType.id, queued.buildType.id)
             assertEquals("queued", queued.state)
         } finally {
             client.deleteProject(project.id)

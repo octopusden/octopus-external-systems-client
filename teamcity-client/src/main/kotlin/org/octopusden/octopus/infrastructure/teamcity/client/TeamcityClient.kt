@@ -12,6 +12,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTy
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeature
@@ -382,7 +383,7 @@ interface TeamcityClient {
 
     @RequestLine("POST $REST/buildQueue")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun queueBuild(build: TeamcityQueuedBuild): TeamcityQueuedBuild
+    fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild
 
     @RequestLine("GET $REST/projects?locator={locator}&fields={fields}")
     @Headers("Content-Type: application/json", "Accept: application/json")
