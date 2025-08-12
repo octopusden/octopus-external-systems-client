@@ -10,6 +10,7 @@ import java.net.http.HttpResponse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -18,6 +19,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRe
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkBuildType
@@ -26,12 +28,14 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkPro
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperties
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 
 class TeamcityClassicClientTest {
@@ -403,6 +407,107 @@ class TeamcityClassicClientTest {
             .getResourceAsStream("${metarunnerId}Edit.xml")!!.readBytes()
         client.uploadMetarunner(projectId, metarunnerName, testEditContent)
         checkHtmlContent( "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId", textAreaId, String(testEditContent))
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testQueueBuild(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestQueueBuild")
+        try {
+            val buildType = createBuildType(client, "TestQueueBuildType", project.id)
+            val request = TeamcityCreateQueuedBuild(
+                buildType = BuildTypeLocator(id = buildType.id),
+                branchName = "master"
+            )
+            val queued = client.queueBuild(request)
+            assertNotNull(queued.id)
+            assertEquals("queued", queued.state)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetProjectsWithLocatorAndFields(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "testGetProjectsWithFields")
+        try {
+            val subProject = createProject(client, "SubProject_WithFields", project.id)
+            val buildType = createBuildType(client, "testGetProjectsWithFieldsBuildType", project.id)
+            val fields = "project(id,name,webUrl,archived,href," +
+                    "buildTypes(buildType(id,name,projectId,projectName,href,template,vcs-root-entries))," +
+                    "projects(project(id,name,webUrl,archived,href)))"
+            val locator = ProjectLocator(name = project.name)
+            val actualProject = client.getProjectsWithLocatorAndFields(locator, fields).projects.first()
+            val expectedProject = client.getProject(project.id)
+
+            assertEquals(expectedProject.id, actualProject.id)
+            assertEquals(expectedProject.name, actualProject.name)
+
+            val actualBuildTypes = actualProject.buildTypes
+            assertNotNull(actualBuildTypes)
+            assertEquals(expectedProject.buildTypes!!.buildTypes.size, actualBuildTypes!!.buildTypes.size)
+            assertEquals(buildType.id, actualBuildTypes.buildTypes.first().id)
+
+            val actualInnerProjects = actualProject.projects
+            assertNotNull(actualInnerProjects)
+            assertEquals(expectedProject.projects!!.projects.size, actualInnerProjects!!.projects.size)
+            assertEquals(subProject.id, actualInnerProjects.projects.first().id)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetBuildTypesWithVcsRootInstanceLocatorAndFields(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFields")
+        try {
+            val buildType = createBuildType(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFieldsBuildType", project.id)
+            val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
+            val vcsRoot = client.createVcsRoot(
+                TeamcityCreateVcsRoot(
+                    name = "${project.name}_VCS_ROOT",
+                    vcsName = TeamcityVCSType.GIT.value,
+                    projectLocator = project.id,
+                    properties = TeamcityProperties(
+                        listOf(
+                            TeamcityProperty("url", url),
+                            TeamcityProperty("branch", "master"),
+                            TeamcityProperty("authMethod", "PRIVATE_KEY_DEFAULT"),
+                            TeamcityProperty("userForTags", "tcagent"),
+                            TeamcityProperty("username", "git"),
+                            TeamcityProperty("ignoreKnownHosts", "true")
+                        )
+                    )
+                )
+            )
+            client.createBuildTypeVcsRootEntry(
+                buildType.id,
+                TeamcityCreateVcsRootEntry(
+                    id = vcsRoot.id,
+                    vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)
+                )
+            )
+            val locator = VcsRootInstanceLocator(
+                property = listOf(PropertyLocator("url", url, PropertyLocator.MatchType.EQUALS, ignoreCase = true)),
+                count = 2000
+            )
+            val fields = "buildType(id,name,projectId,projectName,href)"
+            val result = client.getBuildTypesWithVcsRootInstanceLocatorAndFields(locator, fields)
+            val found = result.buildTypes
+            assertNotNull(found)
+            assertEquals(1, found.size)
+            val actual = found.first()
+            assertEquals(buildType.id, actual.id)
+            assertEquals(buildType.name, actual.name)
+
+        } finally {
+            client.deleteProject(project.id)
+        }
     }
 
     private fun checkHtmlContent(

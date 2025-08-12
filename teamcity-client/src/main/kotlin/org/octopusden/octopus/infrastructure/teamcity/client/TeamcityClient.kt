@@ -12,6 +12,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTy
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeature
@@ -20,6 +21,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFea
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityServer
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
@@ -378,6 +380,24 @@ interface TeamcityClient {
         @Param(value = "action") action: String,
         @Param(value = "projectId") projectId: String
     )
+
+    @RequestLine("POST $REST/buildQueue")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild
+
+    @RequestLine("GET $REST/projects?locator={locator}&fields={fields}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getProjectsWithLocatorAndFields(
+        @Param("locator", expander = Locator::class) locator: ProjectLocator,
+        @Param("fields") fields: String
+    ): TeamcityProjects
+
+    @RequestLine("GET $REST/buildTypes?locator=vcsRootInstance({locator})&fields={fields}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuildTypesWithVcsRootInstanceLocatorAndFields(
+        @Param("locator", expander = Locator::class) locator: VcsRootInstanceLocator,
+        @Param("fields") fields: String
+    ): TeamcityBuildTypes
 }
 
 enum class ConfigurationType(

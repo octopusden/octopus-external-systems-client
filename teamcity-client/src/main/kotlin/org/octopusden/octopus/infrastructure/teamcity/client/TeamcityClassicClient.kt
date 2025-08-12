@@ -7,7 +7,6 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
 import feign.Logger
-import feign.Param
 import feign.RequestInterceptor
 import feign.form.FormData
 import feign.form.FormEncoder
@@ -19,10 +18,13 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRe
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
@@ -170,6 +172,14 @@ class TeamcityClassicClient(
 
     override fun uploadRecipe(fileName: String, file: FormData, action: String, projectId: String) =
         client.uploadRecipe(fileName, file, action, projectId)
+
+    override fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild = client.queueBuild(build)
+
+    override fun getProjectsWithLocatorAndFields(locator: ProjectLocator, fields: String): TeamcityProjects =
+        client.getProjectsWithLocatorAndFields(locator, fields)
+
+    override fun getBuildTypesWithVcsRootInstanceLocatorAndFields(locator: VcsRootInstanceLocator, fields: String): TeamcityBuildTypes =
+        client.getBuildTypesWithVcsRootInstanceLocatorAndFields(locator, fields)
 
     companion object {
         private fun getMapper() = jacksonObjectMapper().apply {
