@@ -15,7 +15,7 @@ if ((project.properties["gitlab.skip"] as String).toBoolean()) {
     configure<ComposeExtension> {
         useComposeFiles.add("${projectDir}${File.separator}docker${File.separator}docker-compose.yml")
         waitForTcpPorts.set(true)
-        captureContainersOutputToFiles.set(buildDir.resolve("docker_logs"))
+        captureContainersOutputToFiles.set(layout.buildDirectory.file("docker_logs").get().asFile)
         environment.putAll(
             mapOf(
                 "DOCKER_REGISTRY" to project.properties["docker.registry"]

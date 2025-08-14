@@ -5,6 +5,7 @@ plugins {
     java
     idea
     id("org.octopusden.octopus-release-management")
+    id("org.octopusden.octopus.oc-template")
     id("org.jetbrains.kotlin.jvm")
     id("io.github.gradle-nexus.publish-plugin")
     signing

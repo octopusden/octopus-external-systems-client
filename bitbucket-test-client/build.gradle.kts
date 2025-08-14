@@ -15,7 +15,7 @@ if ((project.properties["bitbucket.license"] as String).isBlank()) {
     configure<ComposeExtension> {
         useComposeFiles.add("${projectDir}${File.separator}docker${File.separator}docker-compose.yml")
         waitForTcpPorts.set(true)
-        captureContainersOutputToFiles.set(buildDir.resolve("docker_logs"))
+        captureContainersOutputToFiles.set(layout.buildDirectory.dir("docker-logs"))
         environment.putAll(
             mapOf(
                 "BITBUCKET_LICENSE" to project.properties["bitbucket.license"],
