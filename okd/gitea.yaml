@@ -1,0 +1,109 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: test-gitea
+objects:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-gitea-pvc
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
+  - apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-gitea-config
+    data:
+      add_admin.sh: |
+        #!/bin/bash
+        until gitea admin user list &> /dev/null; do sleep 5; done
+        gitea admin user create --username=test-admin --password=test-admin --email=admin@example.com --admin=true
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-gitea
+      labels:
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-gitea
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
+      containers:
+        - name: gitea
+          image: ${DOCKER_REGISTRY}/gitea/gitea:${GITEA_IMAGE_TAG}
+          env:
+            - name: GITEA__server__OFFLINE_MODE
+              value: "false"
+            - name: GITEA__security__INSTALL_LOCK
+              value: "true"
+            - name: GITEA__webhook__ALLOWED_HOST_LIST
+              value: "*"
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - /script/add_admin.sh
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /user/login
+              port: 3000
+            periodSeconds: 10
+          volumeMounts:
+            - mountPath: /var/lib/gitea
+              name: gitea-data
+            - mountPath: /etc/gitea
+              name: gitea-data
+            - mountPath: /script
+              name: gitea-script
+      volumes:
+        - name: gitea-data
+          persistentVolumeClaim:
+            claimName: ${DEPLOYMENT_PREFIX}-gitea-pvc
+        - name: gitea-script
+          configMap:
+            name: ${DEPLOYMENT_PREFIX}-gitea-config
+            items:
+              - key: add_admin.sh
+                path: add_admin.sh
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-gitea-service
+    spec:
+      ports:
+        - port: 3000
+          protocol: TCP
+          targetPort: 3000
+      selector:
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-gitea
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-gitea-route
+    spec:
+      port:
+        targetPort: 3000
+      to:
+        kind: Service
+        name: ${DEPLOYMENT_PREFIX}-gitea-service
+parameters:
+  - description: Unique deployment prefix
+    name: DEPLOYMENT_PREFIX
+    required: true
+  - description: Active deadline seconds
+    name: ACTIVE_DEADLINE_SECONDS
+    required: true
+  - description: Docker registry
+    name: DOCKER_REGISTRY
+    required: true
+  - description: Tag of gitea/gitea image
+    name: GITEA_IMAGE_TAG
+    required: true
