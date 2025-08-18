@@ -1,0 +1,187 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: test-bitbucket
+objects:
+  ################
+  # Bitbucket DB #
+  ################
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-bitbucket-db-pvc
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-bitbucket-db
+      labels:
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-bitbucket-db
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
+      containers:
+        - name: bitbucket-db
+          image: ${DOCKER_REGISTRY}/postgres:${POSTGRES_IMAGE_TAG}
+          env:
+            - name: POSTGRES_DB
+              value: bitbucket
+            - name: POSTGRES_PASSWORD
+              value: bitbucket
+            - name: POSTGRES_USER
+              value: bitbucket
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - exec pg_isready -U bitbucket
+            periodSeconds: 10
+          volumeMounts:
+            - name: bitbucket-db-data
+              mountPath: /var/lib/postgresql/
+      volumes:
+        - name: bitbucket-db-data
+          persistentVolumeClaim:
+            claimName: ${DEPLOYMENT_PREFIX}-bitbucket-db-pvc
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-bitbucket-db-service
+    spec:
+      ports:
+        - port: 5432
+          protocol: TCP
+          targetPort: 5432
+      selector:
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-bitbucket-db
+  #############
+  # Bitbucket #
+  #############
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-bitbucket-pvc
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
+  - apiVersion: v1
+    kind: Secret
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-bitbucket-secret
+    type: Opaque
+    data:
+      license: ${BITBUCKET_LICENSE}
+  - apiVersion: v1
+    kind: Pod
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-bitbucket
+      labels:
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-bitbucket
+    spec:
+      restartPolicy: Never
+      activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
+      containers:
+        - name: bitbucket
+          image: ${DOCKER_REGISTRY}/atlassian/bitbucket-server:${BITBUCKET_IMAGE_TAG}
+          env:
+            - name: SETUP_LICENSE
+              valueFrom:
+                secretKeyRef:
+                  name: ${DEPLOYMENT_PREFIX}-bitbucket-secret
+                  key: license
+            - name: JDBC_DRIVER
+              value: org.postgresql.Driver
+            - name: JDBC_URL
+              value: "jdbc:postgresql://${DEPLOYMENT_PREFIX}-bitbucket-db-service:5432/bitbucket"
+            - name: JDBC_USER
+              value: bitbucket
+            - name: JDBC_PASSWORD
+              value: bitbucket
+            - name: SETUP_DISPLAYNAME
+              value: Bitbucket
+            - name: SETUP_BASEURL
+              value: "http://localhost:7990"
+            - name: SETUP_SYSADMIN_EMAILADDRESS
+              value: admin@domain.corp
+            - name: SETUP_SYSADMIN_DISPLAYNAME
+              value: "Test Admin"
+            - name: SETUP_SYSADMIN_PASSWORD
+              value: admin
+            - name: SETUP_SYSADMIN_USERNAME
+              value: admin
+          ports:
+            - containerPort: 7990
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - |
+                  if curl -s http://localhost:7990/status | grep -q '"state":"RUNNING"'; then
+                    exit 0
+                  else
+                    exit 1
+                  fi
+            periodSeconds: 10
+          volumeMounts:
+            - name: bitbucket-data
+              mountPath: /var/atlassian/application-data/bitbucket
+      volumes:
+        - name: bitbucket-data
+          persistentVolumeClaim:
+            claimName: ${DEPLOYMENT_PREFIX}-bitbucket-pvc
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-bitbucket-service
+    spec:
+      ports:
+        - port: 7990
+          protocol: TCP
+          targetPort: 7990
+      selector:
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-bitbucket
+  - apiVersion: route.openshift.io/v1
+    kind: Route
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-bitbucket-route
+    spec:
+      port:
+        targetPort: 7990
+      to:
+        kind: Service
+        name: ${DEPLOYMENT_PREFIX}-bitbucket-service
+parameters:
+  - description: Unique deployment prefix
+    name: DEPLOYMENT_PREFIX
+    required: true
+  - description: Active deadline seconds
+    name: ACTIVE_DEADLINE_SECONDS
+    required: true
+  - description: Docker registry
+    name: DOCKER_REGISTRY
+    required: true
+  - description: Bitbucket license (base64 encoded)
+    name: BITBUCKET_LICENSE
+    required: true
+  - description: Tag of atlassian/bitbucket-server image
+    name: BITBUCKET_IMAGE_TAG
+    required: true
+  - description: Tag of postgres image
+    name: POSTGRES_IMAGE_TAG
+    required: true

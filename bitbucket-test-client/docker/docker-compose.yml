@@ -2,7 +2,7 @@ version: '3'
 
 services:
   bitbucket:
-    image: ${DOCKER_REGISTRY}/atlassian/bitbucket-server:8.14.0-jdk11
+    image: ${DOCKER_REGISTRY}/atlassian/bitbucket-server:${BITBUCKET_IMAGE_TAG}
     container_name: bitbucket-test-client-ft-bitbucket
     depends_on:
       - postgres
@@ -23,7 +23,7 @@ services:
       JDBC_URL: jdbc:postgresql://bitbucket-test-client-ft-bitbucket-db:5432/bitbucket
 
   postgres:
-    image: ${DOCKER_REGISTRY}/postgres:12-alpine
+    image: ${DOCKER_REGISTRY}/postgres:${POSTGRES_IMAGE_TAG}
     container_name: bitbucket-test-client-ft-bitbucket-db
     environment:
       POSTGRES_USER: bitbucket
