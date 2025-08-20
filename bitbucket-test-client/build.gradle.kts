@@ -37,7 +37,7 @@ ocTemplate {
 
     clusterDomain.set("okdClusterDomain".getExt())
     namespace.set("okdProject".getExt())
-    prefix.set("external-systems-test")
+    prefix.set("external-system")
 
     "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let{
         webConsoleUrl.set(it)

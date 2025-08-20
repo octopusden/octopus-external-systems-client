@@ -2,6 +2,7 @@ import com.avast.gradle.dockercompose.ComposeExtension
 
 plugins {
     id("com.avast.gradle.docker-compose") version "0.16.9"
+    id("org.octopusden.octopus.oc-template")
 }
 
 java {
@@ -31,13 +32,68 @@ configure<ComposeExtension> {
     environment.putAll(
         mapOf(
             "DOCKER_REGISTRY" to project.properties["docker.registry"],
-            "TEAMCITY_VERSION" to "2022.04.7",
-            "TEAMCITY_V25_VERSION" to "2025.03.3"
+            "TEAMCITY_2022_IMAGE_TAG" to project.properties["teamcity-2022.image-tag"],
+            "TEAMCITY_2025_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"]
         )
     )
 }
 
-dockerCompose.isRequiredBy(tasks["test"])
+
+fun String.getExt() = project.ext[this] as String
+
+val commonOkdParameters = mapOf(
+    "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
+    "DOCKER_REGISTRY" to "dockerRegistry".getExt(),
+    "SERVICE_ACCOUNT_NAME" to "teamcity"
+)
+
+ocTemplate {
+    workDir.set(layout.buildDirectory.dir("okd"))
+
+    clusterDomain.set("okdClusterDomain".getExt())
+    namespace.set("okdProject".getExt())
+    prefix.set("external-system")
+
+    "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let{
+        webConsoleUrl.set(it)
+    }
+
+    group("teamcityServices").apply {
+        service("teamcity-2022") {
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2022.yaml"))
+            parameters.set(commonOkdParameters + mapOf(
+                "TEAMCITY_2022_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String
+            ))
+        }
+        service("teamcity-2025") {
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2025.yaml"))
+            parameters.set(commonOkdParameters + mapOf(
+                "TEAMCITY_2025_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"] as String
+            ))
+        }
+    }
+}
+
+tasks.withType<Test> {
+    when ("testPlatform".getExt()) {
+        "okd" -> {
+            systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity-2022")
+            systemProperties["test.teamcity-2025-host"] = ocTemplate.getOkdHost("teamcity-2025")
+            ocTemplate.isRequiredBy(this)
+//            doFirst {
+//                println()
+//                println()
+//                println("WAIT...")
+//                Thread.sleep(150_000L)
+//            }
+        }
+        "docker" -> {
+            systemProperties["test.teamcity-2022-host"] = "localhost:8111"
+            systemProperties["test.teamcity-2025-host"] = "localhost:8112"
+            dockerCompose.isRequiredBy(this)
+        }
+    }
+}
 
 tasks.register<Sync>("prepareTeamcityServerData") {
     from(zipTree(layout.projectDirectory.file("docker/data.zip")))
