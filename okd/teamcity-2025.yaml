@@ -34,7 +34,7 @@ objects:
     spec:
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
-      serviceAccountName: ${SERVICE_ACCOUNT_NAME}
+      serviceAccountName: ${SERVICE_ACCOUNT_ANYUID}
       securityContext:
         runAsUser: 0
       volumes:
@@ -121,7 +121,7 @@ parameters:
     name: TEAMCITY_2025_IMAGE_TAG
     required: true
   - description: Service account name
-    name: SERVICE_ACCOUNT_NAME
+    name: SERVICE_ACCOUNT_ANYUID
     required: true
   - description: Path to seed data
     name: DATA_URL

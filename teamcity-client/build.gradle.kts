@@ -44,7 +44,7 @@ fun String.getExt() = project.ext[this] as String
 val commonOkdParameters = mapOf(
     "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
     "DOCKER_REGISTRY" to "dockerRegistry".getExt(),
-    "SERVICE_ACCOUNT_NAME" to project.properties["okd.service-account"] as String
+    "SERVICE_ACCOUNT_ANYUID" to project.properties["okd.service-account-anyuid"] as String
 )
 
 ocTemplate {
