@@ -44,7 +44,7 @@ fun String.getExt() = project.ext[this] as String
 val commonOkdParameters = mapOf(
     "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
     "DOCKER_REGISTRY" to "dockerRegistry".getExt(),
-    "SERVICE_ACCOUNT_NAME" to "teamcity"
+    "SERVICE_ACCOUNT_NAME" to project.properties["okd.service-account"] as String
 )
 
 ocTemplate {
@@ -62,13 +62,15 @@ ocTemplate {
         service("teamcity-2022") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2022.yaml"))
             parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_2022_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String
+                "TEAMCITY_2022_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String,
+                "DATA_URL" to "https://github.com/octopusden/octopus-external-systems-client/raw/refs/heads/main/teamcity-client/docker/data.zip"
             ))
         }
         service("teamcity-2025") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2025.yaml"))
             parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_2025_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"] as String
+                "TEAMCITY_2025_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"] as String,
+                "DATA_URL" to "https://github.com/octopusden/octopus-external-systems-client/raw/refs/heads/main/teamcity-client/docker/dataV25.zip"
             ))
         }
     }
@@ -80,12 +82,6 @@ tasks.withType<Test> {
             systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity-2022")
             systemProperties["test.teamcity-2025-host"] = ocTemplate.getOkdHost("teamcity-2025")
             ocTemplate.isRequiredBy(this)
-//            doFirst {
-//                println()
-//                println()
-//                println("WAIT...")
-//                Thread.sleep(150_000L)
-//            }
         }
         "docker" -> {
             systemProperties["test.teamcity-2022-host"] = "localhost:8111"

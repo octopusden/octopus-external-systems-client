@@ -12,7 +12,7 @@ objects:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 2Gi
+          storage: 1Gi
       volumeMode: Filesystem
   - apiVersion: v1
     kind: PersistentVolumeClaim
@@ -117,7 +117,7 @@ parameters:
   - description: Docker registry
     name: DOCKER_REGISTRY
     required: true
-  - description: Teamcity version
+  - description: Tag of TeamCity image
     name: TEAMCITY_2025_IMAGE_TAG
     required: true
   - description: Service account name
@@ -126,4 +126,3 @@ parameters:
   - description: Path to seed data
     name: DATA_URL
     required: true
-    value: "https://github.com/octopusden/octopus-external-systems-client/raw/refs/heads/main/teamcity-client/docker/dataV25.zip"
