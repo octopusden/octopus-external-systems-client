@@ -4,28 +4,6 @@ metadata:
   name: teamcity-2025-template
 objects:
   - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2025-datadir
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
-      volumeMode: Filesystem
-  - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2025-logs
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
-      volumeMode: Filesystem
-  - apiVersion: v1
     kind: Pod
     metadata:
       name: ${DEPLOYMENT_PREFIX}-teamcity-2025
@@ -34,58 +12,19 @@ objects:
     spec:
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
-      serviceAccountName: ${SERVICE_ACCOUNT_ANYUID}
-      securityContext:
-        runAsUser: 0
-      volumes:
-        - name: teamcity-2025-data
-          persistentVolumeClaim:
-            claimName: ${DEPLOYMENT_PREFIX}-teamcity-2025-datadir
-        - name: teamcity-2025-logs
-          persistentVolumeClaim:
-            claimName: ${DEPLOYMENT_PREFIX}-teamcity-2025-logs
-        - name: work
-          emptyDir: { }
-      initContainers:
-        - name: seed-data
-          image: busybox:1.37
-          env:
-            - name: DATA_URL
-              value: "${DATA_URL}"
-          command: [ "sh","-c" ]
-          args:
-            - |
-              set -Eeuo pipefail
-              mkdir -p /work /work/unz /data/teamcity_server/datadir /opt/teamcity/logs
-              wget -O /work/data.zip "$DATA_URL"
-              unzip -q /work/data.zip -d /work/unz
-              cp -r /work/unz/datadir/. /data/teamcity_server/datadir/
-              cp -r /work/unz/logs/. /opt/teamcity/logs/
-          volumeMounts:
-            - name: teamcity-2025-data
-              mountPath: /data/teamcity_server/datadir
-            - name: teamcity-2025-logs
-              mountPath: /opt/teamcity/logs
-            - name: work
-              mountPath: /work
       containers:
         - name: teamcity-2025
-          image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:${TEAMCITY_2025_IMAGE_TAG}
+          image: ${DOCKER_REGISTRY}/octopusden/external-clients/teamcity-server:${TEAMCITY_2025_IMAGE_TAG}
+          imagePullPolicy: Always
           ports:
             - containerPort: 8111
               protocol: TCP
           readinessProbe:
-            tcpSocket:
+            httpGet:
+              path: /login.html
               port: 8111
             initialDelaySeconds: 60
             periodSeconds: 10
-          volumeMounts:
-            - name: teamcity-2025-data
-              mountPath: /data/teamcity_server/datadir
-            - name: teamcity-2025-logs
-              mountPath: /opt/teamcity/logs
-            - name: work
-              mountPath: /work
   - apiVersion: v1
     kind: Service
     metadata:
@@ -119,10 +58,4 @@ parameters:
     required: true
   - description: Tag of TeamCity image
     name: TEAMCITY_2025_IMAGE_TAG
-    required: true
-  - description: Service account name
-    name: SERVICE_ACCOUNT_ANYUID
-    required: true
-  - description: Path to seed data
-    name: DATA_URL
     required: true

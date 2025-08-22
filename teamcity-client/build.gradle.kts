@@ -38,13 +38,11 @@ configure<ComposeExtension> {
     )
 }
 
-
 fun String.getExt() = project.ext[this] as String
 
 val commonOkdParameters = mapOf(
     "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
-    "DOCKER_REGISTRY" to "dockerRegistry".getExt(),
-    "SERVICE_ACCOUNT_ANYUID" to project.properties["okd.service-account-anyuid"] as String
+    "DOCKER_REGISTRY" to "dockerRegistry".getExt()
 )
 
 ocTemplate {
@@ -52,7 +50,7 @@ ocTemplate {
 
     clusterDomain.set("okdClusterDomain".getExt())
     namespace.set("okdProject".getExt())
-    prefix.set("external-system")
+    prefix.set("external-clients")
 
     "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let{
         webConsoleUrl.set(it)
@@ -62,15 +60,13 @@ ocTemplate {
         service("teamcity-2022") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2022.yaml"))
             parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_2022_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String,
-                "DATA_URL" to "https://github.com/octopusden/octopus-external-systems-client/raw/refs/heads/main/teamcity-client/docker/data.zip"
+                "TEAMCITY_2022_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String
             ))
         }
         service("teamcity-2025") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2025.yaml"))
             parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_2025_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"] as String,
-                "DATA_URL" to "https://github.com/octopusden/octopus-external-systems-client/raw/refs/heads/main/teamcity-client/docker/dataV25.zip"
+                "TEAMCITY_2025_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"] as String
             ))
         }
     }
@@ -91,17 +87,77 @@ tasks.withType<Test> {
     }
 }
 
-tasks.register<Sync>("prepareTeamcityServerData") {
-    from(zipTree(layout.projectDirectory.file("docker/data.zip")))
-    into(layout.buildDirectory.dir("teamcity-server"))
-}
-
-tasks.register<Sync>("prepareTeamcityServerDataV25") {
-    from(zipTree(layout.projectDirectory.file("docker/dataV25.zip")))
-    into(layout.buildDirectory.dir("teamcity-server-2025"))
+tasks.named("ocProcess") {
+    dependsOn("pushTeamcity2022Image")
+    dependsOn("pushTeamcity2025Image")
 }
 
 tasks.named("composeUp") {
-    dependsOn("prepareTeamcityServerData")
-    dependsOn("prepareTeamcityServerDataV25")
+    dependsOn("buildTeamcity2022Image")
+    dependsOn("buildTeamcity2025Image")
+}
+
+buildImageTask(
+    taskName = "buildTeamcity2022Image",
+    prepareTaskName = "prepareTeamcity2022Context",
+    contextDir = layout.buildDirectory.dir("teamcity-server-2022"),
+    imageTag = project.properties["teamcity-2022.image-tag"] as String
+)
+
+buildImageTask(
+    taskName = "buildTeamcity2025Image",
+    prepareTaskName = "prepareTeamcity2025Context",
+    contextDir = layout.buildDirectory.dir("teamcity-server-2025"),
+    imageTag = project.properties["teamcity-2025.image-tag"] as String
+)
+
+pushImageTask(
+    taskName = "pushTeamcity2022Image",
+    buildTask = "buildTeamcity2022Image",
+    imageTag = project.properties["teamcity-2022.image-tag"] as String
+)
+pushImageTask(
+    taskName = "pushTeamcity2025Image",
+    buildTask = "buildTeamcity2025Image",
+    imageTag = project.properties["teamcity-2025.image-tag"] as String
+)
+
+fun buildImageTask(
+    taskName: String,
+    prepareTaskName: String,
+    contextDir: Provider<Directory>,
+    imageTag: String
+) = tasks.register<Exec>(taskName) {
+    dependsOn(prepareTaskName)
+    val dockerRegistry = project.property("docker.registry") as String
+    commandLine(
+        "docker", "build",
+        "-f", contextDir.get().file("Containerfile").asFile.path,
+        "--build-arg", "DOCKER_REGISTRY=$dockerRegistry",
+        "--build-arg", "TEAMCITY_IMAGE_TAG=$imageTag",
+        "-t", "$dockerRegistry/octopusden/external-clients/teamcity-server:$imageTag",
+        contextDir.get().asFile.path
+    )
+}
+
+fun pushImageTask(
+    taskName: String,
+    buildTask: String,
+    imageTag: String
+) = tasks.register<Exec>(taskName) {
+    dependsOn(buildTask)
+    val dockerRegistry = project.property("docker.registry") as String
+    commandLine("docker", "push", "$dockerRegistry/octopusden/external-clients/teamcity-server:$imageTag")
+}
+
+tasks.register<Sync>("prepareTeamcity2022Context") {
+    from(layout.projectDirectory.file("docker/Containerfile"))
+    from(zipTree(layout.projectDirectory.file("docker/data.zip")))
+    into(layout.buildDirectory.dir("teamcity-server-2022"))
+}
+
+tasks.register<Sync>("prepareTeamcity2025Context") {
+    from(layout.projectDirectory.file("docker/Containerfile"))
+    from(zipTree(layout.projectDirectory.file("docker/dataV25.zip")))
+    into(layout.buildDirectory.dir("teamcity-server-2025"))
 }

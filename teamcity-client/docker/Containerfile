@@ -1,0 +1,12 @@
+ARG DOCKER_REGISTRY
+ARG TEAMCITY_IMAGE_TAG
+
+FROM ${DOCKER_REGISTRY}/jetbrains/teamcity-server:${TEAMCITY_IMAGE_TAG}
+USER root
+RUN mkdir -p /data/teamcity_server/datadir /opt/teamcity/logs \
+    && chmod -R a+rx /services
+COPY datadir/ /data/teamcity_server/datadir/
+COPY logs/ /opt/teamcity/logs/
+RUN chgrp -R 0 /opt/teamcity /data/teamcity_server \
+    && chmod -R g=u /opt/teamcity /data/teamcity_server
+USER tcuser
