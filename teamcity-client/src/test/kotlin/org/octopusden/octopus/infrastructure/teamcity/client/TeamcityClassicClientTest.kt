@@ -510,6 +510,46 @@ class TeamcityClassicClientTest {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetVcsRootInstances(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetVcsRootInstances")
+        try {
+            val buildType = createBuildType(client, "TestGetVcsRootInstancesBuildType", project.id)
+            val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
+            val vcsRoot = client.createVcsRoot(
+                TeamcityCreateVcsRoot(
+                    name = "${project.name}_VCS_ROOT",
+                    vcsName = TeamcityVCSType.GIT.value,
+                    projectLocator = project.id,
+                    properties = TeamcityProperties(
+                        listOf(
+                            TeamcityProperty("url", url),
+                            TeamcityProperty("branch", "master"),
+                            TeamcityProperty("authMethod", "PRIVATE_KEY_DEFAULT"),
+                            TeamcityProperty("userForTags", "tcagent"),
+                            TeamcityProperty("username", "git"),
+                            TeamcityProperty("ignoreKnownHosts", "true")
+                        )
+                    )
+                )
+            )
+            client.createBuildTypeVcsRootEntry(
+                buildTypeId = buildType.id,
+                vcsRootEntry = TeamcityCreateVcsRootEntry(
+                    id = vcsRoot.id,
+                    vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)
+                )
+            )
+            val locator = VcsRootInstanceLocator(property = listOf(PropertyLocator("url", url, PropertyLocator.MatchType.EQUALS, ignoreCase = true)))
+            val instances = client.getVcsRootInstances(locator).vcsRootInstances
+            assertEquals(vcsRoot.id, instances.first().vcsRootId)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
     private fun checkHtmlContent(
         url: String,
         textareaId: String,
