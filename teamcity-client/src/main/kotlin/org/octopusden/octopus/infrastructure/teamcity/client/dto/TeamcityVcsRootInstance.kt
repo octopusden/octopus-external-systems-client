@@ -8,7 +8,7 @@ data class TeamcityVcsRootInstance(
     @JsonProperty("vcs-root-id")
     val vcsRootId: String,
     @JsonProperty("vcs-root")
-    val vcsRoot: String,
+    val vcsRoot: TeamcityVcsRoot? = null,
     val vcsName: String? = null,
     val href: String,
     val project: TeamcityProject? = null,
