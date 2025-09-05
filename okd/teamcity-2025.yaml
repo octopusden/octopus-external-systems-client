@@ -12,10 +12,19 @@ objects:
     spec:
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
+      serviceAccountName: ${SERVICE_ACCOUNT_ANYUID}
+      securityContext:
+        runAsUser: 0
+      volumes:
+        - name: teamcity-2025-data
+          persistentVolumeClaim:
+            claimName: ${DEPLOYMENT_PREFIX}-teamcity-2025-datadir
+        - name: teamcity-2025-logs
+          persistentVolumeClaim:
+            claimName: ${DEPLOYMENT_PREFIX}-teamcity-2025-logs
       containers:
         - name: teamcity-2025
-          image: ${DOCKER_REGISTRY}/octopusden/external-clients/teamcity-server:${TEAMCITY_2025_IMAGE_TAG}
-          imagePullPolicy: Always
+          image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:${TEAMCITY_2025_IMAGE_TAG}
           ports:
             - containerPort: 8111
               protocol: TCP
@@ -25,6 +34,11 @@ objects:
               port: 8111
             initialDelaySeconds: 60
             periodSeconds: 10
+          volumeMounts:
+            - name: teamcity-2025-data
+              mountPath: /data/teamcity_server/datadir
+            - name: teamcity-2025-logs
+              mountPath: /opt/teamcity/logs
   - apiVersion: v1
     kind: Service
     metadata:
@@ -58,4 +72,7 @@ parameters:
     required: true
   - description: Tag of TeamCity image
     name: TEAMCITY_2025_IMAGE_TAG
+    required: true
+  - description: Service account name with SCC - anyuid
+    name: SERVICE_ACCOUNT_ANYUID
     required: true

@@ -42,7 +42,8 @@ fun String.getExt() = project.ext[this] as String
 
 val commonOkdParameters = mapOf(
     "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
-    "DOCKER_REGISTRY" to "dockerRegistry".getExt()
+    "DOCKER_REGISTRY" to "dockerRegistry".getExt(),
+    "SERVICE_ACCOUNT_ANYUID" to project.properties["okd.service-account-anyuid"] as String
 )
 
 ocTemplate {
@@ -56,7 +57,33 @@ ocTemplate {
         webConsoleUrl.set(it)
     }
 
-    group("teamcityServices").apply {
+    group("teamcityPVCs").apply {
+        service("teamcity-2022-pvc") {
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2022-pvc.yaml"))
+        }
+        service("teamcity-2025-pvc") {
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2025-pvc.yaml"))
+        }
+    }
+
+    group("teamcitySeedUploaders").apply {
+        service("teamcity-2022-uploader") {
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2022-uploader.yaml"))
+            parameters.set(mapOf(
+                "SERVICE_ACCOUNT_ANYUID" to project.properties["okd.service-account-anyuid"] as String,
+                "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt()
+            ))
+        }
+        service("teamcity-2025-uploader") {
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2025-uploader.yaml"))
+            parameters.set(mapOf(
+                "SERVICE_ACCOUNT_ANYUID" to project.properties["okd.service-account-anyuid"] as String,
+                "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt()
+            ))
+        }
+    }
+
+    group("teamcityServers").apply {
         service("teamcity-2022") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2022.yaml"))
             parameters.set(commonOkdParameters + mapOf(
@@ -72,12 +99,38 @@ ocTemplate {
     }
 }
 
+val copyFilesTeamcity2022 = tasks.register<Exec>("copyFilesTeamcity2022") {
+    dependsOn("ocCreateTeamcityPVCs", "ocCreateTeamcitySeedUploaders")
+    val localFile = layout.projectDirectory.dir("docker/data.zip").asFile.absolutePath
+    commandLine("oc", "cp", localFile, "-n", "okdProject".getExt(),
+        "${ocTemplate.getPod("teamcity-2022-uploader")}:/seed/seed.zip")
+}
+
+val copyFilesTeamcity2025 = tasks.register<Exec>("copyFilesTeamcity2025") {
+    dependsOn("ocCreateTeamcityPVCs", "ocCreateTeamcitySeedUploaders")
+    val localFile = layout.projectDirectory.dir("docker/dataV25.zip").asFile.absolutePath
+    commandLine("oc", "cp", localFile, "-n", "okdProject".getExt(),
+        "${ocTemplate.getPod("teamcity-2025-uploader")}:/seed/seed.zip")
+}
+
+val seedTeamcity = tasks.register("seedTeamcity") {
+    dependsOn(copyFilesTeamcity2022, copyFilesTeamcity2025)
+    finalizedBy("ocDeleteTeamcitySeedUploaders")
+}
+
 tasks.withType<Test> {
     when ("testPlatform".getExt()) {
         "okd" -> {
             systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity-2022")
             systemProperties["test.teamcity-2025-host"] = ocTemplate.getOkdHost("teamcity-2025")
-            ocTemplate.isRequiredBy(this)
+            dependsOn("ocCreateTeamcityPVCs", "ocCreateTeamcitySeedUploaders")
+            dependsOn(seedTeamcity)
+            tasks.named("ocCreateTeamcityServers").configure {
+                mustRunAfter(seedTeamcity)
+                mustRunAfter("ocDeleteTeamcitySeedUploaders")
+            }
+            dependsOn("ocCreateTeamcityServers")
+            finalizedBy("ocDeleteTeamcityServers", "ocDeleteTeamcityPVCs")
         }
         "docker" -> {
             systemProperties["test.teamcity-2022-host"] = "localhost:8111"
@@ -87,77 +140,17 @@ tasks.withType<Test> {
     }
 }
 
-tasks.named("ocProcess") {
-    dependsOn("pushTeamcity2022Image")
-    dependsOn("pushTeamcity2025Image")
-}
-
 tasks.named("composeUp") {
-    dependsOn("buildTeamcity2022Image")
-    dependsOn("buildTeamcity2025Image")
+    dependsOn(prepareTeamcity2022Data)
+    dependsOn(prepareTeamcity2025Data)
 }
 
-buildImageTask(
-    taskName = "buildTeamcity2022Image",
-    prepareTaskName = "prepareTeamcity2022Context",
-    contextDir = layout.buildDirectory.dir("teamcity-server-2022"),
-    imageTag = project.properties["teamcity-2022.image-tag"] as String
-)
-
-buildImageTask(
-    taskName = "buildTeamcity2025Image",
-    prepareTaskName = "prepareTeamcity2025Context",
-    contextDir = layout.buildDirectory.dir("teamcity-server-2025"),
-    imageTag = project.properties["teamcity-2025.image-tag"] as String
-)
-
-pushImageTask(
-    taskName = "pushTeamcity2022Image",
-    buildTask = "buildTeamcity2022Image",
-    imageTag = project.properties["teamcity-2022.image-tag"] as String
-)
-pushImageTask(
-    taskName = "pushTeamcity2025Image",
-    buildTask = "buildTeamcity2025Image",
-    imageTag = project.properties["teamcity-2025.image-tag"] as String
-)
-
-fun buildImageTask(
-    taskName: String,
-    prepareTaskName: String,
-    contextDir: Provider<Directory>,
-    imageTag: String
-) = tasks.register<Exec>(taskName) {
-    dependsOn(prepareTaskName)
-    val dockerRegistry = project.property("docker.registry") as String
-    commandLine(
-        "docker", "build",
-        "-f", contextDir.get().file("Containerfile").asFile.path,
-        "--build-arg", "DOCKER_REGISTRY=$dockerRegistry",
-        "--build-arg", "TEAMCITY_IMAGE_TAG=$imageTag",
-        "-t", "$dockerRegistry/octopusden/external-clients/teamcity-server:$imageTag",
-        contextDir.get().asFile.path
-    )
-}
-
-fun pushImageTask(
-    taskName: String,
-    buildTask: String,
-    imageTag: String
-) = tasks.register<Exec>(taskName) {
-    dependsOn(buildTask)
-    val dockerRegistry = project.property("docker.registry") as String
-    commandLine("docker", "push", "$dockerRegistry/octopusden/external-clients/teamcity-server:$imageTag")
-}
-
-tasks.register<Sync>("prepareTeamcity2022Context") {
-    from(layout.projectDirectory.file("docker/Containerfile"))
+val prepareTeamcity2022Data = tasks.register<Sync>("prepareTeamcity2022Data") {
     from(zipTree(layout.projectDirectory.file("docker/data.zip")))
     into(layout.buildDirectory.dir("teamcity-server-2022"))
 }
 
-tasks.register<Sync>("prepareTeamcity2025Context") {
-    from(layout.projectDirectory.file("docker/Containerfile"))
+val prepareTeamcity2025Data = tasks.register<Sync>("prepareTeamcity2025Data") {
     from(zipTree(layout.projectDirectory.file("docker/dataV25.zip")))
     into(layout.buildDirectory.dir("teamcity-server-2025"))
 }

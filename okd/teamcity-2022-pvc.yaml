@@ -1,0 +1,31 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: teamcity-2022-pvc-template
+objects:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-teamcity-2022-datadir
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: ${DEPLOYMENT_PREFIX}-teamcity-2022-logs
+    spec:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      volumeMode: Filesystem
+parameters:
+  - description: Unique deployment prefix
+    name: DEPLOYMENT_PREFIX
+    required: true
