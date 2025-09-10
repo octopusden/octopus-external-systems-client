@@ -1,10 +1,11 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.net.InetAddress
 import java.time.Duration
+import java.util.zip.CRC32
 
 plugins {
     java
     idea
-    id("org.octopusden.octopus-release-management")
     id("org.octopusden.octopus.oc-template")
     id("org.jetbrains.kotlin.jvm")
     id("io.github.gradle-nexus.publish-plugin")
@@ -27,8 +28,18 @@ nexusPublishing {
     }
 }
 
+val defaultVersion = "${
+    with(CRC32()) {
+        update(InetAddress.getLocalHost().hostName.toByteArray())
+        value
+    }
+}-snapshot"
+
 allprojects {
     group = "org.octopusden.octopus.octopus-external-systems-clients"
+    if (version == "unspecified") {
+        version = defaultVersion
+    }
 }
 
 subprojects {
