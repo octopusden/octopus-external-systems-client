@@ -118,21 +118,22 @@ val seedTeamcity = tasks.register("seedTeamcity") {
     finalizedBy("ocDeleteTeamcitySeedUploaders")
 }
 
-tasks.withType<Test> {
-    when ("testPlatform".getExt()) {
-        "okd" -> {
+when ("testPlatform".getExt()) {
+    "okd" -> {
+        tasks.withType<Test> {
             systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity-2022")
             systemProperties["test.teamcity-2025-host"] = ocTemplate.getOkdHost("teamcity-2025")
-            dependsOn("ocCreateTeamcityPVCs", "ocCreateTeamcitySeedUploaders")
             dependsOn(seedTeamcity)
-            tasks.named("ocCreateTeamcityServers").configure {
-                mustRunAfter(seedTeamcity)
-                mustRunAfter("ocDeleteTeamcitySeedUploaders")
-            }
             dependsOn("ocCreateTeamcityServers")
             finalizedBy("ocDeleteTeamcityServers", "ocDeleteTeamcityPVCs")
         }
-        "docker" -> {
+        tasks.named("ocCreateTeamcityServers").configure {
+            mustRunAfter(seedTeamcity)
+            mustRunAfter("ocDeleteTeamcitySeedUploaders")
+        }
+    }
+    "docker" -> {
+        tasks.withType<Test> {
             systemProperties["test.teamcity-2022-host"] = "localhost:8111"
             systemProperties["test.teamcity-2025-host"] = "localhost:8112"
             dockerCompose.isRequiredBy(this)
