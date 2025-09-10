@@ -123,13 +123,11 @@ when ("testPlatform".getExt()) {
         tasks.withType<Test> {
             systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity-2022")
             systemProperties["test.teamcity-2025-host"] = ocTemplate.getOkdHost("teamcity-2025")
-            dependsOn(seedTeamcity)
             dependsOn("ocCreateTeamcityServers")
             finalizedBy("ocDeleteTeamcityServers", "ocDeleteTeamcityPVCs")
         }
         tasks.named("ocCreateTeamcityServers").configure {
-            mustRunAfter(seedTeamcity)
-            mustRunAfter("ocDeleteTeamcitySeedUploaders")
+            dependsOn(seedTeamcity)
         }
     }
     "docker" -> {
