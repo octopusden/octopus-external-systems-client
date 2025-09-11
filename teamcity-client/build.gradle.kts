@@ -84,13 +84,13 @@ ocTemplate {
     }
 
     group("teamcityServers").apply {
-        service("teamcity-2022") {
+        service("teamcity22") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2022.yaml"))
             parameters.set(commonOkdParameters + mapOf(
                 "TEAMCITY_2022_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String
             ))
         }
-        service("teamcity-2025") {
+        service("teamcity25") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2025.yaml"))
             parameters.set(commonOkdParameters + mapOf(
                 "TEAMCITY_2025_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"] as String
@@ -125,8 +125,8 @@ tasks.named("ocCreateTeamcityServers").configure {
 tasks.withType<Test> {
     when ("testPlatform".getExt()) {
         "okd" -> {
-            systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity-2022")
-            systemProperties["test.teamcity-2025-host"] = ocTemplate.getOkdHost("teamcity-2025")
+            systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity22")
+            systemProperties["test.teamcity-2025-host"] = ocTemplate.getOkdHost("teamcity25")
             dependsOn("ocCreateTeamcityServers")
             finalizedBy("ocDeleteTeamcityServers", "ocDeleteTeamcityPVCs")
         }

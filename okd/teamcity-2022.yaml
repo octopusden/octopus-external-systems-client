@@ -6,9 +6,9 @@ objects:
   - apiVersion: v1
     kind: Pod
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2022
+      name: ${DEPLOYMENT_PREFIX}-teamcity22
       labels:
-        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity-2022
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity22
     spec:
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
@@ -23,7 +23,7 @@ objects:
           persistentVolumeClaim:
             claimName: ${DEPLOYMENT_PREFIX}-teamcity-2022-logs
       containers:
-        - name: teamcity-2022
+        - name: teamcity22
           image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:${TEAMCITY_2022_IMAGE_TAG}
           ports:
             - containerPort: 8111
@@ -42,24 +42,24 @@ objects:
   - apiVersion: v1
     kind: Service
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2022-service
+      name: ${DEPLOYMENT_PREFIX}-teamcity22-service
     spec:
       ports:
         - port: 8111
           protocol: TCP
           targetPort: 8111
       selector:
-        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity-2022
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity22
   - apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2022-route
+      name: ${DEPLOYMENT_PREFIX}-teamcity22-route
     spec:
       port:
         targetPort: 8111
       to:
         kind: Service
-        name: ${DEPLOYMENT_PREFIX}-teamcity-2022-service
+        name: ${DEPLOYMENT_PREFIX}-teamcity22-service
 parameters:
   - description: Unique deployment prefix
     name: DEPLOYMENT_PREFIX

@@ -6,9 +6,9 @@ objects:
   - apiVersion: v1
     kind: Pod
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2025
+      name: ${DEPLOYMENT_PREFIX}-teamcity25
       labels:
-        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity-2025
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity25
     spec:
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
@@ -23,7 +23,7 @@ objects:
           persistentVolumeClaim:
             claimName: ${DEPLOYMENT_PREFIX}-teamcity-2025-logs
       containers:
-        - name: teamcity-2025
+        - name: teamcity25
           image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:${TEAMCITY_2025_IMAGE_TAG}
           ports:
             - containerPort: 8111
@@ -42,24 +42,24 @@ objects:
   - apiVersion: v1
     kind: Service
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2025-service
+      name: ${DEPLOYMENT_PREFIX}-teamcity25-service
     spec:
       ports:
         - port: 8111
           protocol: TCP
           targetPort: 8111
       selector:
-        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity-2025
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity25
   - apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2025-route
+      name: ${DEPLOYMENT_PREFIX}-teamcity25-route
     spec:
       port:
         targetPort: 8111
       to:
         kind: Service
-        name: ${DEPLOYMENT_PREFIX}-teamcity-2025-service
+        name: ${DEPLOYMENT_PREFIX}-teamcity25-service
 parameters:
   - description: Unique deployment prefix
     name: DEPLOYMENT_PREFIX
