@@ -58,11 +58,8 @@ ocTemplate {
     }
 
     group("teamcityPVCs").apply {
-        service("teamcity-2022-pvc") {
-            templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2022-pvc.yaml"))
-        }
-        service("teamcity-2025-pvc") {
-            templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-2025-pvc.yaml"))
+        service("teamcity-pvc") {
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-pvc.yaml"))
         }
     }
 
@@ -128,7 +125,7 @@ tasks.withType<Test> {
             systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity22")
             systemProperties["test.teamcity-2025-host"] = ocTemplate.getOkdHost("teamcity25")
             dependsOn("ocCreateTeamcityServers")
-            finalizedBy("ocDeleteTeamcityServers", "ocDeleteTeamcityPVCs")
+            finalizedBy("ocLogsTeamcityServers", "ocDeleteTeamcityServers", "ocDeleteTeamcityPVCs")
         }
         "docker" -> {
             systemProperties["test.teamcity-2022-host"] = "localhost:8111"

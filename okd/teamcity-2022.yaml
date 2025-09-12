@@ -19,9 +19,6 @@ objects:
         - name: teamcity-2022-data
           persistentVolumeClaim:
             claimName: ${DEPLOYMENT_PREFIX}-teamcity-2022-datadir
-        - name: teamcity-2022-logs
-          persistentVolumeClaim:
-            claimName: ${DEPLOYMENT_PREFIX}-teamcity-2022-logs
       containers:
         - name: teamcity22
           image: ${DOCKER_REGISTRY}/jetbrains/teamcity-server:${TEAMCITY_2022_IMAGE_TAG}
@@ -37,8 +34,6 @@ objects:
           volumeMounts:
             - name: teamcity-2022-data
               mountPath: /data/teamcity_server/datadir
-            - name: teamcity-2022-logs
-              mountPath: /opt/teamcity/logs
   - apiVersion: v1
     kind: Service
     metadata:

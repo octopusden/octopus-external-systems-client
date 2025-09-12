@@ -1,7 +1,7 @@
 apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
-  name: teamcity-2022-pvc-template
+  name: teamcity-pvc-template
 objects:
   - apiVersion: v1
     kind: PersistentVolumeClaim
@@ -17,7 +17,7 @@ objects:
   - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2022-logs
+      name: ${DEPLOYMENT_PREFIX}-teamcity-2025-datadir
     spec:
       accessModes:
         - ReadWriteOnce
