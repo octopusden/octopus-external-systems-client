@@ -13,8 +13,6 @@ objects:
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
       serviceAccountName: ${SERVICE_ACCOUNT_ANYUID}
-      securityContext:
-        runAsUser: 0
       volumes:
         - name: teamcity-2022-data
           persistentVolumeClaim:
