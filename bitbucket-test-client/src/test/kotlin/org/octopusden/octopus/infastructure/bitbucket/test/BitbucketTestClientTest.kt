@@ -25,16 +25,12 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-private const val HOST = "localhost:7990"
-private const val USER = "admin"
-private const val PASSWORD = "admin"
-
 class BitbucketTestClientTest : BaseTestClientTest(
-    BitbucketTestClient("http://$HOST", USER, PASSWORD), "ssh://git@$HOST/%s/%s.git"
+    BitbucketTestClient("http://$bitbucketHost", USER, PASSWORD), "ssh://git@$bitbucketHost/%s/%s.git"
 ) {
 
     private val client = BitbucketClassicClient(object : BitbucketClientParametersProvider {
-        override fun getApiUrl() = "http://$HOST"
+        override fun getApiUrl() = "http://$bitbucketHost"
         override fun getAuth(): BitbucketCredentialProvider = BitbucketBasicCredentialProvider(USER, PASSWORD)
     })
 
@@ -202,5 +198,13 @@ class BitbucketTestClientTest : BaseTestClientTest(
         } else {
             throw IllegalArgumentException("Resource file not found: $fileName")
         }
+    }
+
+    companion object {
+        private const val USER = "admin"
+        private const val PASSWORD = "admin"
+
+        private val bitbucketHost = System.getProperty("test.bitbucket-host")
+            ?: throw Exception("System property 'test.bitbucket-host' must be defined")
     }
 }

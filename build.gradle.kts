@@ -1,10 +1,12 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.net.InetAddress
 import java.time.Duration
+import java.util.zip.CRC32
 
 plugins {
     java
     idea
-    id("org.octopusden.octopus-release-management")
+    id("org.octopusden.octopus.oc-template")
     id("org.jetbrains.kotlin.jvm")
     id("io.github.gradle-nexus.publish-plugin")
     signing
@@ -26,8 +28,18 @@ nexusPublishing {
     }
 }
 
+val defaultVersion = "${
+    with(CRC32()) {
+        update(InetAddress.getLocalHost().hostName.toByteArray())
+        value
+    }
+}-snapshot"
+
 allprojects {
     group = "org.octopusden.octopus.octopus-external-systems-clients"
+    if (version == "unspecified") {
+        version = defaultVersion
+    }
 }
 
 subprojects {
@@ -101,6 +113,31 @@ subprojects {
             suppressWarnings = true
             jvmTarget = "1.8"
         }
+    }
+
+    ext {
+        System.getenv().let {
+            set("signingRequired", it.containsKey("ORG_GRADLE_PROJECT_signingKey") && it.containsKey("ORG_GRADLE_PROJECT_signingPassword"))
+            set("testPlatform", it.getOrDefault("TEST_PLATFORM", properties["test.platform"]))
+            set("dockerRegistry", it.getOrDefault("DOCKER_REGISTRY", properties["docker.registry"]))
+            set("octopusGithubDockerRegistry", it.getOrDefault("OCTOPUS_GITHUB_DOCKER_REGISTRY", project.properties["octopus.github.docker.registry"]))
+            set("okdActiveDeadlineSeconds", it.getOrDefault("OKD_ACTIVE_DEADLINE_SECONDS", properties["okd.active-deadline-seconds"]))
+            set("okdProject", it.getOrDefault("OKD_PROJECT", properties["okd.project"]))
+            set("okdClusterDomain", it.getOrDefault("OKD_CLUSTER_DOMAIN", properties["okd.cluster-domain"]))
+            set("okdWebConsoleUrl", (it.getOrDefault("OKD_WEB_CONSOLE_URL", properties["okd.web-console-url"]) as String).trimEnd('/'))
+            set("bitbucketLicense", it.getOrDefault("BITBUCKET_LICENSE", properties["bitbucket.license"]))
+        }
+    }
+
+    val supportedTestPlatforms = listOf("docker", "okd")
+    if (project.ext["testPlatform"] !in supportedTestPlatforms) {
+        throw IllegalArgumentException("Test platform must be set to one of the following $supportedTestPlatforms. Start gradle build with -Ptest.platform=... or set env variable TEST_PLATFORM")
+    }
+    val mandatoryProperties = mutableListOf("dockerRegistry", "octopusGithubDockerRegistry")
+    if (project.ext["testPlatform"] == "okd") {
+        mandatoryProperties.add("okdActiveDeadlineSeconds")
+        mandatoryProperties.add("okdProject")
+        mandatoryProperties.add("okdClusterDomain")
     }
 
     dependencies {

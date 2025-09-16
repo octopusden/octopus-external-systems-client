@@ -1,9 +1,9 @@
 import com.avast.gradle.dockercompose.ComposeExtension
-import java.util.concurrent.TimeUnit
 
 plugins {
     java
     id("com.avast.gradle.docker-compose") version "0.16.9"
+    id("org.octopusden.octopus.oc-template")
 }
 
 java {
@@ -14,31 +14,58 @@ java {
 configure<ComposeExtension> {
     useComposeFiles.add("${projectDir}${File.separator}docker${File.separator}docker-compose.yml")
     waitForTcpPorts.set(true)
-    captureContainersOutputToFiles.set(buildDir.resolve("docker_logs"))
+    captureContainersOutputToFiles.set(layout.buildDirectory.file("docker_logs").get().asFile)
     environment.putAll(
         mapOf(
-            "DOCKER_REGISTRY" to project.properties["docker.registry"]
+            "DOCKER_REGISTRY" to project.properties["docker.registry"],
+            "GITEA_IMAGE_TAG" to properties["gitea.image-tag"]
         )
     )
 }
 
-dockerCompose.isRequiredBy(tasks["test"])
+fun String.getExt() = project.ext[this] as String
+
+val commonOkdParameters = mapOf(
+    "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
+    "DOCKER_REGISTRY" to "dockerRegistry".getExt()
+)
+
+ocTemplate {
+    workDir.set(layout.buildDirectory.dir("okd"))
+
+    clusterDomain.set("okdClusterDomain".getExt())
+    namespace.set("okdProject".getExt())
+    prefix.set("ext-clients")
+
+    "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let{
+        webConsoleUrl.set(it)
+    }
+
+    group("giteaServices").apply {
+        service("gitea") {
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/gitea.yaml"))
+            parameters.set(commonOkdParameters + mapOf("GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String))
+        }
+    }
+}
+
+tasks.withType<Test> {
+    when ("testPlatform".getExt()) {
+        "okd" -> {
+            systemProperties["test.gitea-host"] = ocTemplate.getOkdHost("gitea")
+            ocTemplate.isRequiredBy(this)
+        }
+        "docker" -> {
+            systemProperties["test.gitea-host"] = "localhost:3000"
+            dockerCompose.isRequiredBy(this)
+        }
+    }
+}
 
 tasks["composeUp"].doLast {
-    logger.info("Create test-admin in Gitea")
-    val process = ProcessBuilder(
-        "docker", "exec", "gitea-test-client-ft-gitea",
-        "/script/add_admin.sh"
-    ).start()
-    process.waitFor(10, TimeUnit.SECONDS)
-
-    val output = process.inputStream.bufferedReader().readText()
-    logger.info(output)
-
-    val error = process.errorStream.bufferedReader().readText()
-    if (error.isNotEmpty()) {
-        throw GradleException(error)
-    }
+    exec {
+        setCommandLine("docker", "exec", "gitea-test-client-ft-gitea", "/script/add_admin.sh")
+    }.assertNormalExitValue()
 }
 
 dependencies {

@@ -35,22 +35,15 @@ import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-
-private const val HOST = "localhost:3000"
-private const val USER = "test-admin"
-private const val PASSWORD = "test-admin"
-private const val RETRY_INTERVAL_SEC: Long = 1
-private const val RETRY_COUNT = 10
-
 class GiteaTestClientTest :
     BaseTestClientTest(
-        GiteaTestClient("http://$HOST", USER, PASSWORD, vcsFacadeUrl = "http://vcs-facade", "test-gitea", "secret"),
-        "ssh://git@$HOST:%s/%s.git"
+        GiteaTestClient("http://$giteaHost", USER, PASSWORD, vcsFacadeUrl = "http://vcs-facade", "test-gitea", "secret"),
+        "ssh://git@$giteaHost:%s/%s.git"
     ) {
 
     private val log: Logger = LoggerFactory.getLogger(GiteaTestClientTest::class.java)
     private val client = GiteaClassicClient(object : ClientParametersProvider {
-        override fun getApiUrl(): String = "http://$HOST"
+        override fun getApiUrl(): String = "http://$giteaHost"
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
     })
 
@@ -204,5 +197,15 @@ class GiteaTestClientTest :
         assertEquals(1, hooks.size)
         assertEquals(listOf(GiteaHookEvent.PUSH), hooks.first().events)
         assertTrue(hooks.first().active)
+    }
+
+    companion object {
+        private const val USER = "test-admin"
+        private const val PASSWORD = "test-admin"
+        private const val RETRY_INTERVAL_SEC: Long = 1
+        private const val RETRY_COUNT = 10
+
+        private val giteaHost = System.getProperty("test.gitea-host")
+            ?: throw Exception("System property 'test.gitea-host' must be defined")
     }
 }

@@ -43,16 +43,21 @@ class TeamcityClassicClientTest {
         const val USER = "admin"
         const val PASSWORD = "admin"
 
+        private val hostTeamcity2022 = System.getProperty("test.teamcity-2022-host")
+            ?: throw Exception("System property 'test.teamcity-2022-host' must be defined")
+        private val hostTeamcity2025 = System.getProperty("test.teamcity-2025-host")
+            ?: throw Exception("System property 'test.teamcity-2025-host' must be defined")
+
         @JvmStatic
         fun teamcityConfigurations(): List<TeamcityTestConfiguration> = listOf(
             TeamcityTestConfiguration(
                 name = "v22",
-                host = "localhost:8111",
+                host = hostTeamcity2022,
                 version = "2022.04.7 (build 109063)"
             ),
             TeamcityTestConfiguration(
                 name = "v25",
-                host = "localhost:8112",
+                host = hostTeamcity2025,
                 version = "2025.03.3 (build 186370)"
             )
         )
