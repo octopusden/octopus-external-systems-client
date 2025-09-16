@@ -1,14 +1,14 @@
 apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
-  name: teamcity-2022-uploader-template
+  name: teamcity-uploader-template
 objects:
   - apiVersion: v1
     kind: Pod
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2022-uploader
+      name: ${DEPLOYMENT_PREFIX}-teamcity${TEAMCITY_ID}-uploader
       labels:
-        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity-2022-uploader
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-teamcity${TEAMCITY_ID}-uploader
     spec:
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
@@ -18,7 +18,7 @@ objects:
       volumes:
         - name: datadir
           persistentVolumeClaim:
-            claimName: ${DEPLOYMENT_PREFIX}-teamcity-2022-datadir
+            claimName: ${DEPLOYMENT_PREFIX}-teamcity${TEAMCITY_ID}-datadir
         - name: seed
           emptyDir: { }
       containers:
@@ -35,18 +35,15 @@ objects:
               until unzip -t /seed/seed.zip >/dev/null 2>&1; do
                 sleep 1
               done
-              
               echo "Unzipping..."
               mkdir -p /seed/unpacked
               unzip -o /seed/seed.zip -d /seed/unpacked
-              
               if [ -d /seed/unpacked/datadir ]; then
                 echo "Copying datadir -> /data/teamcity_server/datadir"
                 cp -a /seed/unpacked/datadir/. /data/teamcity_server/datadir/
               else
                 echo "!! /seed/unpacked/datadir not found"
               fi
-              
               echo "Cleanup..."
               rm -rf /seed/*
               echo ">> Done, exiting."
@@ -64,4 +61,7 @@ parameters:
     required: true
   - description: Service account name with SCC - anyuid
     name: SERVICE_ACCOUNT_ANYUID
+    required: true
+  - description: TeamCity instance identifier
+    name: TEAMCITY_ID
     required: true

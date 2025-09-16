@@ -6,18 +6,7 @@ objects:
   - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2022-datadir
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
-      volumeMode: Filesystem
-  - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: ${DEPLOYMENT_PREFIX}-teamcity-2025-datadir
+      name: ${DEPLOYMENT_PREFIX}-teamcity${TEAMCITY_ID}-datadir
     spec:
       accessModes:
         - ReadWriteOnce
@@ -28,4 +17,7 @@ objects:
 parameters:
   - description: Unique deployment prefix
     name: DEPLOYMENT_PREFIX
+    required: true
+  - description: TeamCity instance identifier
+    name: TEAMCITY_ID
     required: true
