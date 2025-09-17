@@ -30,6 +30,8 @@ objects:
       labels:
         app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-gitea
     spec:
+      securityContext:
+        fsGroup: 1000
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
       containers:
