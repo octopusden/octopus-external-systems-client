@@ -4,17 +4,6 @@ metadata:
   name: test-gitea
 objects:
   - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: ${DEPLOYMENT_PREFIX}-gitea-pvc
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
-      volumeMode: Filesystem
-  - apiVersion: v1
     kind: ConfigMap
     metadata:
       name: ${DEPLOYMENT_PREFIX}-gitea-config
@@ -30,8 +19,6 @@ objects:
       labels:
         app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-gitea
     spec:
-      securityContext:
-        fsGroup: 1000
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
       containers:
@@ -67,8 +54,8 @@ objects:
               name: gitea-script
       volumes:
         - name: gitea-data
-          persistentVolumeClaim:
-            claimName: ${DEPLOYMENT_PREFIX}-gitea-pvc
+          emptyDir:
+            sizeLimit: 500Mi
         - name: gitea-script
           configMap:
             name: ${DEPLOYMENT_PREFIX}-gitea-config
