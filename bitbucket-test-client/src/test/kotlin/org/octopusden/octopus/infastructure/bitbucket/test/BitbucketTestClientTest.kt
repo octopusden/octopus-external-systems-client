@@ -10,9 +10,12 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.createPullRequestW
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeleteBranch
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
+import org.octopusden.octopus.infrastructure.bitbucket.client.getBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommitChanges
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommits
@@ -166,6 +169,41 @@ class BitbucketTestClientTest : BaseTestClientTest(
     }
 
     @Test
+    fun testDeletePullRequest(){
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+
+        val prBranch = "pr-to-delete"
+        testClient.commit(NewChangeSet("$prBranch commit", vcsUrl, prBranch))
+        Thread.sleep(5000)
+
+        val createdPullRequest = createPullRequestWithDefaultReviewers(
+            PROJECT,
+            REPOSITORY,
+            prBranch,
+            BaseTestClient.DEFAULT_BRANCH,
+            "PR Title $prBranch",
+            "PR Description"
+        )
+        Thread.sleep(5000)
+
+        val pullRequest = client.getPullRequest(PROJECT, REPOSITORY, createdPullRequest.index)
+        Assertions.assertEquals(createdPullRequest, pullRequest.toTestPullRequest())
+
+        client.deletePullRequest(PROJECT, REPOSITORY, createdPullRequest.index.toString(), BitbucketDeletePullRequest(pullRequest.version))
+        Thread.sleep(5000)
+
+        Assertions.assertThrowsExactly(NotFoundException::class.java, {
+            client.getPullRequest(PROJECT, REPOSITORY, createdPullRequest.index)
+        }, "Pull request ${createdPullRequest.index} does not exist in $PROJECT/$REPOSITORY.")
+    }
+
+    @Test
     fun testGetCommitInvalidId() {
         Assertions.assertThrowsExactly(NotFoundException::class.java, {
             client.getCommit(PROJECT, REPOSITORY, "bug/fix")
@@ -185,6 +223,31 @@ class BitbucketTestClientTest : BaseTestClientTest(
         Assertions.assertEquals(1, changes.size)
         Assertions.assertEquals(BitbucketCommitChange.BitbucketCommitChangeType.ADD, changes.first().type)
         Assertions.assertTrue(changes.first().path.value.endsWith(".commit"))
+    }
+
+    @Test
+    fun testDeleteBranch() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+
+        val branchToDelete = "branch-to-delete"
+        testClient.commit(NewChangeSet("$branchToDelete commit", vcsUrl, branchToDelete))
+        Thread.sleep(5000)
+
+        val commits = client.getCommits(PROJECT, REPOSITORY, branchToDelete)
+        Assertions.assertFalse(commits.isEmpty())
+
+        client.deleteBranch(PROJECT, REPOSITORY, BitbucketDeleteBranch(branchToDelete))
+        Thread.sleep(5000)
+
+        Assertions.assertThrowsExactly(NotFoundException::class.java, {
+            client.getBranch(PROJECT, REPOSITORY, branchToDelete)
+        }, "Ref '$branchToDelete' does not exist in repository '$REPOSITORY'")
     }
 
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)

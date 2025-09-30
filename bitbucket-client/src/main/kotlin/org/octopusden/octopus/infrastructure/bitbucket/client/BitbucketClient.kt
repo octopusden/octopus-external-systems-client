@@ -14,6 +14,8 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreat
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequestReviewer
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeleteBranch
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntityList
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketJiraCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketProject
@@ -34,6 +36,7 @@ private val _log: Logger = LoggerFactory.getLogger(BitbucketClient::class.java)
 const val DASHBOARD_PATH = "rest/api/1.0/dashboard"
 const val PROJECT_PATH = "rest/api/1.0/projects"
 const val REPO_PATH = "rest/api/1.0/repos"
+const val BRANCH_PATH = "rest/branch-utils/1.0/projects"
 const val GIT_PROJECT_PATH = "/rest/git/1.0/projects"
 const val JIRA_ISSUES_PATH = "rest/jira/1.0/issues"
 const val DEFAULT_REVIEWERS_PATH = "rest/default-reviewers/1.0/projects"
@@ -146,6 +149,14 @@ interface BitbucketClient {
         @QueryMap requestParams: Map<String, Any>,
     ): BitbucketEntityList<BitbucketBranch>
 
+    @RequestLine("DELETE $BRANCH_PATH/{projectKey}/repos/{repository}/branches")
+    @Headers("Content-Type: application/json")
+    fun deleteBranch(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        dto: BitbucketDeleteBranch
+    )
+
     @RequestLine("GET $DEFAULT_REVIEWERS_PATH/{projectKey}/repos/{repository}/reviewers")
     fun getDefaultReviewers(
         @Param("projectKey") projectKey: String,
@@ -163,6 +174,7 @@ interface BitbucketClient {
 
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/pull-requests/{id}")
     @Headers("Content-Type: application/json")
+    @Throws(NotFoundException::class)
     fun getPullRequest(
         @Param("projectKey") projectKey: String,
         @Param("repository") repository: String,
@@ -174,6 +186,15 @@ interface BitbucketClient {
     fun getPullRequests(
         @QueryMap requestParams: Map<String, Any>
     ): BitbucketEntityList<BitbucketPullRequest>
+
+    @RequestLine("DELETE $PROJECT_PATH/{projectKey}/repos/{repository}/pull-requests/{pullRequestId}")
+    @Headers("Content-Type: application/json")
+    fun deletePullRequest(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        @Param("pullRequestId") pullRequestId: String,
+        dto: BitbucketDeletePullRequest
+    )
 
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/files?at={at}&start={start}&limit={limit}")
     @Throws(NotFoundException::class)

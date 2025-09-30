@@ -13,6 +13,8 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreat
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeleteBranch
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.DefaultReviewersQuery
 
@@ -78,6 +80,9 @@ class BitbucketClassicClient(
     override fun getBranches(projectKey: String, repository: String, requestParams: Map<String, Any>) =
         client.getBranches(projectKey, repository, requestParams)
 
+    override fun deleteBranch(projectKey: String, repository: String, dto: BitbucketDeleteBranch) =
+        client.deleteBranch(projectKey, repository, dto)
+
     override fun getDefaultReviewers(projectKey: String, repository: String, query: DefaultReviewersQuery) =
         client.getDefaultReviewers(projectKey, repository, query)
 
@@ -89,6 +94,9 @@ class BitbucketClassicClient(
 
     override fun getPullRequests(requestParams: Map<String, Any>) =
         client.getPullRequests(requestParams)
+
+    override fun deletePullRequest(projectKey: String, repository: String, pullRequestId: String, dto: BitbucketDeletePullRequest) =
+        client.deletePullRequest(projectKey, repository, pullRequestId, dto)
 
     override fun getRepositoryFiles(projectKey: String, repository: String, requestParams: Map<String, Any>) =
         client.getRepositoryFiles(projectKey, repository, requestParams)

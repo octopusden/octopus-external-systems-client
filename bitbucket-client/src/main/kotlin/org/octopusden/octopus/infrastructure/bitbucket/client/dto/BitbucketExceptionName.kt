@@ -36,6 +36,10 @@ enum class BitbucketExceptionName(
         "com.atlassian.bitbucket.content.NoSuchPathException",
         { message -> NotFoundException(message) }
     ),
+    NO_SUCH_PULL_REQUEST(
+        "com.atlassian.bitbucket.pull.NoSuchPullRequestException",
+        { message -> NotFoundException(message) }
+    ),
     OTHER("", { message -> IllegalStateException(message) });
 
     companion object {
