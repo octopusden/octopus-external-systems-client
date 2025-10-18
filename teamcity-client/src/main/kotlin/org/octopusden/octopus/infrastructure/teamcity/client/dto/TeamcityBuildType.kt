@@ -24,5 +24,6 @@ data class TeamcityBuildType(
     @JsonProperty("snapshot-dependencies")
     val snapshotDependencies: TeamcitySnapshotDependencies? = null,
     val paused: Boolean? = null,
+    val builds: TeamcityBuilds? = null
 )
 
