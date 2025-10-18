@@ -9,5 +9,6 @@ data class CreateIssueFields(
     val project: Project,
     val issuetype: IssueType,
     val summary: String,
-    val description: String
+    val description: String,
+    val labels: List<String> = mutableListOf(),
 ) : IssueFields
