@@ -14,11 +14,11 @@ import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkResponse
 import org.octopusden.octopus.infrastructure.jira.dto.UpdateIssueFields
 
 const val REST_API_PATH = "rest/api/2"
-const val JIRA_SOFTWARE_PATH = "rest/agile/1.0"
+const val REST_AGILE_PATH = "rest/agile/1.0"
 const val ISSUE_PATH = "$REST_API_PATH/issue"
 const val USER_PATH = "$REST_API_PATH/user"
-const val BOARD_PATH = "$JIRA_SOFTWARE_PATH/board"
-const val SPRINT_PATH = "$JIRA_SOFTWARE_PATH/sprint"
+const val BOARD_PATH = "$REST_AGILE_PATH/board"
+const val SPRINT_PATH = "$REST_AGILE_PATH/sprint"
 
 interface JiraClient {
 
@@ -39,7 +39,7 @@ interface JiraClient {
 
     @Headers("Content-Type: application/json")
     @RequestLine("POST $SPRINT_PATH/{sprintId}/issue")
-    fun moveIssuesToSprint(@Param("sprintId") sprintId: Long, moveIssuesToSprintRequest: MoveIssuesToSprintRequest): String
+    fun moveIssuesToSprint(@Param("sprintId") sprintId: Long, moveIssuesToSprintRequest: MoveIssuesToSprintRequest): Unit
 
     @Headers("Content-Type: application/json")
     @RequestLine("POST $ISSUE_PATH/{issueKey}/remotelink")

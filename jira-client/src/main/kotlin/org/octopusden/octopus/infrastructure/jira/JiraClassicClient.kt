@@ -44,16 +44,8 @@ class JiraClassicClient(
 
     override fun getActiveSprint(boardId: Long): ActiveSprintResponse = client.getActiveSprint(boardId)
 
-    override fun moveIssuesToSprint(sprintId: Long, moveIssuesToSprintRequest: MoveIssuesToSprintRequest): String {
-        return try {
-            client.moveIssuesToSprint(sprintId, moveIssuesToSprintRequest)
-            "Successfully moved issues to sprint $sprintId"
-        } catch (ex: FeignException) {
-            val status = ex.status()
-            val reason = ex.message ?: "Unknown error"
-            "Failed to move issues to sprint $sprintId (HTTP $status): $reason"
-        }
-    }
+    override fun moveIssuesToSprint(sprintId: Long, moveIssuesToSprintRequest: MoveIssuesToSprintRequest): Unit = client.moveIssuesToSprint(sprintId, moveIssuesToSprintRequest)
+
 
     override fun addRemoteLink(issueKey: String, remoteLinkRequest: RemoteLinkRequest): RemoteLinkResponse = client.addRemoteLink(issueKey, remoteLinkRequest)
 
