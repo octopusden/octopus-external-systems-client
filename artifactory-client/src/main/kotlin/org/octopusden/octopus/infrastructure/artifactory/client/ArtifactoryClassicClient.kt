@@ -13,7 +13,10 @@ import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.ArtifactoryResponse
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfoResponse
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.DeleteBuildRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteBuildRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDockerImageRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
@@ -44,6 +47,11 @@ class ArtifactoryClassicClient(
 
     override fun getBuildInfo(buildName: String, buildNumber: String): BuildInfoResponse =
         client.getBuildInfo(buildName, buildNumber)
+
+    override fun uploadBuildInfo(request: BuildInfo) = client.uploadBuildInfo(request)
+
+    override fun deleteBuild(request: DeleteBuildRequest): ArtifactoryResponse =
+        client.deleteBuild(request)
 
     override fun promoteBuild(buildName: String, buildNumber: String, request: PromoteBuildRequest) =
         client.promoteBuild(buildName, buildNumber, request)

@@ -1,3 +1,12 @@
 package org.octopusden.octopus.infrastructure.artifactory.client.dto
 
-data class Artifact(val name: String, val type: String?)
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class Artifact(
+    val name: String,
+    val type: String?,
+    val sha1: String?,
+    val sha256: String?,
+    val md5: String?
+)
