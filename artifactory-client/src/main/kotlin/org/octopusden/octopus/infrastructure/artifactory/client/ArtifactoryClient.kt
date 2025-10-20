@@ -34,11 +34,11 @@ interface ArtifactoryClient {
 
     @RequestLine("PUT $BUILD_PATH")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun uploadBuildInfo(request: BuildInfo): ArtifactoryResponse
+    fun uploadBuildInfo(request: BuildInfo)
 
     @RequestLine("POST $BUILD_PATH/delete")
     @Headers("Content-Type: application/json")
-    fun deleteBuild(request: DeleteBuildRequest): ArtifactoryResponse
+    fun deleteBuild(request: DeleteBuildRequest)
 
     @RequestLine("POST $BUILD_PATH/promote/{buildName}/{buildNumber}")
     @Headers("Content-Type: application/json", "Accept: application/json")

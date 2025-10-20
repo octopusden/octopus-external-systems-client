@@ -50,8 +50,7 @@ class ArtifactoryClassicClient(
 
     override fun uploadBuildInfo(request: BuildInfo) = client.uploadBuildInfo(request)
 
-    override fun deleteBuild(request: DeleteBuildRequest): ArtifactoryResponse =
-        client.deleteBuild(request)
+    override fun deleteBuild(request: DeleteBuildRequest) = client.deleteBuild(request)
 
     override fun promoteBuild(buildName: String, buildNumber: String, request: PromoteBuildRequest) =
         client.promoteBuild(buildName, buildNumber, request)
