@@ -2,6 +2,7 @@ package org.octopusden.octopus.infrastructure.artifactory.client.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
+@Suppress("unused")
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class Dependency(
     val id: String,
