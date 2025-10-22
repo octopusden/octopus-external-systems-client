@@ -87,6 +87,19 @@ class LocatorTest {
     }
 
     @Test
+    fun testNestedProjectLocator(){
+        val expected = "parentProject:(id:TestParentProjectId)"
+        val actual = locatorExpander.expand(
+            ProjectLocator(
+                parentProject = ProjectLocator(
+                    id ="TestParentProjectId"
+                )
+            )
+        )
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun testSimpleBuildTypeLocator() {
         val expected = "id:TestBuildTypeId"
         val actual = locatorExpander.expand(
@@ -96,4 +109,6 @@ class LocatorTest {
         )
         assertEquals(expected, actual)
     }
+
+
 }
