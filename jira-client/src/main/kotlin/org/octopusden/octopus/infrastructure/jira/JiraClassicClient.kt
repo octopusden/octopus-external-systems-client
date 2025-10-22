@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
+import feign.FeignException
 import feign.Logger
 import feign.RequestInterceptor
 import feign.httpclient.ApacheHttpClient
@@ -11,8 +12,12 @@ import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
+import org.octopusden.octopus.infrastructure.jira.dto.ActiveSprintResponse
 import org.octopusden.octopus.infrastructure.jira.dto.CreateIssueFields
 import org.octopusden.octopus.infrastructure.jira.dto.Issue
+import org.octopusden.octopus.infrastructure.jira.dto.MoveIssuesToSprintRequest
+import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkRequest
+import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkResponse
 import org.octopusden.octopus.infrastructure.jira.dto.UpdateIssueFields
 
 class JiraClassicClient(
@@ -36,6 +41,13 @@ class JiraClassicClient(
     override fun updateIssue(issueKey: String, issue: Issue<UpdateIssueFields>) = client.updateIssue(issueKey, issue)
 
     override fun getAssignable(issueKey: String, username: String?) = client.getAssignable(issueKey, username)
+
+    override fun getActiveSprint(boardId: Long): ActiveSprintResponse = client.getActiveSprint(boardId)
+
+    override fun moveIssuesToSprint(sprintId: Long, moveIssuesToSprintRequest: MoveIssuesToSprintRequest): Unit = client.moveIssuesToSprint(sprintId, moveIssuesToSprintRequest)
+
+
+    override fun addRemoteLink(issueKey: String, remoteLinkRequest: RemoteLinkRequest): RemoteLinkResponse = client.addRemoteLink(issueKey, remoteLinkRequest)
 
     companion object {
         private fun getMapper(): ObjectMapper {
