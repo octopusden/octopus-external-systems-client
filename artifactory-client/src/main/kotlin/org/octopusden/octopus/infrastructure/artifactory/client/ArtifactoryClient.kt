@@ -4,7 +4,9 @@ import feign.Headers
 import feign.Param
 import feign.RequestLine
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.ArtifactoryResponse
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfoResponse
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.DeleteBuildRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteBuildRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDockerImageRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
@@ -29,6 +31,14 @@ interface ArtifactoryClient {
     @RequestLine("GET $BUILD_PATH/{buildName}/{buildNumber}")
     @Headers("Accept: application/json")
     fun getBuildInfo(@Param("buildName") buildName: String, @Param("buildNumber") buildNumber: String): BuildInfoResponse
+
+    @RequestLine("PUT $BUILD_PATH")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun uploadBuildInfo(request: BuildInfo)
+
+    @RequestLine("POST $BUILD_PATH/delete")
+    @Headers("Content-Type: application/json")
+    fun deleteBuild(request: DeleteBuildRequest)
 
     @RequestLine("POST $BUILD_PATH/promote/{buildName}/{buildNumber}")
     @Headers("Content-Type: application/json", "Accept: application/json")
