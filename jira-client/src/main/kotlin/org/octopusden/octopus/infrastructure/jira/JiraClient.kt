@@ -11,6 +11,8 @@ import org.octopusden.octopus.infrastructure.jira.dto.Issue
 import org.octopusden.octopus.infrastructure.jira.dto.MoveIssuesToSprintRequest
 import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkRequest
 import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkResponse
+import org.octopusden.octopus.infrastructure.jira.dto.SearchIssueResponse
+import org.octopusden.octopus.infrastructure.jira.dto.SearchIssueRequest
 import org.octopusden.octopus.infrastructure.jira.dto.UpdateIssueFields
 
 const val REST_API_PATH = "rest/api/2"
@@ -19,7 +21,7 @@ const val ISSUE_PATH = "$REST_API_PATH/issue"
 const val USER_PATH = "$REST_API_PATH/user"
 const val BOARD_PATH = "$REST_AGILE_PATH/board"
 const val SPRINT_PATH = "$REST_AGILE_PATH/sprint"
-
+const val SEARCH_PATH = "$REST_API_PATH/search"
 interface JiraClient {
 
     @RequestLine("POST $ISSUE_PATH")
@@ -44,5 +46,9 @@ interface JiraClient {
     @Headers("Content-Type: application/json")
     @RequestLine("POST $ISSUE_PATH/{issueKey}/remotelink")
     fun addRemoteLink(@Param("issueKey") issueKey: String, remoteLinkRequest: RemoteLinkRequest): RemoteLinkResponse
+
+    @Headers("Content-Type: application/json")
+    @RequestLine("POST $SEARCH_PATH")
+    fun searchIssueWithJql(searchIssueRequest: SearchIssueRequest): SearchIssueResponse
 
 }

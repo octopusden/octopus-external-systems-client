@@ -5,4 +5,4 @@ import com.fasterxml.jackson.annotation.JsonInclude
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class Assignee constructor(val key: String, val name: String)
+data class Assignee constructor(val key: String, val name: String, val displayName: String?)
