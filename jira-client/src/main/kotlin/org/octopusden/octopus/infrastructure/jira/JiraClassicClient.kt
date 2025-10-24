@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
-import feign.FeignException
 import feign.Logger
 import feign.RequestInterceptor
 import feign.httpclient.ApacheHttpClient
@@ -18,6 +17,8 @@ import org.octopusden.octopus.infrastructure.jira.dto.Issue
 import org.octopusden.octopus.infrastructure.jira.dto.MoveIssuesToSprintRequest
 import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkRequest
 import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkResponse
+import org.octopusden.octopus.infrastructure.jira.dto.SearchIssueResponse
+import org.octopusden.octopus.infrastructure.jira.dto.SearchIssueRequest
 import org.octopusden.octopus.infrastructure.jira.dto.UpdateIssueFields
 
 class JiraClassicClient(
@@ -48,6 +49,8 @@ class JiraClassicClient(
 
 
     override fun addRemoteLink(issueKey: String, remoteLinkRequest: RemoteLinkRequest): RemoteLinkResponse = client.addRemoteLink(issueKey, remoteLinkRequest)
+
+    override fun searchIssueWithJql(searchIssueRequest: SearchIssueRequest): SearchIssueResponse = client.searchIssueWithJql(searchIssueRequest)
 
     companion object {
         private fun getMapper(): ObjectMapper {

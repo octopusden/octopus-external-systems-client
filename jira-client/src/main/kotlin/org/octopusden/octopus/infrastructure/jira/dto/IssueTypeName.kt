@@ -10,5 +10,6 @@ enum class IssueTypeName(@JsonValue val jiraTypeName: String) {
     EPIC("Epic"),
     RESEARCH("Research"),
     DOCUMENTATION("Documentation"),
-    DEPLOYMENT("Deployment")
+    DEPLOYMENT("Deployment"),
+    TECHNICAL_CHANGE("Technical Change")
 }
