@@ -1,6 +1,6 @@
 package org.octopusden.octopus.infrastructure.jira.dto
 
-class SearchIssueFields (
+data class SearchIssueFields (
     val summary: String?,
     val status: IssueStatus?,
     val assignee: Assignee?,
