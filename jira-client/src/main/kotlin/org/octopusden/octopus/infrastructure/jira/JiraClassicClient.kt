@@ -11,15 +11,7 @@ import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
-import org.octopusden.octopus.infrastructure.jira.dto.ActiveSprintResponse
-import org.octopusden.octopus.infrastructure.jira.dto.CreateIssueFields
-import org.octopusden.octopus.infrastructure.jira.dto.Issue
-import org.octopusden.octopus.infrastructure.jira.dto.MoveIssuesToSprintRequest
-import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkRequest
-import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkResponse
-import org.octopusden.octopus.infrastructure.jira.dto.SearchIssueResponse
-import org.octopusden.octopus.infrastructure.jira.dto.SearchIssueRequest
-import org.octopusden.octopus.infrastructure.jira.dto.UpdateIssueFields
+import org.octopusden.octopus.infrastructure.jira.dto.*
 
 class JiraClassicClient(
     apiParametersProvider: ClientParametersProvider,
@@ -45,12 +37,15 @@ class JiraClassicClient(
 
     override fun getActiveSprint(boardId: Long): ActiveSprintResponse = client.getActiveSprint(boardId)
 
-    override fun moveIssuesToSprint(sprintId: Long, moveIssuesToSprintRequest: MoveIssuesToSprintRequest): Unit = client.moveIssuesToSprint(sprintId, moveIssuesToSprintRequest)
+    override fun moveIssuesToSprint(sprintId: Long, moveIssuesToSprintRequest: MoveIssuesToSprintRequest): Unit =
+        client.moveIssuesToSprint(sprintId, moveIssuesToSprintRequest)
 
 
-    override fun addRemoteLink(issueKey: String, remoteLinkRequest: RemoteLinkRequest): RemoteLinkResponse = client.addRemoteLink(issueKey, remoteLinkRequest)
+    override fun addRemoteLink(issueKey: String, remoteLinkRequest: RemoteLinkRequest): RemoteLinkResponse =
+        client.addRemoteLink(issueKey, remoteLinkRequest)
 
-    override fun searchIssueWithJql(searchIssueRequest: SearchIssueRequest): SearchIssueResponse = client.searchIssueWithJql(searchIssueRequest)
+    override fun searchIssueWithJql(searchIssueRequest: SearchIssueRequest): SearchIssueResponse =
+        client.searchIssueWithJql(searchIssueRequest)
 
     companion object {
         private fun getMapper(): ObjectMapper {
@@ -59,7 +54,8 @@ class JiraClassicClient(
             return objectMapper
         }
 
-        private fun createClient(            apiUrl: String,            interceptor: RequestInterceptor, objectMapper: ObjectMapper
+        private fun createClient(
+            apiUrl: String, interceptor: RequestInterceptor, objectMapper: ObjectMapper
         ) = Feign.builder()
             .client(ApacheHttpClient())
             .encoder(JacksonEncoder(objectMapper))

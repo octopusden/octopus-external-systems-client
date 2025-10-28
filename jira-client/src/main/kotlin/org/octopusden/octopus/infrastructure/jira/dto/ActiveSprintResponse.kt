@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ActiveSprintResponse(
-        val values: List<SprintResponse> = emptyList()
+    val values: List<SprintResponse> = emptyList()
 )
