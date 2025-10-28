@@ -11,7 +11,7 @@ package org.octopusden.octopus.infrastructure.jira.dto
  * - `assignee`: The user assigned to the issue.
  * - `created`: The date and time when the issue was created.
  * - `issueType`: The type of the issue (e.g., Bug, Task, Story).
- * - `issuePriority`: The priority level of the issue (e.g., High, Medium, Low).
+ * - `priority`: The priority level of the issue (e.g., High, Medium, Low).
  * - `resolution`: The final resolution of the issue (e.g., Fixed, Won’t Fix, Duplicate).
  * If `null`, Jira returns its default subset of fields.
  * @property maxResults The maximum number of issues to return.
@@ -23,7 +23,7 @@ data class SearchIssueRequest(
         "summary",
         "status",
         "assignee",
-        "issuepriority",
+        "priority",
         "resolution",
         "issuetype",
         "created"
