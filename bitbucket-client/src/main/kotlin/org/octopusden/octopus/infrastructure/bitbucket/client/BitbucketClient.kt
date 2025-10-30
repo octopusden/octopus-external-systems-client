@@ -4,32 +4,12 @@ import feign.Headers
 import feign.Param
 import feign.QueryMap
 import feign.RequestLine
-import java.util.Date
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePrRef
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateProject
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequest
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequestReviewer
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeleteBranch
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntityList
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketJiraCommit
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketProject
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPlainTextResponse
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketRepository
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUser
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.DefaultReviewersQuery
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.*
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.InvalidCommitIdException
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
 
 private val _log: Logger = LoggerFactory.getLogger(BitbucketClient::class.java)
 
@@ -180,6 +160,15 @@ interface BitbucketClient {
         @Param("repository") repository: String,
         @Param("id") id: Long
     ): BitbucketPullRequest
+
+    @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/pull-requests")
+    @Headers("Content-Type: application/json")
+    fun getPullRequests(
+        @Param("projectKey") projectKey: String,
+        @Param("repository") repository: String,
+        @QueryMap requestParams: Map<String, Any> = emptyMap()
+    ): BitbucketEntityList<BitbucketPullRequest>
+
 
     @RequestLine("GET $DASHBOARD_PATH/pull-requests")
     @Headers("Content-Type: application/json")
