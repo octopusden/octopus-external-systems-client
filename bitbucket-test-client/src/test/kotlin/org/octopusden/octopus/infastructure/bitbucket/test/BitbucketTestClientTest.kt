@@ -169,6 +169,80 @@ class BitbucketTestClientTest : BaseTestClientTest(
     }
 
     @Test
+    fun testGetPullRequestsByProjectAndRepository(){
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+
+        val prBranches = listOf("first-pr", "second-pr")
+        prBranches.forEach { branch ->
+            testClient.commit(NewChangeSet("$branch commit", vcsUrl, branch))
+        }
+        Thread.sleep(5000)
+
+        val createdPullRequests = prBranches.map { branch ->
+            val pr = createPullRequestWithDefaultReviewers(
+                PROJECT,
+                REPOSITORY,
+                branch,
+                BaseTestClient.DEFAULT_BRANCH,
+                "PR Title $branch",
+                "PR Description"
+            )
+            Thread.sleep(5000)
+            pr
+        }
+
+        val pullRequests = client.getPullRequests(PROJECT, REPOSITORY)
+
+        Assertions.assertEquals(prBranches.size, pullRequests.size)
+        Assertions.assertEquals(prBranches.size, pullRequests.values.size)
+        Assertions.assertEquals(
+            createdPullRequests.toSet(),
+            pullRequests.values.map { it.toTestPullRequest() }.toSet()
+        )
+    }
+
+    @Test
+    fun testGetPullRequestsByProjectAndRepositoryWithParams(){
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+
+        val prBranches = listOf("first-pr", "second-pr")
+        prBranches.forEach { branch ->
+            testClient.commit(NewChangeSet("$branch commit", vcsUrl, branch))
+        }
+        Thread.sleep(5000)
+
+        val createdPullRequests = prBranches.map { branch ->
+            val pr = createPullRequestWithDefaultReviewers(
+                PROJECT,
+                REPOSITORY,
+                branch,
+                BaseTestClient.DEFAULT_BRANCH,
+                "PR Title $branch",
+                "PR Description"
+            )
+            Thread.sleep(5000)
+            pr
+        }
+
+        val pullRequests = client.getPullRequests(PROJECT, REPOSITORY, mapOf("limit" to 1))
+
+        Assertions.assertEquals(1, pullRequests.size)
+        Assertions.assertEquals(1, pullRequests.values.size)
+    }
+
+    @Test
     fun testDeletePullRequest(){
         testClient.commit(
             NewChangeSet(
