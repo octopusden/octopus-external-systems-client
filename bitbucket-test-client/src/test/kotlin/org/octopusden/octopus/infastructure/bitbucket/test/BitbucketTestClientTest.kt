@@ -198,7 +198,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
                 pingInterval = 500,
                 raiseOnException = true,
                 waitMessage = "Waiting for PR $branch to be available",
-                failMessage = "PR $branch not available after %d seconds"
+                failMessage = "PR $branch not available"
             ) {
                 val pullRequests = client.getPullRequests(PROJECT, REPOSITORY)
                 if (pullRequests.values.none { it.title == "PR Title $branch" }) {
@@ -249,7 +249,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
                 pingInterval = 500,
                 raiseOnException = true,
                 waitMessage = "Waiting for PR $branch to be available",
-                failMessage = "PR $branch not available after %d seconds"
+                failMessage = "PR $branch not available"
             ) {
                 val pullRequests = client.getPullRequests(PROJECT, REPOSITORY)
                 if (pullRequests.values.none { it.title == "PR Title $branch" }) {
@@ -265,7 +265,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
             pingInterval = 500,
             raiseOnException = true,
             waitMessage = "Waiting for at least 1 PR to be available",
-            failMessage = "No PR available after %d seconds"
+            failMessage = "No PR available"
         ) {
             val pullRequests = client.getPullRequests(PROJECT, REPOSITORY, mapOf("limit" to 1))
             if (pullRequests.size < 1) {
