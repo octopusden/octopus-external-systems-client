@@ -277,7 +277,7 @@ abstract class BaseTestClient(
      * @param waitMessage message to log before each retry
      * @param failMessage message to log after all retries(%d will be replaced with elapsed time)
      */
-    private fun wait(
+     override fun wait(
         retries: Int,
         pingInterval: Long,
         raiseOnException: Boolean,

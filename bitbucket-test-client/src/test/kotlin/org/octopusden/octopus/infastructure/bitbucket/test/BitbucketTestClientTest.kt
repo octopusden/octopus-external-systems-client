@@ -169,7 +169,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
     }
 
     @Test
-    fun testGetPullRequestsByProjectAndRepository(){
+    fun testGetPullRequestsByProjectAndRepository() {
         testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit",
@@ -182,7 +182,6 @@ class BitbucketTestClientTest : BaseTestClientTest(
         prBranches.forEach { branch ->
             testClient.commit(NewChangeSet("$branch commit", vcsUrl, branch))
         }
-        Thread.sleep(5000)
 
         val createdPullRequests = prBranches.map { branch ->
             val pr = createPullRequestWithDefaultReviewers(
@@ -193,7 +192,20 @@ class BitbucketTestClientTest : BaseTestClientTest(
                 "PR Title $branch",
                 "PR Description"
             )
-            Thread.sleep(5000)
+
+            testClient.wait(
+                retries = 10,
+                pingInterval = 500,
+                raiseOnException = true,
+                waitMessage = "Waiting for PR $branch to be available",
+                failMessage = "PR $branch not available after %d seconds"
+            ) {
+                val pullRequests = client.getPullRequests(PROJECT, REPOSITORY)
+                if (pullRequests.values.none { it.title == "PR Title $branch" }) {
+                    throw IllegalStateException("PR $branch not ready yet")
+                }
+            }
+
             pr
         }
 
@@ -208,7 +220,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
     }
 
     @Test
-    fun testGetPullRequestsByProjectAndRepositoryWithParams(){
+    fun testGetPullRequestsByProjectAndRepositoryWithParams() {
         testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit",
@@ -221,7 +233,6 @@ class BitbucketTestClientTest : BaseTestClientTest(
         prBranches.forEach { branch ->
             testClient.commit(NewChangeSet("$branch commit", vcsUrl, branch))
         }
-        Thread.sleep(5000)
 
         val createdPullRequests = prBranches.map { branch ->
             val pr = createPullRequestWithDefaultReviewers(
@@ -232,12 +243,37 @@ class BitbucketTestClientTest : BaseTestClientTest(
                 "PR Title $branch",
                 "PR Description"
             )
-            Thread.sleep(5000)
+
+            testClient.wait(
+                retries = 10,
+                pingInterval = 500,
+                raiseOnException = true,
+                waitMessage = "Waiting for PR $branch to be available",
+                failMessage = "PR $branch not available after %d seconds"
+            ) {
+                val pullRequests = client.getPullRequests(PROJECT, REPOSITORY)
+                if (pullRequests.values.none { it.title == "PR Title $branch" }) {
+                    throw IllegalStateException("PR $branch not ready yet")
+                }
+            }
+
             pr
         }
 
-        val pullRequests = client.getPullRequests(PROJECT, REPOSITORY, mapOf("limit" to 1))
+        testClient.wait(
+            retries = 10,
+            pingInterval = 500,
+            raiseOnException = true,
+            waitMessage = "Waiting for at least 1 PR to be available",
+            failMessage = "No PR available after %d seconds"
+        ) {
+            val pullRequests = client.getPullRequests(PROJECT, REPOSITORY, mapOf("limit" to 1))
+            if (pullRequests.size < 1) {
+                throw IllegalStateException("PR not ready yet")
+            }
+        }
 
+        val pullRequests = client.getPullRequests(PROJECT, REPOSITORY, mapOf("limit" to 1))
         Assertions.assertEquals(1, pullRequests.size)
         Assertions.assertEquals(1, pullRequests.values.size)
     }
