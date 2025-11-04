@@ -189,7 +189,6 @@ interface BitbucketClient {
         @QueryMap requestParams: Map<String, Any> = emptyMap()
     ): BitbucketEntityList<BitbucketPullRequest>
 
-
     @RequestLine("GET $DASHBOARD_PATH/pull-requests")
     @Headers("Content-Type: application/json")
     fun getPullRequests(
