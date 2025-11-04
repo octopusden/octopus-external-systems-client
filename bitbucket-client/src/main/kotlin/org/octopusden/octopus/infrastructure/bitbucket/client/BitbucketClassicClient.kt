@@ -92,7 +92,7 @@ class BitbucketClassicClient(
     override fun getPullRequest(projectKey: String, repository: String, id: Long) =
         client.getPullRequest(projectKey, repository, id)
 
-    override fun getPullRequests( projectKey: String, repository: String, requestParams: Map<String, Any> ) =
+    override fun getPullRequests(projectKey: String, repository: String, requestParams: Map<String, Any>) =
         client.getPullRequests(projectKey, repository, requestParams)
 
     override fun getPullRequests(requestParams: Map<String, Any>) =
