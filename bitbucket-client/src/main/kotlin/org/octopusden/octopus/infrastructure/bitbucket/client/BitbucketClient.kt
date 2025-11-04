@@ -29,7 +29,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.exception.InvalidC
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
+import java.util.Date
 
 private val _log: Logger = LoggerFactory.getLogger(BitbucketClient::class.java)
 
