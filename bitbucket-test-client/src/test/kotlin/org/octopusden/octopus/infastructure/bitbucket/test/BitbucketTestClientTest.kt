@@ -169,6 +169,116 @@ class BitbucketTestClientTest : BaseTestClientTest(
     }
 
     @Test
+    fun testGetPullRequestsByProjectAndRepository() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+
+        val prBranches = listOf("first-pr", "second-pr")
+        prBranches.forEach { branch ->
+            testClient.commit(NewChangeSet("$branch commit", vcsUrl, branch))
+        }
+
+        val createdPullRequests = prBranches.map { branch ->
+            val pr = createPullRequestWithDefaultReviewers(
+                PROJECT,
+                REPOSITORY,
+                branch,
+                BaseTestClient.DEFAULT_BRANCH,
+                "PR Title $branch",
+                "PR Description"
+            )
+
+            testClient.wait(
+                retries = 10,
+                pingInterval = 500,
+                raiseOnException = true,
+                waitMessage = "Waiting for PR $branch to be available",
+                failMessage = "PR $branch not available"
+            ) {
+                val pullRequests = client.getPullRequests(PROJECT, REPOSITORY)
+                if (pullRequests.values.none { it.title == "PR Title $branch" }) {
+                    throw IllegalStateException("PR $branch not ready yet")
+                }
+            }
+
+            pr
+        }
+
+        val pullRequests = client.getPullRequests(PROJECT, REPOSITORY)
+
+        Assertions.assertEquals(prBranches.size, pullRequests.size)
+        Assertions.assertEquals(prBranches.size, pullRequests.values.size)
+        Assertions.assertEquals(
+            createdPullRequests.toSet(),
+            pullRequests.values.map { it.toTestPullRequest() }.toSet()
+        )
+    }
+
+    @Test
+    fun testGetPullRequestsByProjectAndRepositoryWithParams() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+
+        val prBranches = listOf("first-pr", "second-pr")
+        prBranches.forEach { branch ->
+            testClient.commit(NewChangeSet("$branch commit", vcsUrl, branch))
+        }
+
+        val createdPullRequests = prBranches.map { branch ->
+            val pr = createPullRequestWithDefaultReviewers(
+                PROJECT,
+                REPOSITORY,
+                branch,
+                BaseTestClient.DEFAULT_BRANCH,
+                "PR Title $branch",
+                "PR Description"
+            )
+
+            testClient.wait(
+                retries = 10,
+                pingInterval = 500,
+                raiseOnException = true,
+                waitMessage = "Waiting for PR $branch to be available",
+                failMessage = "PR $branch not available"
+            ) {
+                val pullRequests = client.getPullRequests(PROJECT, REPOSITORY)
+                if (pullRequests.values.none { it.title == "PR Title $branch" }) {
+                    throw IllegalStateException("PR $branch not ready yet")
+                }
+            }
+
+            pr
+        }
+
+        testClient.wait(
+            retries = 10,
+            pingInterval = 500,
+            raiseOnException = true,
+            waitMessage = "Waiting for at least 1 PR to be available",
+            failMessage = "No PR available"
+        ) {
+            val pullRequests = client.getPullRequests(PROJECT, REPOSITORY, mapOf("limit" to 1))
+            if (pullRequests.size < 1) {
+                throw IllegalStateException("PR not ready yet")
+            }
+        }
+
+        val pullRequests = client.getPullRequests(PROJECT, REPOSITORY, mapOf("limit" to 1))
+        Assertions.assertEquals(1, pullRequests.size)
+        Assertions.assertEquals(1, pullRequests.values.size)
+    }
+
+    @Test
     fun testDeletePullRequest(){
         testClient.commit(
             NewChangeSet(
