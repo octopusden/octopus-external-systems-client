@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -105,7 +104,7 @@ class TeamcityClassicClientTest {
             TeamcityAddInvestigation(
                 state = state,
                 assignee = TeamcityAssignee(
-                    username = assigneeUsername ,
+                    username = assigneeUsername,
                     name = assigneeName,
                     id = assigneeId
                 ),
@@ -352,7 +351,7 @@ class TeamcityClassicClientTest {
             )
         )
         val requirement = client.addAgentRequirementToBuildType(
-            BuildTypeLocator(id = buildType.id),  TeamcityAgentRequirement(
+            BuildTypeLocator(id = buildType.id), TeamcityAgentRequirement(
                 id = null,
                 type = "matches",
                 properties = properties,
@@ -502,7 +501,8 @@ class TeamcityClassicClientTest {
         val client = createClient(config)
         val project = createProject(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFields")
         try {
-            val buildType = createBuildType(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFieldsBuildType", project.id)
+            val buildType =
+                createBuildType(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFieldsBuildType", project.id)
             val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
             val vcsRoot = client.createVcsRoot(
                 TeamcityCreateVcsRoot(
@@ -592,10 +592,15 @@ class TeamcityClassicClientTest {
         val client = createClient(config)
         val project = createProject(client, "TestInvestigation")
         val buildType = createBuildType(client, "TestInvestigation", project.id)
-        val investigation = addInvestigation(client, buildType.id, "TAKEN", "admin", "admin", 1, "whenFixed")
+        try {
+            val investigation = addInvestigation(client, buildType.id, "TAKEN", "admin", "admin", 1, "whenFixed")
 
-        assertEquals("admin", investigation.assignee?.username)
-        assertEquals("TAKEN", investigation.state)
+            assertEquals("admin", investigation.assignee?.username)
+            assertEquals("TAKEN", investigation.state)
+        } finally {
+            client.deleteProject(project.id)
+        }
+
     }
 
     @ParameterizedTest
@@ -604,12 +609,17 @@ class TeamcityClassicClientTest {
         val client = createClient(config)
         val project = createProject(client, "TestGetInvestigation")
         val buildType = createBuildType(client, "TestGetInvestigation", project.id)
-        addInvestigation(client, buildType.id, "TAKEN", "admin", "admin", 1, "whenFixed")
+        try {
+            addInvestigation(client, buildType.id, "TAKEN", "admin", "admin", 1, "whenFixed")
 
-        val investigations = client.getInvestigationWithInvestigationLocator(buildType.id)
+            val investigations = client.getInvestigationWithInvestigationLocator(buildType.id)
 
-        assertEquals(1,investigations.investigation.size)
-        assertEquals("admin", investigations.investigation.get(0)?.assignee?.username)
+            assertEquals(1, investigations.investigation.size)
+            assertEquals("admin", investigations.investigation.get(0)?.assignee?.username)
+        } finally {
+            client.deleteProject(project.id)
+        }
+
     }
 
     @ParameterizedTest
@@ -618,10 +628,13 @@ class TeamcityClassicClientTest {
         val client = createClient(config)
         val project = createProject(client, "TestNullInvestigation")
         val buildType = createBuildType(client, "TestNullInvestigation", project.id)
+        try {
+            val investigations = client.getInvestigationWithInvestigationLocator(buildType.id)
+            assertEquals(0, investigations.investigation.size)
+        } finally {
+            client.deleteProject(project.id)
+        }
 
-        val investigations = client.getInvestigationWithInvestigationLocator(buildType.id)
-
-        assertEquals(0, investigations.investigation.size)
     }
 
     private fun checkHtmlContent(
