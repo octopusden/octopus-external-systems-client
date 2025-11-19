@@ -3,6 +3,7 @@ package org.octopusden.octopus.infrastructure.teamcity.client
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.InvestigationLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
@@ -110,5 +111,17 @@ class LocatorTest {
         assertEquals(expected, actual)
     }
 
+    @Test
+    fun testInvestigationLocator() {
+        val expected = "buildType:(id:TestBuildTypeId)"
+        val actual = locatorExpander.expand(
+            InvestigationLocator(
+                BuildTypeLocator(
+                    id = "TestBuildTypeId"
+                )
+            )
+        )
+        assertEquals(expected, actual)
+    }
 
 }

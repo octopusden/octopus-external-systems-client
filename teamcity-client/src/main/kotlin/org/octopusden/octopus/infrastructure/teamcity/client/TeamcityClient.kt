@@ -6,6 +6,8 @@ import feign.Headers
 import feign.Param
 import feign.RequestLine
 import feign.form.FormData
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInvestigation
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityInvestigation
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirements
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildType
@@ -17,6 +19,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateV
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeatures
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityInvestigations
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
@@ -34,6 +37,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoots
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.InvestigationLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
@@ -398,6 +402,16 @@ interface TeamcityClient {
         @Param("locator", expander = Locator::class) locator: VcsRootInstanceLocator,
         @Param("fields") fields: String
     ): TeamcityBuildTypes
+
+    @RequestLine("GET $REST/investigations?locator={locator}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getInvestigationWithInvestigationLocator(
+        @Param("locator", expander = Locator::class) locator: InvestigationLocator
+    ): TeamcityInvestigations
+
+    @RequestLine("POST $REST/investigations")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun addInvestigation(body: TeamcityAddInvestigation): TeamcityInvestigation
 }
 
 enum class ConfigurationType(
@@ -495,6 +509,9 @@ fun TeamcityClient.attachTemplateToBuildType(buildTypeId: String, template: Stri
 
 fun TeamcityClient.detachTemplatesFromBuildType(buildTypeId: String) =
     detachTemplatesFromBuildType(BuildTypeLocator(id = buildTypeId))
+
+fun TeamcityClient.getInvestigationWithInvestigationLocator(buildTypeId: String) =
+    getInvestigationWithInvestigationLocator(InvestigationLocator(BuildTypeLocator(buildTypeId)))
 
 fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileContent: ByteArray) {
     val majorVersion = getServer().version.substringBefore(".").toInt()

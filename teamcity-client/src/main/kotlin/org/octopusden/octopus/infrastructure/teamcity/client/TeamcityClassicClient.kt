@@ -14,6 +14,7 @@ import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInvestigation
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
@@ -21,6 +22,8 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateP
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityInvestigation
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityInvestigations
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
@@ -31,6 +34,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.InvestigationLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
@@ -180,6 +184,11 @@ class TeamcityClassicClient(
 
     override fun getBuildTypesWithVcsRootInstanceLocatorAndFields(locator: VcsRootInstanceLocator, fields: String): TeamcityBuildTypes =
         client.getBuildTypesWithVcsRootInstanceLocatorAndFields(locator, fields)
+
+    override fun getInvestigationWithInvestigationLocator(locator: InvestigationLocator): TeamcityInvestigations =
+        client.getInvestigationWithInvestigationLocator(locator)
+
+    override fun addInvestigation(body: TeamcityAddInvestigation): TeamcityInvestigation = client.addInvestigation(body)
 
     companion object {
         private fun getMapper() = jacksonObjectMapper().apply {
