@@ -15,7 +15,11 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInvestigation
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInvestigationBuildType
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInvestigationBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAssignee
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
@@ -29,8 +33,11 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkVcs
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperties
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityResolution
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityScope
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityTarget
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
@@ -89,6 +96,29 @@ class TeamcityClassicClientTest {
             TeamcityCreateBuildType(
                 name = buildName,
                 project = TeamcityLinkProject(id = projectId)
+            )
+        )
+
+    private fun addInvestigation(client: TeamcityClient, buildTypeId: String, state: String, assigneeUsername: String, assigneeName: String, assigneeId: Long, resolutionType: String) =
+    client.addInvestigation(
+            TeamcityAddInvestigation(
+                state = state,
+                assignee = TeamcityAssignee(
+                    username = assigneeUsername,
+                    name = assigneeName,
+                    id = assigneeId
+                ),
+                scope = TeamcityScope(
+                    buildTypes = TeamcityAddInvestigationBuildTypes(
+                        listOf(TeamcityAddInvestigationBuildType(
+                            id = buildTypeId
+                        ))
+                    )
+                ),
+                target = TeamcityTarget(anyProblem = true),
+                resolution = TeamcityResolution(
+                    type = resolutionType
+                )
             )
         )
 
@@ -321,7 +351,7 @@ class TeamcityClassicClientTest {
             )
         )
         val requirement = client.addAgentRequirementToBuildType(
-            BuildTypeLocator(id = buildType.id),  TeamcityAgentRequirement(
+            BuildTypeLocator(id = buildType.id), TeamcityAgentRequirement(
                 id = null,
                 type = "matches",
                 properties = properties,
@@ -471,7 +501,8 @@ class TeamcityClassicClientTest {
         val client = createClient(config)
         val project = createProject(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFields")
         try {
-            val buildType = createBuildType(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFieldsBuildType", project.id)
+            val buildType =
+                createBuildType(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFieldsBuildType", project.id)
             val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
             val vcsRoot = client.createVcsRoot(
                 TeamcityCreateVcsRoot(
@@ -553,6 +584,57 @@ class TeamcityClassicClientTest {
         } finally {
             client.deleteProject(project.id)
         }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testAddInvestigation(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestInvestigation")
+        val buildType = createBuildType(client, "TestInvestigation", project.id)
+        try {
+            val investigation = addInvestigation(client, buildType.id, "TAKEN", "admin", "admin", 1, "whenFixed")
+
+            assertEquals("admin", investigation.assignee?.username)
+            assertEquals("TAKEN", investigation.state)
+        } finally {
+            client.deleteProject(project.id)
+        }
+
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetInvestigation(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetInvestigation")
+        val buildType = createBuildType(client, "TestGetInvestigation", project.id)
+        try {
+            addInvestigation(client, buildType.id, "TAKEN", "admin", "admin", 1, "whenFixed")
+
+            val investigations = client.getInvestigationWithInvestigationLocator(buildType.id)
+
+            assertEquals(1, investigations.investigation.size)
+            assertEquals("admin", investigations.investigation.get(0)?.assignee?.username)
+        } finally {
+            client.deleteProject(project.id)
+        }
+
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetEmptyInvestigation(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestNullInvestigation")
+        val buildType = createBuildType(client, "TestNullInvestigation", project.id)
+        try {
+            val investigations = client.getInvestigationWithInvestigationLocator(buildType.id)
+            assertEquals(0, investigations.investigation.size)
+        } finally {
+            client.deleteProject(project.id)
+        }
+
     }
 
     private fun checkHtmlContent(
