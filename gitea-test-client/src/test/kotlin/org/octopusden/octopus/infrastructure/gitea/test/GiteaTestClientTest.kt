@@ -48,8 +48,8 @@ class GiteaTestClientTest :
         override fun getApiUrl(): String = "http://$giteaHost"
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
     })
-    private val additionallyClient = GiteaClassicClient(object : ClientParametersProvider{
-        override fun getApiUrl(): String = "http://$additionallyGiteaHost"
+    private val secondClient = GiteaClassicClient(object : ClientParametersProvider{
+        override fun getApiUrl(): String = "http://$secondGiteaHost"
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
     })
 
@@ -225,21 +225,26 @@ class GiteaTestClientTest :
             )
         )
         val sourceRepository = client.getRepository(organizationName, repositoryName)
-        additionallyClient.createOrganization(GiteaCreateOrganization(organizationName))
-        additionallyClient.migrateRepository(
+        secondClient.createOrganization(GiteaCreateOrganization(organizationName))
+        val cloneAddr = if (giteaInternalHost != null) {
+            "http://$giteaInternalHost/$organizationName/$repositoryName.git"
+        } else {
+            sourceRepository.cloneUrl ?: error("cloneUrl is null")
+        }
+        secondClient.migrateRepository(
             GiteaMigrateRepository(
-                cloneAddr = sourceRepository.cloneUrl ?: error("cloneUrl is null"),
+                cloneAddr = cloneAddr,
                 repoName = repositoryName,
                 repoOwner = organizationName
             )
         )
-        val migratedRepository = additionallyClient.getRepository(organizationName, repositoryName)
+        val migratedRepository = secondClient.getRepository(organizationName, repositoryName)
         assertEquals(repositoryName, migratedRepository.name)
         assertEquals("$organizationName/$repositoryName", migratedRepository.fullName)
         val sourceCommits = client
             .getCommits(organizationName, repositoryName, BaseTestClient.DEFAULT_BRANCH)
             .map { it.sha }.toSet()
-        val targetCommits = additionallyClient
+        val targetCommits = secondClient
             .getCommits(organizationName, repositoryName, BaseTestClient.DEFAULT_BRANCH)
             .map { it.sha }.toSet()
         assertEquals(sourceCommits, targetCommits)
@@ -253,7 +258,8 @@ class GiteaTestClientTest :
 
         private val giteaHost = System.getProperty("test.gitea-host")
             ?: throw Exception("System property 'test.gitea-host' must be defined")
-        private val additionallyGiteaHost = System.getProperty("test.additionally-gitea-host")
-            ?: throw Exception("System property 'test.additionally-gitea-host' must be defined")
+        private val giteaInternalHost = System.getProperty("test.gitea-internal-host") // Needed for docker support
+        private val secondGiteaHost = System.getProperty("test.second-gitea-host")
+            ?: throw Exception("System property 'test.second-gitea-host' must be defined")
     }
 }

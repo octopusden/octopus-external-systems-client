@@ -1,15 +1,29 @@
 version: "3"
 
 services:
-  gitea:
+  gitea-1:
     image: ${DOCKER_REGISTRY}/gitea/gitea:${GITEA_IMAGE_TAG}
-    container_name: gitea-test-client-ft-gitea
+    container_name: gitea-1-test-client-ft-gitea
     environment:
       - "GITEA__server__OFFLINE_MODE=false"
       - "GITEA__security__INSTALL_LOCK=true"
       - "GITEA__webhook__ALLOWED_HOST_LIST=*"
+      - "GITEA__migrations__ALLOWED_DOMAINS=*"
     restart: always
     volumes:
       - ./add_admin.sh:/script/add_admin.sh
     ports:
       - "3000:3000"
+  gitea-2:
+    image: ${DOCKER_REGISTRY}/gitea/gitea:${GITEA_IMAGE_TAG}
+    container_name: gitea-2-test-client-ft-gitea
+    environment:
+      - "GITEA__server__OFFLINE_MODE=false"
+      - "GITEA__security__INSTALL_LOCK=true"
+      - "GITEA__webhook__ALLOWED_HOST_LIST=*"
+      - "GITEA__migrations__ALLOWED_DOMAINS=*"
+    restart: always
+    volumes:
+      - ./add_admin.sh:/script/add_admin.sh
+    ports:
+      - "3001:3000"

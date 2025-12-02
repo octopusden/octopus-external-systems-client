@@ -64,11 +64,13 @@ tasks.withType<Test> {
     when ("testPlatform".getExt()) {
         "okd" -> {
             systemProperties["test.gitea-host"] = ocTemplate.getOkdHost("gitea-1")
-            systemProperties["test.additionally-gitea-host"] = ocTemplate.getOkdHost("gitea-2")
+            systemProperties["test.second-gitea-host"] = ocTemplate.getOkdHost("gitea-2")
             ocTemplate.isRequiredBy(this)
         }
         "docker" -> {
             systemProperties["test.gitea-host"] = "localhost:3000"
+            systemProperties["test.gitea-internal-host"] = "gitea-1:3000"
+            systemProperties["test.second-gitea-host"] = "localhost:3001"
             dockerCompose.isRequiredBy(this)
         }
     }
@@ -76,7 +78,10 @@ tasks.withType<Test> {
 
 tasks["composeUp"].doLast {
     exec {
-        setCommandLine("docker", "exec", "gitea-test-client-ft-gitea", "/script/add_admin.sh")
+        setCommandLine("docker", "exec", "gitea-1-test-client-ft-gitea", "/script/add_admin.sh")
+    }.assertNormalExitValue()
+    exec {
+        setCommandLine("docker", "exec", "gitea-2-test-client-ft-gitea", "/script/add_admin.sh")
     }.assertNormalExitValue()
 }
 
