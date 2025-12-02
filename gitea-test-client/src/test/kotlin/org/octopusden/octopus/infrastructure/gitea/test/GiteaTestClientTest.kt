@@ -235,7 +235,9 @@ class GiteaTestClientTest :
             GiteaMigrateRepository(
                 cloneAddr = cloneAddr,
                 repoName = repositoryName,
-                repoOwner = organizationName
+                repoOwner = organizationName,
+                authUsername = USER,
+                authPassword = PASSWORD
             )
         )
         val migratedRepository = secondClient.getRepository(organizationName, repositoryName)
