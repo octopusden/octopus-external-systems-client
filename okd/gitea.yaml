@@ -6,7 +6,7 @@ objects:
   - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-gitea-pvc
+      name: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}-pvc
     spec:
       accessModes:
         - ReadWriteOnce
@@ -17,7 +17,7 @@ objects:
   - apiVersion: v1
     kind: ConfigMap
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-gitea-config
+      name: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}-config
     data:
       add_admin.sh: |
         #!/bin/bash
@@ -26,14 +26,14 @@ objects:
   - apiVersion: v1
     kind: Pod
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-gitea
+      name: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}
       labels:
-        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-gitea
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}
     spec:
       restartPolicy: Never
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
       containers:
-        - name: gitea
+        - name: gitea-${GITEA_ID}
           image: ${DOCKER_REGISTRY}/gitea/gitea:${GITEA_IMAGE_TAG}
           env:
             - name: GITEA__server__OFFLINE_MODE
@@ -41,6 +41,8 @@ objects:
             - name: GITEA__security__INSTALL_LOCK
               value: "true"
             - name: GITEA__webhook__ALLOWED_HOST_LIST
+              value: "*"
+            - name: GITEA__migrations__ALLOWED_DOMAINS
               value: "*"
           lifecycle:
             postStart:
@@ -58,42 +60,42 @@ objects:
             periodSeconds: 10
           volumeMounts:
             - mountPath: /var/lib/gitea
-              name: gitea-data
+              name: gitea-${GITEA_ID}-data
             - mountPath: /etc/gitea
-              name: gitea-data
+              name: gitea-${GITEA_ID}-data
             - mountPath: /script
-              name: gitea-script
+              name: gitea-${GITEA_ID}-script
       volumes:
-        - name: gitea-data
+        - name: gitea-${GITEA_ID}-data
           persistentVolumeClaim:
-            claimName: ${DEPLOYMENT_PREFIX}-gitea-pvc
-        - name: gitea-script
+            claimName: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}-pvc
+        - name: gitea-${GITEA_ID}-script
           configMap:
-            name: ${DEPLOYMENT_PREFIX}-gitea-config
+            name: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}-config
             items:
               - key: add_admin.sh
                 path: add_admin.sh
   - apiVersion: v1
     kind: Service
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-gitea-service
+      name: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}-service
     spec:
       ports:
         - port: 3000
           protocol: TCP
           targetPort: 3000
       selector:
-        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-gitea
+        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}
   - apiVersion: route.openshift.io/v1
     kind: Route
     metadata:
-      name: ${DEPLOYMENT_PREFIX}-gitea-route
+      name: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}-route
     spec:
       port:
         targetPort: 3000
       to:
         kind: Service
-        name: ${DEPLOYMENT_PREFIX}-gitea-service
+        name: ${DEPLOYMENT_PREFIX}-gitea-${GITEA_ID}-service
 parameters:
   - description: Unique deployment prefix
     name: DEPLOYMENT_PREFIX
@@ -106,4 +108,7 @@ parameters:
     required: true
   - description: Tag of gitea/gitea image
     name: GITEA_IMAGE_TAG
+    required: true
+  - description: ID of gitea instance
+    name: GITEA_ID
     required: true

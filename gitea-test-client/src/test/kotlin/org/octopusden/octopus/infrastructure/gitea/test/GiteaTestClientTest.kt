@@ -22,6 +22,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateReposit
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaHookEvent
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaMigrateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
@@ -34,6 +35,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.getTags
 import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.text.format
 
 class GiteaTestClientTest :
     BaseTestClientTest(
@@ -44,6 +46,10 @@ class GiteaTestClientTest :
     private val log: Logger = LoggerFactory.getLogger(GiteaTestClientTest::class.java)
     private val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = "http://$giteaHost"
+        override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
+    })
+    private val additionallyClient = GiteaClassicClient(object : ClientParametersProvider{
+        override fun getApiUrl(): String = "http://$additionallyGiteaHost"
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
     })
 
@@ -199,6 +205,46 @@ class GiteaTestClientTest :
         assertTrue(hooks.first().active)
     }
 
+    @Test
+    fun testMigrateRepository() {
+        val organizationName = "test-migrate-organization"
+        val repositoryName = "test-migrate-repository"
+        val vcsUrl = vcsFormatter.format(organizationName, repositoryName)
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit 1",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit 2",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+        val sourceRepository = client.getRepository(organizationName, repositoryName)
+        additionallyClient.createOrganization(GiteaCreateOrganization(organizationName))
+        additionallyClient.migrateRepository(
+            GiteaMigrateRepository(
+                cloneAddr = sourceRepository.cloneUrl ?: error("cloneUrl is null"),
+                repoName = repositoryName,
+                repoOwner = organizationName
+            )
+        )
+        val migratedRepository = additionallyClient.getRepository(organizationName, repositoryName)
+        assertEquals(repositoryName, migratedRepository.name)
+        assertEquals("$organizationName/$repositoryName", migratedRepository.fullName)
+        val sourceCommits = client
+            .getCommits(organizationName, repositoryName, BaseTestClient.DEFAULT_BRANCH)
+            .map { it.sha }.toSet()
+        val targetCommits = additionallyClient
+            .getCommits(organizationName, repositoryName, BaseTestClient.DEFAULT_BRANCH)
+            .map { it.sha }.toSet()
+        assertEquals(sourceCommits, targetCommits)
+    }
+
     companion object {
         private const val USER = "test-admin"
         private const val PASSWORD = "test-admin"
@@ -207,5 +253,7 @@ class GiteaTestClientTest :
 
         private val giteaHost = System.getProperty("test.gitea-host")
             ?: throw Exception("System property 'test.gitea-host' must be defined")
+        private val additionallyGiteaHost = System.getProperty("test.additionally-gitea-host")
+            ?: throw Exception("System property 'test.additionally-gitea-host' must be defined")
     }
 }
