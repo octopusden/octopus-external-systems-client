@@ -16,7 +16,9 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreatePullReq
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaMigrateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepository
 
 class GiteaClassicClient(
     apiParametersProvider: ClientParametersProvider,
@@ -107,6 +109,8 @@ class GiteaClassicClient(
 
     override fun updateRepositoryConfiguration(organization: String, repository: String, dto: GiteaEditRepoOption) =
         client.updateRepositoryConfiguration(organization, repository, dto)
+
+    override fun migrateRepository(dto: GiteaMigrateRepository): GiteaRepository = client.migrateRepository(dto)
 
     companion object {
         private fun getMapper(): ObjectMapper {

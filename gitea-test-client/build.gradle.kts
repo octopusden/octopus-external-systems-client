@@ -42,9 +42,20 @@ ocTemplate {
     }
 
     group("giteaServices").apply {
-        service("gitea") {
+        service("gitea-1") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/gitea.yaml"))
-            parameters.set(commonOkdParameters + mapOf("GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String))
+            parameters.set(commonOkdParameters + mapOf(
+                "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
+                "GITEA_ID" to "1"
+            ))
+        }
+
+        service("gitea-2") {
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/gitea.yaml"))
+            parameters.set(commonOkdParameters + mapOf(
+                "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
+                "GITEA_ID" to "2"
+            ))
         }
     }
 }
@@ -52,11 +63,14 @@ ocTemplate {
 tasks.withType<Test> {
     when ("testPlatform".getExt()) {
         "okd" -> {
-            systemProperties["test.gitea-host"] = ocTemplate.getOkdHost("gitea")
+            systemProperties["test.gitea-host"] = ocTemplate.getOkdHost("gitea-1")
+            systemProperties["test.second-gitea-host"] = ocTemplate.getOkdHost("gitea-2")
             ocTemplate.isRequiredBy(this)
         }
         "docker" -> {
             systemProperties["test.gitea-host"] = "localhost:3000"
+            systemProperties["test.gitea-internal-host"] = "gitea-1:3000"
+            systemProperties["test.second-gitea-host"] = "localhost:3001"
             dockerCompose.isRequiredBy(this)
         }
     }
@@ -64,7 +78,10 @@ tasks.withType<Test> {
 
 tasks["composeUp"].doLast {
     exec {
-        setCommandLine("docker", "exec", "gitea-test-client-ft-gitea", "/script/add_admin.sh")
+        setCommandLine("docker", "exec", "gitea-1-test-client-ft-gitea", "/script/add_admin.sh")
+    }.assertNormalExitValue()
+    exec {
+        setCommandLine("docker", "exec", "gitea-2-test-client-ft-gitea", "/script/add_admin.sh")
     }.assertNormalExitValue()
 }
 

@@ -18,6 +18,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateTag
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaHook
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaMigrateRepository
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequest
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPullRequestReview
@@ -194,6 +195,10 @@ interface GiteaClient {
         @Param("repository") repository: String,
         dto: GiteaEditRepoOption
     )
+
+    @RequestLine("POST $REPO_PATH/migrate")
+    @Headers("Content-Type: application/json")
+    fun migrateRepository(dto: GiteaMigrateRepository): GiteaRepository
 }
 
 fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {
