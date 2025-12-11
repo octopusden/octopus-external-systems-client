@@ -96,7 +96,7 @@ objects:
       activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
       containers:
         - name: bitbucket
-          image: ${DOCKER_REGISTRY}/atlassian/bitbucket-server:${BITBUCKET_IMAGE_TAG}
+          image: ${DOCKER_REGISTRY}/atlassian/bitbucket:${BITBUCKET_IMAGE_TAG}
           env:
             - name: SETUP_LICENSE
               valueFrom:

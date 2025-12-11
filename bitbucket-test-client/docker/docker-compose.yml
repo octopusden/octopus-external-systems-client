@@ -2,7 +2,7 @@ version: '3'
 
 services:
   bitbucket:
-    image: ${DOCKER_REGISTRY}/atlassian/bitbucket-server:${BITBUCKET_IMAGE_TAG}
+    image: ${DOCKER_REGISTRY}/atlassian/bitbucket:${BITBUCKET_IMAGE_TAG}
     container_name: bitbucket-test-client-ft-bitbucket
     depends_on:
       - postgres
