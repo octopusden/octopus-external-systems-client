@@ -383,11 +383,10 @@ class BitbucketTestClientTest : BaseTestClientTest(
         val buildStatus = client.getCommitBasedBuildStatus(commit.id)
 
         Assertions.assertFalse(buildStatus.values.isEmpty(), "buildStatus.values should not be empty")
-        Assertions.assertEquals(buildStatus.values[0].key, buildDetails.key)
-        Assertions.assertEquals(buildStatus.values[0].name, buildDetails.name)
-        Assertions.assertEquals(buildStatus.values[0].url, buildDetails.url)
-        Assertions.assertEquals(buildStatus.values[0].state, buildDetails.state)
-
+        Assertions.assertEquals(buildDetails.key, buildStatus.values[0].key)
+        Assertions.assertEquals(buildDetails.name, buildStatus.values[0].name)
+        Assertions.assertEquals(buildDetails.url, buildStatus.values[0].url)
+        Assertions.assertEquals(buildDetails.state, buildStatus.values[0].state)
     }
 
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)

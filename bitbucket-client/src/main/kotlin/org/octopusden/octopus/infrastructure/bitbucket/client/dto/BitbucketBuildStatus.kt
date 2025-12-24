@@ -1,6 +1,6 @@
 package org.octopusden.octopus.infrastructure.bitbucket.client.dto
 
-class BitbucketBuildStatus(
+data class BitbucketBuildStatus(
     val state: String,
     val key: String,
     val name: String,
