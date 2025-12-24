@@ -9,12 +9,15 @@ import feign.RequestInterceptor
 import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBuildStatus
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateBuildStatus
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeleteBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketEntityList
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.DefaultReviewersQuery
 
@@ -100,6 +103,12 @@ class BitbucketClassicClient(
 
     override fun deletePullRequest(projectKey: String, repository: String, pullRequestId: String, dto: BitbucketDeletePullRequest) =
         client.deletePullRequest(projectKey, repository, pullRequestId, dto)
+
+    override fun getCommitBasedBuildStatus(commitId: String): BitbucketEntityList<BitbucketBuildStatus> =
+        client.getCommitBasedBuildStatus(commitId)
+
+    override fun addCommitBasedBuildStatus(commitId: String, dto: BitbucketCreateBuildStatus) =
+        client.addCommitBasedBuildStatus(commitId, dto)
 
     override fun getRepositoryFiles(projectKey: String, repository: String, requestParams: Map<String, Any>) =
         client.getRepositoryFiles(projectKey, repository, requestParams)

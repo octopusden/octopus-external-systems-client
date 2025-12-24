@@ -9,6 +9,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketCredentia
 import org.octopusden.octopus.infrastructure.bitbucket.client.createPullRequestWithDefaultReviewers
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateBuildStatus
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeleteBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
@@ -358,6 +359,34 @@ class BitbucketTestClientTest : BaseTestClientTest(
         Assertions.assertThrowsExactly(NotFoundException::class.java, {
             client.getBranch(PROJECT, REPOSITORY, branchToDelete)
         }, "Ref '$branchToDelete' does not exist in repository '$REPOSITORY'")
+    }
+
+    @Test
+    fun testCommitBasedBuildStatus() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+
+        val commit = client.getCommits(PROJECT, REPOSITORY, BaseTestClient.DEFAULT_BRANCH).get(0)
+        val buildDetails = BitbucketCreateBuildStatus(
+            state = "SUCCESSFUL",
+            key = "test",
+            name = "test",
+            url = "https://example.com",
+        )
+        client.addCommitBasedBuildStatus(commit.id, buildDetails)
+
+        val buildStatus = client.getCommitBasedBuildStatus(commit.id)
+
+        Assertions.assertFalse(buildStatus.values.isEmpty(), "buildStatus.values should not be empty")
+        Assertions.assertEquals(buildDetails.key, buildStatus.values[0].key)
+        Assertions.assertEquals(buildDetails.name, buildStatus.values[0].name)
+        Assertions.assertEquals(buildDetails.url, buildStatus.values[0].url)
+        Assertions.assertEquals(buildDetails.state, buildStatus.values[0].state)
     }
 
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)
