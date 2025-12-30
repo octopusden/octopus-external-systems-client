@@ -1,16 +1,33 @@
 package org.octopusden.octopus.infastructure.bitbucket.test
 
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
-import org.octopusden.octopus.infrastructure.bitbucket.client.*
-import org.octopusden.octopus.infrastructure.bitbucket.client.dto.*
-import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
-import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
-import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
-import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketBasicCredentialProvider
+import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketClassicClient
+import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketClientParametersProvider
+import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketCredentialProvider
+import org.octopusden.octopus.infrastructure.bitbucket.client.createPullRequestWithDefaultReviewers
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateBuildStatus
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeleteBranch
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
+import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
+import org.octopusden.octopus.infrastructure.bitbucket.client.getBranch
+import org.octopusden.octopus.infrastructure.bitbucket.client.getCommit
+import org.octopusden.octopus.infrastructure.bitbucket.client.getCommitChanges
+import org.octopusden.octopus.infrastructure.bitbucket.client.getCommits
+import org.octopusden.octopus.infrastructure.bitbucket.client.getTag
+import org.octopusden.octopus.infrastructure.bitbucket.client.getTags
+import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
+import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
+import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
 
 class BitbucketTestClientTest : BaseTestClientTest(
     BitbucketTestClient("http://$bitbucketHost", USER, PASSWORD), "ssh://git@$bitbucketHost/%s/%s.git"
