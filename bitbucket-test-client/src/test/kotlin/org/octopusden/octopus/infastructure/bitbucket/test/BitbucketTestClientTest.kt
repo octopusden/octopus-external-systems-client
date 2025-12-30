@@ -1,5 +1,8 @@
 package org.octopusden.octopus.infastructure.bitbucket.test
 
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketBasicCredentialProvider
@@ -9,6 +12,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketCredentia
 import org.octopusden.octopus.infrastructure.bitbucket.client.createPullRequestWithDefaultReviewers
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateBuildStatus
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeleteBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
@@ -24,9 +28,6 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.getTags
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClient
 import org.octopusden.octopus.infrastructure.common.test.BaseTestClientTest
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
 
 class BitbucketTestClientTest : BaseTestClientTest(
     BitbucketTestClient("http://$bitbucketHost", USER, PASSWORD), "ssh://git@$bitbucketHost/%s/%s.git"
@@ -80,7 +81,11 @@ class BitbucketTestClientTest : BaseTestClientTest(
                 BaseTestClient.DEFAULT_BRANCH,
             ), null, paths
         )
-        val response = client.getRepositoryFiles(PROJECT, REPOSITORY, mapOf("at" to BaseTestClient.DEFAULT_BRANCH, "start" to 0, "limit" to filesName.size))
+        val response = client.getRepositoryFiles(
+            PROJECT,
+            REPOSITORY,
+            mapOf("at" to BaseTestClient.DEFAULT_BRANCH, "start" to 0, "limit" to filesName.size)
+        )
         Assertions.assertEquals(filesName.size, response.values.size)
         Assertions.assertTrue(response.values.containsAll(filesName))
     }
@@ -132,7 +137,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
         client.getPullRequest(project, repository, index).toTestPullRequest()
 
     @Test
-    fun testGetPullRequests(){
+    fun testGetPullRequests() {
         testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit",
@@ -279,7 +284,7 @@ class BitbucketTestClientTest : BaseTestClientTest(
     }
 
     @Test
-    fun testDeletePullRequest(){
+    fun testDeletePullRequest() {
         testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit",
@@ -305,7 +310,12 @@ class BitbucketTestClientTest : BaseTestClientTest(
         val pullRequest = client.getPullRequest(PROJECT, REPOSITORY, createdPullRequest.index)
         Assertions.assertEquals(createdPullRequest, pullRequest.toTestPullRequest())
 
-        client.deletePullRequest(PROJECT, REPOSITORY, createdPullRequest.index.toString(), BitbucketDeletePullRequest(pullRequest.version))
+        client.deletePullRequest(
+            PROJECT,
+            REPOSITORY,
+            createdPullRequest.index.toString(),
+            BitbucketDeletePullRequest(pullRequest.version)
+        )
         Thread.sleep(5000)
 
         Assertions.assertThrowsExactly(NotFoundException::class.java, {
@@ -315,9 +325,13 @@ class BitbucketTestClientTest : BaseTestClientTest(
 
     @Test
     fun testGetCommitInvalidId() {
-        Assertions.assertThrowsExactly(NotFoundException::class.java, {
-            client.getCommit(PROJECT, REPOSITORY, "bug/fix")
-        }, "Ref 'bug/fix' does not exist in repository 'test-repository' and 'bug/fix' is not valid BitBucket commit id")
+        Assertions.assertThrowsExactly(
+            NotFoundException::class.java,
+            {
+                client.getCommit(PROJECT, REPOSITORY, "bug/fix")
+            },
+            "Ref 'bug/fix' does not exist in repository 'test-repository' and 'bug/fix' is not valid BitBucket commit id"
+        )
     }
 
     @Test
@@ -360,9 +374,39 @@ class BitbucketTestClientTest : BaseTestClientTest(
         }, "Ref '$branchToDelete' does not exist in repository '$REPOSITORY'")
     }
 
+    @Test
+    fun testCommitBasedBuildStatus() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH
+            )
+        )
+
+        val commit = client.getCommits(PROJECT, REPOSITORY, BaseTestClient.DEFAULT_BRANCH).get(0)
+        val buildDetails = BitbucketCreateBuildStatus(
+            state = "SUCCESSFUL",
+            key = "test",
+            name = "test",
+            url = "https://example.com",
+        )
+        client.addCommitBasedBuildStatus(commit.id, buildDetails)
+
+        val buildStatus = client.getCommitBasedBuildStatus(commit.id)
+
+        Assertions.assertEquals(1, buildStatus.values.size, "Expected exactly one build status")
+        val retrievedStatus = buildStatus.values.find { it.key == buildDetails.key }
+        Assertions.assertNotNull(retrievedStatus, "Build status with key '${buildDetails.key}' not found")
+        Assertions.assertEquals(buildDetails.name, retrievedStatus!!.name)
+        Assertions.assertEquals(buildDetails.url, retrievedStatus.url)
+        Assertions.assertEquals(buildDetails.state, retrievedStatus.state)
+    }
+
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)
     private fun BitbucketCommit.toTestCommit() = TestCommit(id, message)
-    private fun BitbucketPullRequest.toTestPullRequest() = TestPullRequest(id, title, description ?: "", fromRef.displayId, toRef.displayId)
+    private fun BitbucketPullRequest.toTestPullRequest() =
+        TestPullRequest(id, title, description ?: "", fromRef.displayId, toRef.displayId)
 
     private fun getTestResourceFile(fileName: String): Path {
         val resource = javaClass.getResource("/$fileName")

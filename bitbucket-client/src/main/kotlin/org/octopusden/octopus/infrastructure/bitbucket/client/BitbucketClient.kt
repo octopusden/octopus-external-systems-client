@@ -5,8 +5,10 @@ import feign.Param
 import feign.QueryMap
 import feign.RequestLine
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBranch
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketBuildStatus
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateBuildStatus
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePrRef
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreatePullRequest
@@ -40,6 +42,7 @@ const val BRANCH_PATH = "rest/branch-utils/1.0/projects"
 const val GIT_PROJECT_PATH = "/rest/git/1.0/projects"
 const val JIRA_ISSUES_PATH = "rest/jira/1.0/issues"
 const val DEFAULT_REVIEWERS_PATH = "rest/default-reviewers/1.0/projects"
+const val BUILD_STATUS_PATH = "rest/build-status/1.0/commits"
 const val ENTITY_LIMIT = 100
 
 interface BitbucketClient {
@@ -202,6 +205,19 @@ interface BitbucketClient {
         @Param("repository") repository: String,
         @Param("pullRequestId") pullRequestId: String,
         dto: BitbucketDeletePullRequest
+    )
+
+    @RequestLine("GET $BUILD_STATUS_PATH/{commitId}")
+    @Headers("Content-Type: application/json")
+    fun getCommitBasedBuildStatus(
+        @Param("commitId") commitId: String,
+    ): BitbucketEntityList<BitbucketBuildStatus>
+
+    @RequestLine("POST $BUILD_STATUS_PATH/{commitId}")
+    @Headers("Content-Type: application/json")
+    fun addCommitBasedBuildStatus(
+        @Param("commitId") commitId: String,
+        dto: BitbucketCreateBuildStatus
     )
 
     @RequestLine("GET $PROJECT_PATH/{projectKey}/repos/{repository}/files?at={at}&start={start}&limit={limit}")
