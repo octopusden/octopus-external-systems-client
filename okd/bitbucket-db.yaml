@@ -1,7 +1,7 @@
 apiVersion: template.openshift.io/v1
 kind: Template
 metadata:
-  name: bitbucket-postgres-template
+  name: bitbucket-db-template
 objects:
   - apiVersion: v1
     kind: PersistentVolumeClaim

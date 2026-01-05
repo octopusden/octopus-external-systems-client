@@ -46,7 +46,7 @@ ocTemplate {
 
     group("bitbucketServices").apply {
         service("bitbucket-db") {
-            templateFile.set(rootProject.layout.projectDirectory.file("okd/postgres.yaml"))
+            templateFile.set(rootProject.layout.projectDirectory.file("okd/bitbucket-db.yaml"))
             parameters.set(commonOkdParameters + mapOf(
                 "POSTGRES_IMAGE_TAG" to properties["postgres.image-tag"] as String
             ))
