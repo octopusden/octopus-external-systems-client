@@ -38,6 +38,7 @@ ocTemplate {
     clusterDomain.set("okdClusterDomain".getExt())
     namespace.set("okdProject".getExt())
     prefix.set("ext-clients")
+    attempts.set(25)
 
     "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let{
         webConsoleUrl.set(it)
