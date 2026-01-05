@@ -44,6 +44,8 @@ objects:
                 - exec pg_isready -U bitbucket
             initialDelaySeconds: 30
             periodSeconds: 10
+            failureThreshold: 10
+            timeoutSeconds: 5
           volumeMounts:
             - name: bitbucket-db-data
               mountPath: /var/lib/postgresql/
