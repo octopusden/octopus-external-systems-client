@@ -3,73 +3,6 @@ kind: Template
 metadata:
   name: test-bitbucket
 objects:
-  ################
-  # Bitbucket DB #
-  ################
-  - apiVersion: v1
-    kind: PersistentVolumeClaim
-    metadata:
-      name: ${DEPLOYMENT_PREFIX}-bitbucket-db-pvc
-    spec:
-      accessModes:
-        - ReadWriteOnce
-      resources:
-        requests:
-          storage: 1Gi
-      volumeMode: Filesystem
-  - apiVersion: v1
-    kind: Pod
-    metadata:
-      name: ${DEPLOYMENT_PREFIX}-bitbucket-db
-      labels:
-        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-bitbucket-db
-    spec:
-      restartPolicy: Never
-      activeDeadlineSeconds: ${{ACTIVE_DEADLINE_SECONDS}}
-      containers:
-        - name: bitbucket-db
-          image: ${DOCKER_REGISTRY}/postgres:${POSTGRES_IMAGE_TAG}
-          env:
-            - name: POSTGRES_DB
-              value: bitbucket
-            - name: POSTGRES_PASSWORD
-              value: bitbucket
-            - name: POSTGRES_USER
-              value: bitbucket
-          ports:
-            - containerPort: 5432
-              protocol: TCP
-          readinessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - exec pg_isready -U bitbucket
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            failureThreshold: 30
-            timeoutSeconds: 5
-          volumeMounts:
-            - name: bitbucket-db-data
-              mountPath: /var/lib/postgresql/
-      volumes:
-        - name: bitbucket-db-data
-          persistentVolumeClaim:
-            claimName: ${DEPLOYMENT_PREFIX}-bitbucket-db-pvc
-  - apiVersion: v1
-    kind: Service
-    metadata:
-      name: ${DEPLOYMENT_PREFIX}-bitbucket-db-service
-    spec:
-      ports:
-        - port: 5432
-          protocol: TCP
-          targetPort: 5432
-      selector:
-        app.kubernetes.io/name: ${DEPLOYMENT_PREFIX}-bitbucket-db
-  #############
-  # Bitbucket #
-  #############
   - apiVersion: v1
     kind: PersistentVolumeClaim
     metadata:
@@ -140,7 +73,10 @@ objects:
                   else
                     exit 1
                   fi
+            initialDelaySeconds: 30
             periodSeconds: 10
+            failureThreshold: 30
+            timeoutSeconds: 5
           volumeMounts:
             - name: bitbucket-data
               mountPath: /var/atlassian/application-data/bitbucket
@@ -184,7 +120,4 @@ parameters:
     required: true
   - description: Tag of atlassian/bitbucket-server image
     name: BITBUCKET_IMAGE_TAG
-    required: true
-  - description: Tag of postgres image
-    name: POSTGRES_IMAGE_TAG
     required: true
