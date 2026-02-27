@@ -7,5 +7,5 @@ import com.fasterxml.jackson.annotation.JsonInclude
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class Project(
     val key: String,
-    val projectCategory: ProjectCategory
+    val projectCategory: ProjectCategory? = null
 )
