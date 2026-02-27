@@ -9,6 +9,7 @@ import org.octopusden.octopus.infrastructure.jira.dto.CreateIssueFields
 import org.octopusden.octopus.infrastructure.jira.dto.CreateIssueResponse
 import org.octopusden.octopus.infrastructure.jira.dto.Issue
 import org.octopusden.octopus.infrastructure.jira.dto.MoveIssuesToSprintRequest
+import org.octopusden.octopus.infrastructure.jira.dto.Project
 import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkRequest
 import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkResponse
 import org.octopusden.octopus.infrastructure.jira.dto.UpdateIssueFields
@@ -17,6 +18,7 @@ const val REST_API_PATH = "rest/api/2"
 const val REST_AGILE_PATH = "rest/agile/1.0"
 const val ISSUE_PATH = "$REST_API_PATH/issue"
 const val USER_PATH = "$REST_API_PATH/user"
+const val PROJECT_PATH = "$REST_API_PATH/project"
 const val BOARD_PATH = "$REST_AGILE_PATH/board"
 const val SPRINT_PATH = "$REST_AGILE_PATH/sprint"
 
@@ -32,6 +34,9 @@ interface JiraClient {
 
     @RequestLine("GET $USER_PATH/assignable/search?issueKey={issueKey}&username={username}&maxResults=9999")
     fun getAssignable(@Param("issueKey") issueKey: String, @Param("username") username: String?): List<Assignee>
+
+    @RequestLine("GET $PROJECT_PATH/{projectKey}")
+    fun getProject(@Param("projectKey") projectKey: String): Project
 
     @Headers("Content-Type: application/json")
     @RequestLine("GET $BOARD_PATH/{boardId}/sprint?state=active")
