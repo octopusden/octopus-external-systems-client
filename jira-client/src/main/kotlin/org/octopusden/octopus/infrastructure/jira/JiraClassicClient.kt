@@ -16,6 +16,7 @@ import org.octopusden.octopus.infrastructure.jira.dto.ActiveSprintResponse
 import org.octopusden.octopus.infrastructure.jira.dto.CreateIssueFields
 import org.octopusden.octopus.infrastructure.jira.dto.Issue
 import org.octopusden.octopus.infrastructure.jira.dto.MoveIssuesToSprintRequest
+import org.octopusden.octopus.infrastructure.jira.dto.Project
 import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkRequest
 import org.octopusden.octopus.infrastructure.jira.dto.RemoteLinkResponse
 import org.octopusden.octopus.infrastructure.jira.dto.UpdateIssueFields
@@ -41,6 +42,8 @@ class JiraClassicClient(
     override fun updateIssue(issueKey: String, issue: Issue<UpdateIssueFields>) = client.updateIssue(issueKey, issue)
 
     override fun getAssignable(issueKey: String, username: String?) = client.getAssignable(issueKey, username)
+
+    override fun getProject(projectKey: String): Project = client.getProject(projectKey)
 
     override fun getActiveSprint(boardId: Long): ActiveSprintResponse = client.getActiveSprint(boardId)
 
