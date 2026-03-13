@@ -32,6 +32,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapsho
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.InvestigationLocator
@@ -181,6 +182,9 @@ class TeamcityClassicClient(
 
     override fun getProjectsWithLocatorAndFields(locator: ProjectLocator, fields: String): TeamcityProjects =
         client.getProjectsWithLocatorAndFields(locator, fields)
+
+    override fun getBuildsWithLocatorAndFields(locator: BuildLocator, fields: String) =
+        client.getBuildsWithLocatorAndFields(locator, fields)
 
     override fun getBuildTypesWithVcsRootInstanceLocatorAndFields(locator: VcsRootInstanceLocator, fields: String): TeamcityBuildTypes =
         client.getBuildTypesWithVcsRootInstanceLocatorAndFields(locator, fields)

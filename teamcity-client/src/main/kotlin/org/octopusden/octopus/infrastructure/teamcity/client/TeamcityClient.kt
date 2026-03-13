@@ -10,6 +10,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInve
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityInvestigation
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirements
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuilds
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
@@ -36,6 +37,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootInstances
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoots
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.InvestigationLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
@@ -395,6 +397,13 @@ interface TeamcityClient {
         @Param("locator", expander = Locator::class) locator: ProjectLocator,
         @Param("fields") fields: String
     ): TeamcityProjects
+
+    @RequestLine("GET $REST/builds?locator={locator}&fields={fields}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuildsWithLocatorAndFields(
+        @Param("locator", expander = Locator::class) locator: BuildLocator,
+        @Param("fields") fields: String
+    ): TeamcityBuilds
 
     @RequestLine("GET $REST/buildTypes?locator=vcsRootInstance({locator})&fields={fields}")
     @Headers("Content-Type: application/json", "Accept: application/json")
