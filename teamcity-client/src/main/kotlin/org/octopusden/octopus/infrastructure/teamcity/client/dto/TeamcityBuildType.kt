@@ -1,12 +1,13 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+
 data class TeamcityBuildType(
     val id: String,
-    val name: String,
-    val projectId: String,
-    val projectName: String,
-    val href: String,
+    val name: String? = null,
+    val projectId: String? = null,
+    val projectName: String? = null,
+    val href: String? = null,
     @JsonProperty("vcs-root-entries")
     val vcsRoots: TeamcityVcsRootEntries? = null,
     val parameters: TeamcityProperties? = null,
