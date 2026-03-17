@@ -3,6 +3,7 @@ package org.octopusden.octopus.infrastructure.teamcity.client.dto
 data class TeamcityBuild(
     val id: String,
     val buildTypeId: String?,
+    val buildType: TeamcityBuildType? = null,
     val number: String?,
     val status: String?,
     val state: String?,

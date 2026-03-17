@@ -2,10 +2,12 @@ package org.octopusden.octopus.infrastructure.teamcity.client
 
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.InvestigationLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.TemplateLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 
 class LocatorTest {
@@ -88,12 +90,12 @@ class LocatorTest {
     }
 
     @Test
-    fun testNestedProjectLocator(){
+    fun testNestedProjectLocator() {
         val expected = "parentProject:(id:TestParentProjectId)"
         val actual = locatorExpander.expand(
             ProjectLocator(
                 parentProject = ProjectLocator(
-                    id ="TestParentProjectId"
+                    id = "TestParentProjectId"
                 )
             )
         )
@@ -106,6 +108,33 @@ class LocatorTest {
         val actual = locatorExpander.expand(
             BuildTypeLocator(
                 id = "TestBuildTypeId",
+            )
+        )
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testBuildLocator() {
+        val expected =
+            "branch:default:any,buildType:(template:(id:WlValidator)),count:100,state:finished,status:FAILURE"
+        val actual = locatorExpander.expand(
+            BuildLocator(
+                buildType = BuildTypeLocator(template = TemplateLocator(id = "WlValidator")),
+                status = "FAILURE",
+                state = "finished",
+                branch = "default:any",
+                count = 100,
+            )
+        )
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testBuildTypeLocatorWithTemplate() {
+        val expected = "template:(id:WlValidator)"
+        val actual = locatorExpander.expand(
+            BuildTypeLocator(
+                template = TemplateLocator(id = "WlValidator")
             )
         )
         assertEquals(expected, actual)
