@@ -201,7 +201,7 @@ class TeamcityClassicClientTest {
         client.createSnapshotDependency(
             buildType.id,
             TeamcitySnapshotDependency(
-                id = sourceBuildType.name,
+                id = sourceBuildType.name!!,
                 type = "snapshot_dependency",
                 properties = TeamcityProperties(
                     listOf(
