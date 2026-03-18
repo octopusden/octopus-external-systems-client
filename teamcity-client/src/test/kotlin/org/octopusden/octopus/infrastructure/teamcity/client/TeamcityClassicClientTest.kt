@@ -32,7 +32,6 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkPro
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperties
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
-import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityResolution
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityScope
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
@@ -99,8 +98,16 @@ class TeamcityClassicClientTest {
             )
         )
 
-    private fun addInvestigation(client: TeamcityClient, buildTypeId: String, state: String, assigneeUsername: String, assigneeName: String, assigneeId: Long, resolutionType: String) =
-    client.addInvestigation(
+    private fun addInvestigation(
+        client: TeamcityClient,
+        buildTypeId: String,
+        state: String,
+        assigneeUsername: String,
+        assigneeName: String,
+        assigneeId: Long,
+        resolutionType: String
+    ) =
+        client.addInvestigation(
             TeamcityAddInvestigation(
                 state = state,
                 assignee = TeamcityAssignee(
@@ -110,9 +117,11 @@ class TeamcityClassicClientTest {
                 ),
                 scope = TeamcityScope(
                     buildTypes = TeamcityAddInvestigationBuildTypes(
-                        listOf(TeamcityAddInvestigationBuildType(
-                            id = buildTypeId
-                        ))
+                        listOf(
+                            TeamcityAddInvestigationBuildType(
+                                id = buildTypeId
+                            )
+                        )
                     )
                 ),
                 target = TeamcityTarget(anyProblem = true),
@@ -436,12 +445,20 @@ class TeamcityClassicClientTest {
         val testCreateContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${metarunnerId}Create.xml")!!.readBytes()
         client.uploadMetarunner(projectId, metarunnerName, testCreateContent)
-        checkHtmlContent("http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId", textAreaId, String(testCreateContent))
+        checkHtmlContent(
+            "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId",
+            textAreaId,
+            String(testCreateContent)
+        )
 
         val testEditContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${metarunnerId}Edit.xml")!!.readBytes()
         client.uploadMetarunner(projectId, metarunnerName, testEditContent)
-        checkHtmlContent( "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId", textAreaId, String(testEditContent))
+        checkHtmlContent(
+            "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId",
+            textAreaId,
+            String(testEditContent)
+        )
     }
 
     @ParameterizedTest
@@ -578,7 +595,16 @@ class TeamcityClassicClientTest {
                     vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)
                 )
             )
-            val locator = VcsRootInstanceLocator(property = listOf(PropertyLocator("url", url, PropertyLocator.MatchType.EQUALS, ignoreCase = true)))
+            val locator = VcsRootInstanceLocator(
+                property = listOf(
+                    PropertyLocator(
+                        "url",
+                        url,
+                        PropertyLocator.MatchType.EQUALS,
+                        ignoreCase = true
+                    )
+                )
+            )
             val instances = client.getVcsRootInstances(locator).vcsRootInstances
             assertEquals(vcsRoot.id, instances.first().vcsRootId)
         } finally {

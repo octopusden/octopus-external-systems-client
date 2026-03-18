@@ -32,8 +32,8 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapsho
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
-import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.InvestigationLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
@@ -71,7 +71,8 @@ class TeamcityClassicClient(
 
     override fun getBuildTypes(project: ProjectLocator) = client.getBuildTypes(project)
 
-    override fun getBuildTypesProjectWithFields(project: ProjectLocator,fields: String) = client.getBuildTypesProjectWithFields(project, fields)
+    override fun getBuildTypesProjectWithFields(project: ProjectLocator, fields: String) =
+        client.getBuildTypesProjectWithFields(project, fields)
 
     override fun deleteAgentRequirement(buildType: BuildTypeLocator, agentRequirementLocator: AgentRequirementLocator) =
         client.deleteAgentRequirement(buildType, agentRequirementLocator)
@@ -186,13 +187,19 @@ class TeamcityClassicClient(
     override fun getBuildsWithLocatorAndFields(locator: BuildLocator, fields: String) =
         client.getBuildsWithLocatorAndFields(locator, fields)
 
-    override fun getBuildTypesWithVcsRootInstanceLocatorAndFields(locator: VcsRootInstanceLocator, fields: String): TeamcityBuildTypes =
+    override fun getBuildTypesWithVcsRootInstanceLocatorAndFields(
+        locator: VcsRootInstanceLocator,
+        fields: String
+    ): TeamcityBuildTypes =
         client.getBuildTypesWithVcsRootInstanceLocatorAndFields(locator, fields)
 
     override fun getInvestigationWithInvestigationLocator(locator: InvestigationLocator): TeamcityInvestigations =
         client.getInvestigationWithInvestigationLocator(locator)
 
     override fun addInvestigation(body: TeamcityAddInvestigation): TeamcityInvestigation = client.addInvestigation(body)
+
+    override fun assignRoleToUser(username: String, roleId: TeamcityRole, projectId: String) =
+        client.assignRoleToUser(username, roleId, projectId)
 
     companion object {
         private fun getMapper() = jacksonObjectMapper().apply {
