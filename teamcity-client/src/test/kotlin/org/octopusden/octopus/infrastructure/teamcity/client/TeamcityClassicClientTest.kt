@@ -667,18 +667,53 @@ class TeamcityClassicClientTest {
     @MethodSource("teamcityContexts")
     fun testAssignProjectRoleToUser(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val projectRole = client.assignProjectRoleToUser("admin", TeamcityRole.PROJECT_ADMIN, "RDDepartment")
-        assertEquals("PROJECT_ADMIN", projectRole.roleId)
-        assertEquals("p:RDDepartment", projectRole.scope)
+        val username = "testRoleUser"
+        createTestUser(config.host, username, "password123")
+        try {
+            val projectRole = client.assignProjectRoleToUser(username, TeamcityRole.PROJECT_ADMIN, "RDDepartment")
+            assertEquals("PROJECT_ADMIN", projectRole.roleId)
+            assertEquals("p:RDDepartment", projectRole.scope)
+        } finally {
+            deleteTestUser(config.host, username)
+        }
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testAssignGlobalRoleToUser(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val globalRole = client.assignGlobalRoleToUser("admin", TeamcityRole.SYSTEM_ADMIN)
-        assertEquals("SYSTEM_ADMIN", globalRole.roleId)
-        assertEquals("g", globalRole.scope)
+        val username = "testGlobalRoleUser"
+        createTestUser(config.host, username, "password123")
+        try {
+            val globalRole = client.assignGlobalRoleToUser(username, TeamcityRole.SYSTEM_ADMIN)
+            assertEquals("SYSTEM_ADMIN", globalRole.roleId)
+            assertEquals("g", globalRole.scope)
+        } finally {
+            deleteTestUser(config.host, username)
+        }
+    }
+
+    private fun createTestUser(host: String, username: String, password: String) {
+        HttpClient.newHttpClient().send(
+            HttpRequest.newBuilder()
+                .uri(URI("http://$host/app/rest/users"))
+                .header("Authorization", "Basic YWRtaW46YWRtaW4=")
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("""{"username":"$username","password":"$password"}"""))
+                .build(),
+            HttpResponse.BodyHandlers.ofString()
+        )
+    }
+
+    private fun deleteTestUser(host: String, username: String) {
+        HttpClient.newHttpClient().send(
+            HttpRequest.newBuilder()
+                .uri(URI("http://$host/app/rest/users/username:$username"))
+                .header("Authorization", "Basic YWRtaW46YWRtaW4=")
+                .DELETE()
+                .build(),
+            HttpResponse.BodyHandlers.ofString()
+        )
     }
 
     private fun checkHtmlContent(
