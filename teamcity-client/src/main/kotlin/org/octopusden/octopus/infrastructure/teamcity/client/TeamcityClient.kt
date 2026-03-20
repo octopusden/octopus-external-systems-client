@@ -26,6 +26,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityRoleAssignment
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityServer
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
@@ -425,13 +426,20 @@ interface TeamcityClient {
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun addInvestigation(body: TeamcityAddInvestigation): TeamcityInvestigation
 
-    @RequestLine("POST $REST/users/username:{username}/roles/{roleId}/p:{projectId}")
+    @RequestLine("PUT $REST/users/username:{username}/roles/{roleId}/p:{projectId}")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun assignRoleToUser(
+    fun assignProjectRoleToUser(
         @Param("username") username: String,
         @Param("roleId", expander = TeamcityRole.TeamcityRoleExpander::class) roleId: TeamcityRole,
         @Param("projectId") projectId: String
-    )
+    ): TeamcityRoleAssignment
+
+    @RequestLine("PUT $REST/users/username:{username}/roles/{roleId}/g")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun assignGlobalRoleToUser(
+        @Param("username") username: String,
+        @Param("roleId", expander = TeamcityRole.TeamcityRoleExpander::class) roleId: TeamcityRole
+    ): TeamcityRoleAssignment
 }
 
 enum class ConfigurationType(
@@ -532,6 +540,9 @@ fun TeamcityClient.detachTemplatesFromBuildType(buildTypeId: String) =
 
 fun TeamcityClient.getInvestigationWithInvestigationLocator(buildTypeId: String) =
     getInvestigationWithInvestigationLocator(InvestigationLocator(BuildTypeLocator(buildTypeId)))
+
+fun TeamcityClient.assignRoleToUser(username: String, roleId: TeamcityRole, projectId: String) =
+    assignProjectRoleToUser(username, roleId, projectId)
 
 fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileContent: ByteArray) {
     val majorVersion = getServer().version.substringBefore(".").toInt()

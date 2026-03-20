@@ -15,7 +15,7 @@ enum class TeamcityRole(
     class TeamcityRoleExpander : Param.Expander {
         override fun expand(value: Any?) = when (value) {
             is TeamcityRole -> value.value
-            else -> throw Exception("Unknown class ${value}")
+            else -> throw IllegalArgumentException("Unknown class ${value}")
         }
     }
 }

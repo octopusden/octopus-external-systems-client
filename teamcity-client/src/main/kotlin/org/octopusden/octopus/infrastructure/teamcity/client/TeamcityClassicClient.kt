@@ -198,8 +198,11 @@ class TeamcityClassicClient(
 
     override fun addInvestigation(body: TeamcityAddInvestigation): TeamcityInvestigation = client.addInvestigation(body)
 
-    override fun assignRoleToUser(username: String, roleId: TeamcityRole, projectId: String) =
-        client.assignRoleToUser(username, roleId, projectId)
+    override fun assignProjectRoleToUser(username: String, roleId: TeamcityRole, projectId: String) =
+        client.assignProjectRoleToUser(username, roleId, projectId)
+
+    override fun assignGlobalRoleToUser(username: String, roleId: TeamcityRole) =
+        client.assignGlobalRoleToUser(username, roleId)
 
     companion object {
         private fun getMapper() = jacksonObjectMapper().apply {

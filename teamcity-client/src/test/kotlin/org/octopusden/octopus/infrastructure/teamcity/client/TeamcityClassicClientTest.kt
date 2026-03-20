@@ -663,6 +663,24 @@ class TeamcityClassicClientTest {
 
     }
 
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testAssignProjectRoleToUser(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val projectRole = client.assignProjectRoleToUser("admin", TeamcityRole.PROJECT_ADMIN, "RDDepartment")
+        assertEquals("PROJECT_ADMIN", projectRole.roleId)
+        assertEquals("p:RDDepartment", projectRole.scope)
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testAssignGlobalRoleToUser(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val globalRole = client.assignGlobalRoleToUser("admin", TeamcityRole.SYSTEM_ADMIN)
+        assertEquals("SYSTEM_ADMIN", globalRole.roleId)
+        assertEquals("g", globalRole.scope)
+    }
+
     private fun checkHtmlContent(
         url: String,
         textareaId: String,
