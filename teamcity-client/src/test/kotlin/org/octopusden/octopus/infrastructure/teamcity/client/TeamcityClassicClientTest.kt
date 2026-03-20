@@ -4,6 +4,7 @@ import it.skrape.core.htmlDocument
 import it.skrape.matchers.toBe
 import it.skrape.selects.html5.textarea
 import java.net.URI
+import java.util.UUID
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -667,8 +668,10 @@ class TeamcityClassicClientTest {
     @MethodSource("teamcityContexts")
     fun testAssignProjectRoleToUser(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val username = "testRoleUser"
-        createTestUser(config.host, username, "password123")
+        val suffix = UUID.randomUUID().toString().substring(0, 8)
+        val username = "testRoleUser_$suffix"
+        val password = UUID.randomUUID().toString()
+        createTestUser(config.host, username, password)
         try {
             val projectRole = client.assignProjectRoleToUser(username, TeamcityRole.PROJECT_ADMIN, "RDDepartment")
             assertEquals("PROJECT_ADMIN", projectRole.roleId)
@@ -682,8 +685,10 @@ class TeamcityClassicClientTest {
     @MethodSource("teamcityContexts")
     fun testAssignGlobalRoleToUser(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val username = "testGlobalRoleUser"
-        createTestUser(config.host, username, "password123")
+        val suffix = UUID.randomUUID().toString().substring(0, 8)
+        val username = "testGlobalRoleUser_$suffix"
+        val password = UUID.randomUUID().toString()
+        createTestUser(config.host, username, password)
         try {
             val globalRole = client.assignGlobalRoleToUser(username, TeamcityRole.SYSTEM_ADMIN)
             assertEquals("SYSTEM_ADMIN", globalRole.roleId)
@@ -694,7 +699,7 @@ class TeamcityClassicClientTest {
     }
 
     private fun createTestUser(host: String, username: String, password: String) {
-        HttpClient.newHttpClient().send(
+        val response = HttpClient.newHttpClient().send(
             HttpRequest.newBuilder()
                 .uri(URI("http://$host/app/rest/users"))
                 .header("Authorization", "Basic YWRtaW46YWRtaW4=")
@@ -703,10 +708,13 @@ class TeamcityClassicClientTest {
                 .build(),
             HttpResponse.BodyHandlers.ofString()
         )
+        check(response.statusCode() in 200..299) {
+            "Failed to create test user '$username': HTTP ${response.statusCode()} ${response.body()}"
+        }
     }
 
     private fun deleteTestUser(host: String, username: String) {
-        HttpClient.newHttpClient().send(
+        val response = HttpClient.newHttpClient().send(
             HttpRequest.newBuilder()
                 .uri(URI("http://$host/app/rest/users/username:$username"))
                 .header("Authorization", "Basic YWRtaW46YWRtaW4=")
@@ -714,6 +722,9 @@ class TeamcityClassicClientTest {
                 .build(),
             HttpResponse.BodyHandlers.ofString()
         )
+        check(response.statusCode() in 200..299) {
+            "Failed to delete test user '$username': HTTP ${response.statusCode()} ${response.body()}"
+        }
     }
 
     private fun checkHtmlContent(
