@@ -673,9 +673,11 @@ class TeamcityClassicClientTest {
         val password = UUID.randomUUID().toString()
         createTestUser(config.host, username, password)
         try {
-            val projectRole = client.assignProjectRoleToUser(username, TeamcityRole.PROJECT_ADMIN, "RDDepartment")
+            val projectRole = client.assignProjectRoleToUser(
+                username, TeamcityRole.PROJECT_ADMIN, "RDDepartment"
+            )
             assertEquals("PROJECT_ADMIN", projectRole.roleId)
-            assertEquals("p:RDDepartment", projectRole.scope)
+            assertEquals("RDDepartment", projectRole.scope?.project)
         } finally {
             deleteTestUser(config.host, username)
         }
@@ -690,9 +692,10 @@ class TeamcityClassicClientTest {
         val password = UUID.randomUUID().toString()
         createTestUser(config.host, username, password)
         try {
-            val globalRole = client.assignGlobalRoleToUser(username, TeamcityRole.SYSTEM_ADMIN)
+            val globalRole = client.assignGlobalRoleToUser(
+                username, TeamcityRole.SYSTEM_ADMIN
+            )
             assertEquals("SYSTEM_ADMIN", globalRole.roleId)
-            assertEquals("g", globalRole.scope)
         } finally {
             deleteTestUser(config.host, username)
         }

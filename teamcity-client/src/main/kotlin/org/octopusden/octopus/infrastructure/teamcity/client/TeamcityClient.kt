@@ -541,9 +541,6 @@ fun TeamcityClient.detachTemplatesFromBuildType(buildTypeId: String) =
 fun TeamcityClient.getInvestigationWithInvestigationLocator(buildTypeId: String) =
     getInvestigationWithInvestigationLocator(InvestigationLocator(BuildTypeLocator(buildTypeId)))
 
-fun TeamcityClient.assignRoleToUser(username: String, roleId: TeamcityRole, projectId: String) =
-    assignProjectRoleToUser(username, roleId, projectId)
-
 fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileContent: ByteArray) {
     val majorVersion = getServer().version.substringBefore(".").toInt()
     if (majorVersion < 2025) {
