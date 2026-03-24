@@ -7,12 +7,11 @@ import feign.Param
 import feign.RequestLine
 import feign.form.FormData
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInvestigation
-import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityInvestigation
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirements
-import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuilds
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuilds
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateQueuedBuild
@@ -20,12 +19,14 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateV
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateVcsRootEntry
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityFeatures
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityInvestigation
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityInvestigations
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProjects
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityRoleAssignment
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityServer
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependencies
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
@@ -109,7 +110,10 @@ interface TeamcityClient {
      */
     @RequestLine("GET $REST/projects/{locator}/buildTypes?fields={fields}")
     @Headers("Accept: application/json")
-    fun getBuildTypesProjectWithFields(@Param("locator", expander = Locator::class) project: ProjectLocator, @Param("fields") fields: String): TeamcityBuildTypes
+    fun getBuildTypesProjectWithFields(
+        @Param("locator", expander = Locator::class) project: ProjectLocator,
+        @Param("fields") fields: String
+    ): TeamcityBuildTypes
 
     /**
      * Add an agent requirement to the matching build configuration.
@@ -421,6 +425,21 @@ interface TeamcityClient {
     @RequestLine("POST $REST/investigations")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun addInvestigation(body: TeamcityAddInvestigation): TeamcityInvestigation
+
+    @RequestLine("PUT $REST/users/username:{username}/roles/{roleId}/p:{projectId}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun assignProjectRoleToUser(
+        @Param("username") username: String,
+        @Param("roleId", expander = TeamcityRole.TeamcityRoleExpander::class) roleId: TeamcityRole,
+        @Param("projectId") projectId: String
+    ): TeamcityRoleAssignment
+
+    @RequestLine("PUT $REST/users/username:{username}/roles/{roleId}/g")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun assignGlobalRoleToUser(
+        @Param("username") username: String,
+        @Param("roleId", expander = TeamcityRole.TeamcityRoleExpander::class) roleId: TeamcityRole
+    ): TeamcityRoleAssignment
 }
 
 enum class ConfigurationType(

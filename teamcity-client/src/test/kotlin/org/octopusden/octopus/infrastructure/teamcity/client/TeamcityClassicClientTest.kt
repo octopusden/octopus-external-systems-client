@@ -4,6 +4,7 @@ import it.skrape.core.htmlDocument
 import it.skrape.matchers.toBe
 import it.skrape.selects.html5.textarea
 import java.net.URI
+import java.util.UUID
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
@@ -32,7 +33,6 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkPro
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperties
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
-import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityQueuedBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityResolution
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityScope
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapshotDependency
@@ -99,8 +99,16 @@ class TeamcityClassicClientTest {
             )
         )
 
-    private fun addInvestigation(client: TeamcityClient, buildTypeId: String, state: String, assigneeUsername: String, assigneeName: String, assigneeId: Long, resolutionType: String) =
-    client.addInvestigation(
+    private fun addInvestigation(
+        client: TeamcityClient,
+        buildTypeId: String,
+        state: String,
+        assigneeUsername: String,
+        assigneeName: String,
+        assigneeId: Long,
+        resolutionType: String
+    ) =
+        client.addInvestigation(
             TeamcityAddInvestigation(
                 state = state,
                 assignee = TeamcityAssignee(
@@ -110,9 +118,11 @@ class TeamcityClassicClientTest {
                 ),
                 scope = TeamcityScope(
                     buildTypes = TeamcityAddInvestigationBuildTypes(
-                        listOf(TeamcityAddInvestigationBuildType(
-                            id = buildTypeId
-                        ))
+                        listOf(
+                            TeamcityAddInvestigationBuildType(
+                                id = buildTypeId
+                            )
+                        )
                     )
                 ),
                 target = TeamcityTarget(anyProblem = true),
@@ -436,12 +446,20 @@ class TeamcityClassicClientTest {
         val testCreateContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${metarunnerId}Create.xml")!!.readBytes()
         client.uploadMetarunner(projectId, metarunnerName, testCreateContent)
-        checkHtmlContent("http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId", textAreaId, String(testCreateContent))
+        checkHtmlContent(
+            "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId",
+            textAreaId,
+            String(testCreateContent)
+        )
 
         val testEditContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${metarunnerId}Edit.xml")!!.readBytes()
         client.uploadMetarunner(projectId, metarunnerName, testEditContent)
-        checkHtmlContent( "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId", textAreaId, String(testEditContent))
+        checkHtmlContent(
+            "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId",
+            textAreaId,
+            String(testEditContent)
+        )
     }
 
     @ParameterizedTest
@@ -578,7 +596,16 @@ class TeamcityClassicClientTest {
                     vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)
                 )
             )
-            val locator = VcsRootInstanceLocator(property = listOf(PropertyLocator("url", url, PropertyLocator.MatchType.EQUALS, ignoreCase = true)))
+            val locator = VcsRootInstanceLocator(
+                property = listOf(
+                    PropertyLocator(
+                        "url",
+                        url,
+                        PropertyLocator.MatchType.EQUALS,
+                        ignoreCase = true
+                    )
+                )
+            )
             val instances = client.getVcsRootInstances(locator).vcsRootInstances
             assertEquals(vcsRoot.id, instances.first().vcsRootId)
         } finally {
@@ -635,6 +662,72 @@ class TeamcityClassicClientTest {
             client.deleteProject(project.id)
         }
 
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testAssignProjectRoleToUser(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val suffix = UUID.randomUUID().toString().substring(0, 8)
+        val username = "testRoleUser_$suffix"
+        val password = UUID.randomUUID().toString()
+        createTestUser(config.host, username, password)
+        try {
+            val projectRole = client.assignProjectRoleToUser(
+                username, TeamcityRole.PROJECT_ADMIN, "RDDepartment"
+            )
+            assertEquals("PROJECT_ADMIN", projectRole.roleId)
+            assertEquals("RDDepartment", projectRole.scope?.project)
+        } finally {
+            deleteTestUser(config.host, username)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testAssignGlobalRoleToUser(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val suffix = UUID.randomUUID().toString().substring(0, 8)
+        val username = "testGlobalRoleUser_$suffix"
+        val password = UUID.randomUUID().toString()
+        createTestUser(config.host, username, password)
+        try {
+            val globalRole = client.assignGlobalRoleToUser(
+                username, TeamcityRole.SYSTEM_ADMIN
+            )
+            assertEquals("SYSTEM_ADMIN", globalRole.roleId)
+        } finally {
+            deleteTestUser(config.host, username)
+        }
+    }
+
+    private fun createTestUser(host: String, username: String, password: String) {
+        val response = HttpClient.newHttpClient().send(
+            HttpRequest.newBuilder()
+                .uri(URI("http://$host/app/rest/users"))
+                .header("Authorization", "Basic YWRtaW46YWRtaW4=")
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("""{"username":"$username","password":"$password"}"""))
+                .build(),
+            HttpResponse.BodyHandlers.ofString()
+        )
+        check(response.statusCode() in 200..299) {
+            "Failed to create test user '$username': HTTP ${response.statusCode()} ${response.body()}"
+        }
+    }
+
+    private fun deleteTestUser(host: String, username: String) {
+        val response = HttpClient.newHttpClient().send(
+            HttpRequest.newBuilder()
+                .uri(URI("http://$host/app/rest/users/username:$username"))
+                .header("Authorization", "Basic YWRtaW46YWRtaW4=")
+                .DELETE()
+                .build(),
+            HttpResponse.BodyHandlers.ofString()
+        )
+        check(response.statusCode() in 200..299) {
+            "Failed to delete test user '$username': HTTP ${response.statusCode()} ${response.body()}"
+        }
     }
 
     private fun checkHtmlContent(
