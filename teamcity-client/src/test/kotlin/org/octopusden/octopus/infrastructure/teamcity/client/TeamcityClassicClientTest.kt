@@ -21,6 +21,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInve
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInvestigationBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAssignee
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAssignment
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityCreateProject
@@ -662,6 +663,37 @@ class TeamcityClassicClientTest {
             client.deleteProject(project.id)
         }
 
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testUpdateInvestigationComment(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestUpdateInvestigationComment")
+        val buildType = createBuildType(client, "TestUpdateInvestigationComment", project.id)
+        try {
+            addInvestigation(client, buildType.id, "TAKEN", "admin", "admin", 1, "whenFixed")
+            val comment = "Updated investigation comment"
+            client.addInvestigation(
+                TeamcityAddInvestigation(
+                    state = "TAKEN",
+                    assignee = TeamcityAssignee(username = "admin", name = "admin", id = 1),
+                    assignment = TeamcityAssignment(text = comment),
+                    scope = TeamcityScope(
+                        buildTypes = TeamcityAddInvestigationBuildTypes(
+                            listOf(TeamcityAddInvestigationBuildType(id = buildType.id))
+                        )
+                    ),
+                    target = TeamcityTarget(anyProblem = true),
+                    resolution = TeamcityResolution(type = "whenFixed")
+                )
+            )
+            val investigations = client.getInvestigationWithInvestigationLocator(buildType.id)
+            assertEquals(1, investigations.investigation.size)
+            assertEquals(comment, investigations.investigation[0].assignment?.text)
+        } finally {
+            client.deleteProject(project.id)
+        }
     }
 
     @ParameterizedTest
