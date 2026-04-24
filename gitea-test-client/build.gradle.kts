@@ -46,7 +46,11 @@ ocTemplate {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/gitea.yaml"))
             parameters.set(commonOkdParameters + mapOf(
                 "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
-                "GITEA_ID" to "1"
+                "GITEA_ID" to "1",
+                "CPU_REQUEST" to "5m",
+                "CPU_LIMIT" to "50m",
+                "MEMORY_REQUEST" to "100Mi",
+                "MEMORY_LIMIT" to "150Mi"
             ))
         }
 
@@ -54,7 +58,11 @@ ocTemplate {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/gitea.yaml"))
             parameters.set(commonOkdParameters + mapOf(
                 "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
-                "GITEA_ID" to "2"
+                "GITEA_ID" to "2",
+                "CPU_REQUEST" to "5m",
+                "CPU_LIMIT" to "50m",
+                "MEMORY_REQUEST" to "100Mi",
+                "MEMORY_LIMIT" to "150Mi"
             ))
         }
     }
