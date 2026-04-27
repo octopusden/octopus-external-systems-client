@@ -134,6 +134,7 @@ class GiteaTestClientTest :
             allowRebaseExplicit = giteaRepository.allowRebaseExplicit?.let { !it },
             allowRebaseUpdate = giteaRepository.allowRebaseUpdate?.let { !it },
             allowSquashMerge = giteaRepository.allowSquashMerge?.let { !it },
+            defaultAllowMaintainerEdit = giteaRepository.defaultAllowMaintainerEdit?.let { !it },
             defaultBranch = giteaRepository.defaultBranch?.let { "master" },
             description = giteaRepository.description?.let { "Repository test get configuration" },
             hasProjects = giteaRepository.hasProjects?.let { !it },
