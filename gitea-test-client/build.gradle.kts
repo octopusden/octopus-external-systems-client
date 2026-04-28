@@ -49,8 +49,8 @@ ocTemplate {
                 "GITEA_ID" to "1",
                 "CPU_REQUEST" to "5m",
                 "CPU_LIMIT" to "50m",
-                "MEMORY_REQUEST" to "100Mi",
-                "MEMORY_LIMIT" to "150Mi"
+                "MEMORY_REQUEST" to "256Mi",
+                "MEMORY_LIMIT" to "512Mi"
             ))
         }
 
@@ -61,8 +61,8 @@ ocTemplate {
                 "GITEA_ID" to "2",
                 "CPU_REQUEST" to "5m",
                 "CPU_LIMIT" to "50m",
-                "MEMORY_REQUEST" to "100Mi",
-                "MEMORY_LIMIT" to "150Mi"
+                "MEMORY_REQUEST" to "256Mi",
+                "MEMORY_LIMIT" to "512Mi"
             ))
         }
     }
