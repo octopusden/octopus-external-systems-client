@@ -95,14 +95,22 @@ ocTemplate {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity.yaml"))
             parameters.set(commonOkdParameters + mapOf(
                 "TEAMCITY_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String,
-                "TEAMCITY_ID" to "22"
+                "TEAMCITY_ID" to "22",
+                "CPU_REQUEST" to "500m",
+                "CPU_LIMIT" to "2000m",
+                "MEMORY_REQUEST" to "1.5Gi",
+                "MEMORY_LIMIT" to "2Gi"
             ))
         }
         service("teamcity25") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity.yaml"))
             parameters.set(commonOkdParameters + mapOf(
                 "TEAMCITY_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"] as String,
-                "TEAMCITY_ID" to "25"
+                "TEAMCITY_ID" to "25",
+                "CPU_REQUEST" to "500m",
+                "CPU_LIMIT" to "2000m",
+                "MEMORY_REQUEST" to "1.2Gi",
+                "MEMORY_LIMIT" to "1.5Gi"
             ))
         }
     }

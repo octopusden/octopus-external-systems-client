@@ -48,14 +48,22 @@ ocTemplate {
         service("bitbucket-db") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/bitbucket-db.yaml"))
             parameters.set(commonOkdParameters + mapOf(
-                "POSTGRES_IMAGE_TAG" to properties["postgres.image-tag"] as String
+                "POSTGRES_IMAGE_TAG" to properties["postgres.image-tag"] as String,
+                "CPU_REQUEST" to "10m",
+                "CPU_LIMIT" to "50m",
+                "MEMORY_REQUEST" to "128Mi",
+                "MEMORY_LIMIT" to "200Mi"
             ))
         }
         service("bitbucket") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/bitbucket.yaml"))
             parameters.set(commonOkdParameters + mapOf(
                 "BITBUCKET_LICENSE" to Base64.getEncoder().encodeToString("bitbucketLicense".getExt().toByteArray()),
-                "BITBUCKET_IMAGE_TAG" to properties["bitbucket.image-tag"] as String
+                "BITBUCKET_IMAGE_TAG" to properties["bitbucket.image-tag"] as String,
+                "CPU_REQUEST" to "150m",
+                "CPU_LIMIT" to "2000m",
+                "MEMORY_REQUEST" to "3Gi",
+                "MEMORY_LIMIT" to "4Gi"
             ))
             dependsOn.set(listOf("bitbucket-db"))
         }

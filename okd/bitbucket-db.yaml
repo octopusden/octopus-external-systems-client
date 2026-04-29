@@ -26,6 +26,13 @@ objects:
       containers:
         - name: bitbucket-db
           image: ${DOCKER_REGISTRY}/postgres:${POSTGRES_IMAGE_TAG}
+          resources:
+            requests:
+              cpu: ${CPU_REQUEST}
+              memory: ${MEMORY_REQUEST}
+            limits:
+              cpu: ${CPU_LIMIT}
+              memory: ${MEMORY_LIMIT}
           env:
             - name: POSTGRES_DB
               value: bitbucket
@@ -76,4 +83,16 @@ parameters:
     required: true
   - description: Tag of postgres image
     name: POSTGRES_IMAGE_TAG
+    required: true
+  - description: CPU request
+    name: CPU_REQUEST
+    required: true
+  - description: CPU limit
+    name: CPU_LIMIT
+    required: true
+  - description: Memory request
+    name: MEMORY_REQUEST
+    required: true
+  - description: Memory limit
+    name: MEMORY_LIMIT
     required: true
