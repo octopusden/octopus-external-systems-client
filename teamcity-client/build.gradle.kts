@@ -106,7 +106,7 @@ ocTemplate {
                 "CPU_REQUEST" to "500m",
                 "CPU_LIMIT" to "2000m",
                 "MEMORY_REQUEST" to "1.2Gi",
-                "MEMORY_LIMIT" to "1.5Gi"
+                "MEMORY_LIMIT" to "2Gi"
             ))
         }
     }
