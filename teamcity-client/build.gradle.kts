@@ -74,17 +74,13 @@ ocTemplate {
     group("teamcitySeedUploaders").apply {
         service("teamcity22-uploader") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-uploader.yaml"))
-            parameters.set(mapOf(
-                "SERVICE_ACCOUNT_ANYUID" to project.properties["okd.service-account-anyuid"] as String,
-                "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
+            parameters.set(commonOkdParameters + mapOf(
                 "TEAMCITY_ID" to "22"
             ))
         }
         service("teamcity25-uploader") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-uploader.yaml"))
-            parameters.set(mapOf(
-                "SERVICE_ACCOUNT_ANYUID" to project.properties["okd.service-account-anyuid"] as String,
-                "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
+            parameters.set(commonOkdParameters + mapOf(
                 "TEAMCITY_ID" to "25"
             ))
         }
