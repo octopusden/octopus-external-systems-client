@@ -134,7 +134,6 @@ class GiteaTestClientTest :
             allowRebaseExplicit = giteaRepository.allowRebaseExplicit?.let { !it },
             allowRebaseUpdate = giteaRepository.allowRebaseUpdate?.let { !it },
             allowSquashMerge = giteaRepository.allowSquashMerge?.let { !it },
-            defaultAllowMaintainerEdit = giteaRepository.defaultAllowMaintainerEdit?.let { !it },
             defaultBranch = giteaRepository.defaultBranch?.let { "master" },
             description = giteaRepository.description?.let { "Repository test get configuration" },
             hasProjects = giteaRepository.hasProjects?.let { !it },
@@ -147,8 +146,36 @@ class GiteaTestClientTest :
             website = giteaRepository.website?.let { "https://localhost" },
         )
         client.updateRepositoryConfiguration(organizationName, repositoryName, giteaRepositoryConfig)
-        val giteaRepositoryConfigResult = client.getRepository(organizationName, repositoryName).toGiteaEditRepoOption()
-        assertEquals(giteaRepositoryConfigResult.toString(), giteaRepositoryConfig.toString())
+        val giteaRepositoryConfigResult =
+            client.getRepository(organizationName, repositoryName).toGiteaEditRepoOption()
+        assertEquals(
+            giteaRepositoryConfig.copy(
+                // defaultAllowMaintainerEdit is a setting of the Pull Requests unit.
+                // This test disables the Pull Requests unit by setting hasPullRequests to false.
+                // Therefore, we do not compare defaultAllowMaintainerEdit here.
+                defaultAllowMaintainerEdit = giteaRepositoryConfigResult.defaultAllowMaintainerEdit
+            ).toString(),
+            giteaRepositoryConfigResult.toString()
+        )
+    }
+
+    @Test
+    fun testDefaultAllowMaintainerEdit() {
+        val organizationName = "test-default-allow-maintainer-edit-org"
+        val repositoryName = "test-default-allow-maintainer-edit-repo"
+        client.createOrganization(GiteaCreateOrganization(organizationName))
+        client.createRepository(organizationName, GiteaCreateRepository(repositoryName))
+        val giteaRepository = client.getRepository(organizationName, repositoryName)
+        val expectedDefaultAllowMaintainerEdit =
+            giteaRepository.defaultAllowMaintainerEdit?.let { !it } ?: true
+        val giteaRepositoryConfig = giteaRepository.toGiteaEditRepoOption().copy(
+            hasPullRequests = true,
+            defaultAllowMaintainerEdit = expectedDefaultAllowMaintainerEdit
+        )
+        client.updateRepositoryConfiguration(organizationName, repositoryName, giteaRepositoryConfig)
+        val result = client.getRepository(organizationName, repositoryName).toGiteaEditRepoOption()
+        assertEquals(true, result.hasPullRequests)
+        assertEquals(expectedDefaultAllowMaintainerEdit, result.defaultAllowMaintainerEdit)
     }
 
     @Test
