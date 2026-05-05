@@ -153,4 +153,29 @@ class LocatorTest {
         assertEquals(expected, actual)
     }
 
+    @Test
+    fun testProjectLocatorWithPagination() {
+        val expected = "count:50,start:100"
+        val actual = locatorExpander.expand(
+            ProjectLocator(
+                count = 50,
+                start = 100
+            )
+        )
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testProjectLocatorWithAffectedProject() {
+        val expected = "affectedProject:(id:TestRootProjectId)"
+        val actual = locatorExpander.expand(
+            ProjectLocator(
+                affectedProject = ProjectLocator(
+                    id = "TestRootProjectId"
+                )
+            )
+        )
+        assertEquals(expected, actual)
+    }
+
 }
