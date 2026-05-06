@@ -13,8 +13,8 @@ data class TeamcityProject(
     val parentProject: TeamcityProject? = null,
 //    val defaultTemplate: TeamcityBuildType? = null,
     val buildTypes: TeamcityBuildTypes? = null,
-//    val templates: TeamcityBuildTypes? = null,
-//    val parameters: TeamcityProperties? = null,
+    val templates: TeamcityBuildTypes? = null,
+    val parameters: TeamcityProperties? = null,
 //    val vcsRoots: TeamcityVcsRoots? = null,
 //    val projectFeatures: TeamcityProjectFeatures? = null,
     val projects: TeamcityProjects? = null
