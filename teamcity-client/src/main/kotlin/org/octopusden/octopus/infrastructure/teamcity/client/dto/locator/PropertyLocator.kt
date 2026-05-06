@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonValue
 
 class PropertyLocator(
     val name: String,
-    val value: String,
+    val value: String? = null,
     val matchType: MatchType? = null,
     val ignoreCase: Boolean? = null,
 ) : BaseLocator() {

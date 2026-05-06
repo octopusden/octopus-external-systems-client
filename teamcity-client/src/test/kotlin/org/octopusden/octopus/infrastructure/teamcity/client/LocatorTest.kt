@@ -178,4 +178,17 @@ class LocatorTest {
         assertEquals(expected, actual)
     }
 
+    @Test
+    fun testProjectLocatorWithNameOnlyParameter() {
+        val expected = "parameter:(name:COMPONENT_NAME)"
+        val actual = locatorExpander.expand(
+            ProjectLocator(
+                parameter = listOf(
+                    PropertyLocator(name = "COMPONENT_NAME")
+                )
+            )
+        )
+        assertEquals(expected, actual)
+    }
+
 }
