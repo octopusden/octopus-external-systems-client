@@ -191,4 +191,23 @@ class LocatorTest {
         assertEquals(expected, actual)
     }
 
+    @Test
+    fun testPropertyLocatorValueWithUrlSpecialCharsIsEscaped() {
+        // Values that contain URL/query-string delimiters (& ? # + space %) must be
+        // percent-encoded so that the locator survives transport with `@Param(encoded = true)`.
+        // TC locator structural chars (: , ( )) must remain raw in the output.
+        val actual = locatorExpander.expand(
+            ProjectLocator(
+                parameter = listOf(
+                    PropertyLocator(
+                        name = "url",
+                        value = "https://host/repo.git?x=1&y=2#frag with+plus 100%"
+                    )
+                )
+            )
+        )
+        val expected = "parameter:(name:url,value:https://host/repo.git%3Fx=1%26y=2%23frag%20with%2Bplus%20100%25)"
+        assertEquals(expected, actual)
+    }
+
 }
