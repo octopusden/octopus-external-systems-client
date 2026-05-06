@@ -531,7 +531,12 @@ class TeamcityClassicClientTest {
         try {
             client.createParameter(ConfigurationType.PROJECT, project.id, uniqueParamName, "expectedValue")
             val locator = ProjectLocator(parameter = listOf(PropertyLocator(name = uniqueParamName)))
-            val fields = "project(id,name,webUrl,parameters(property(name,value)))"
+            // `href` is included intentionally — `TeamcityProject.href` is non-nullable, so
+            // deserialisation throws if the fields spec omits it (TC then returns no `href`
+            // and Jackson sees a missing required field). Same constraint applies to `webUrl`,
+            // which is already in the spec because the test asserts on it indirectly via project
+            // identity.
+            val fields = "project(id,name,webUrl,href,parameters(property(name,value)))"
             val response = client.getProjectsWithLocatorAndFields(locator, fields)
 
             assertEquals(1, response.projects.size)
