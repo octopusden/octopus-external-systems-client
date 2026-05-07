@@ -15,11 +15,39 @@ class TeamcityLocatorExpander: Param.Expander{
 
     private fun propertyToString(name: String, value: Any?):String =
         when (value) {
-            is PropertyLocator.MatchType -> "$name:${value.value}"
-            is TeamcityVCSType -> "$name:${value.value}"
+            is PropertyLocator.MatchType -> "$name:${escape(value.value)}"
+            is TeamcityVCSType -> "$name:${escape(value.value)}"
             is List<*> -> value.joinToString(",") { "$name:(${expand(it)})" }
             is BaseLocator -> "$name:(${expand(value)})"
-            else -> "$name:$value"
+            else -> "$name:${escape(value.toString())}"
         }
+
+    /**
+     * Percent-encode characters that would break the URL when the expanded locator is sent
+     * with `@Param(encoded = true)`. Encoding is intentionally narrow:
+     *
+     * - `%` → `%25` (must be first to avoid escaping our own escapes).
+     * - `&` `?` `#` `+` ` ` → percent-encoded — these have query-string semantics; left raw they
+     *   would split or corrupt the URL.
+     *
+     * NOT encoded: `:` `,` `(` `)` — TC locator structural delimiters. Callers whose values
+     * legitimately contain those characters must wrap them in TC's `${'$'}any(...)` syntax themselves;
+     * automatic escaping would mask such cases as silent value mismatches on the server.
+     */
+    private fun escape(s: String): String {
+        val sb = StringBuilder(s.length)
+        for (c in s) {
+            when (c) {
+                '%' -> sb.append("%25")
+                '&' -> sb.append("%26")
+                '?' -> sb.append("%3F")
+                '#' -> sb.append("%23")
+                '+' -> sb.append("%2B")
+                ' ' -> sb.append("%20")
+                else -> sb.append(c)
+            }
+        }
+        return sb.toString()
+    }
 
 }

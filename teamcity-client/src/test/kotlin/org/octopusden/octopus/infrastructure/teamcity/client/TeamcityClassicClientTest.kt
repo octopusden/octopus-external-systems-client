@@ -516,6 +516,45 @@ class TeamcityClassicClientTest {
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
+    fun testGetProjectsByParameterNameOnlyExposesParameters(config: TeamcityTestConfiguration) {
+        // Verifies the batch-lookup pattern:
+        //   GET /projects?locator=parameter:(name:X)&fields=project(...,parameters(property(name,value)))
+        // The locator filters projects by parameter NAME only (no value); the fields spec asks
+        // TC to include parameter name/value pairs in the response so callers can group by value
+        // client-side. Two pieces under test:
+        //   1. PropertyLocator(name = ...) — name-only, no value (requires PropertyLocator.value to be nullable).
+        //   2. TeamcityProject.parameters — parameter map deserialised from the response.
+        val uniqueSuffix = UUID.randomUUID().toString().replace("-", "_")
+        val uniqueParamName = "PARAM_NAME_ONLY_TEST_$uniqueSuffix"
+        val client = createClient(config)
+        val project = createProject(client, "testGetProjectsByParameterNameOnly_$uniqueSuffix")
+        try {
+            client.createParameter(ConfigurationType.PROJECT, project.id, uniqueParamName, "expectedValue")
+            val locator = ProjectLocator(parameter = listOf(PropertyLocator(name = uniqueParamName)))
+            // `href` is included intentionally — `TeamcityProject.href` is non-nullable, so
+            // deserialisation throws if the fields spec omits it (TC then returns no `href`
+            // and Jackson sees a missing required field). Same constraint applies to `webUrl`,
+            // which is already in the spec because the test asserts on it indirectly via project
+            // identity.
+            val fields = "project(id,name,webUrl,href,parameters(property(name,value)))"
+            val response = client.getProjectsWithLocatorAndFields(locator, fields)
+
+            assertEquals(1, response.projects.size)
+            val actualProject = response.projects.single()
+            assertEquals(project.id, actualProject.id)
+
+            val parameters = actualProject.parameters
+            assertNotNull(parameters)
+            val matched = parameters!!.properties.firstOrNull { it.name == uniqueParamName }
+            assertNotNull(matched)
+            assertEquals("expectedValue", matched!!.value)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
     fun testGetBuildTypesWithVcsRootInstanceLocatorAndFields(config: TeamcityTestConfiguration) {
         val client = createClient(config)
         val project = createProject(client, "TestGetBuildTypesWithVcsRootInstanceLocatorAndFields")

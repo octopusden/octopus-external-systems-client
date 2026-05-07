@@ -66,7 +66,7 @@ interface TeamcityClient {
 
     @RequestLine("GET $REST/projects?locator={locator}")
     @Headers("Accept: application/json")
-    fun getProjects(@Param("locator", expander = Locator::class) locator: ProjectLocator): TeamcityProjects
+    fun getProjects(@Param("locator", expander = Locator::class, encoded = true) locator: ProjectLocator): TeamcityProjects
 
     @RequestLine("POST $REST/buildTypes")
     @Headers("Content-Type: application/json", "Accept: application/json")
@@ -97,7 +97,7 @@ interface TeamcityClient {
     @RequestLine("GET $REST/buildTypes?fields={fields}")
     @Headers("Accept: application/json")
     fun getBuildTypesWithFields(
-        @Param("fields") fields: String
+        @Param("fields", encoded = true) fields: String
     ): TeamcityBuildTypes
 
     @RequestLine("GET $REST/projects/{locator}/buildTypes")
@@ -112,7 +112,7 @@ interface TeamcityClient {
     @Headers("Accept: application/json")
     fun getBuildTypesProjectWithFields(
         @Param("locator", expander = Locator::class) project: ProjectLocator,
-        @Param("fields") fields: String
+        @Param("fields", encoded = true) fields: String
     ): TeamcityBuildTypes
 
     /**
@@ -364,13 +364,13 @@ interface TeamcityClient {
     @RequestLine("GET $REST/vcs-root-instances?locator={locator}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getVcsRootInstances(
-        @Param("locator", expander = Locator::class) locator: VcsRootInstanceLocator
+        @Param("locator", expander = Locator::class, encoded = true) locator: VcsRootInstanceLocator
     ): TeamcityVcsRootInstances
 
     @RequestLine("GET $REST/vcs-roots?locator={locator}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getVcsRoots(
-        @Param("locator", expander = Locator::class) locator: VcsRootLocator
+        @Param("locator", expander = Locator::class, encoded = true) locator: VcsRootLocator
     ): TeamcityVcsRoots
 
     @RequestLine("POST /plugins/metarunner/upload.html")
@@ -398,28 +398,28 @@ interface TeamcityClient {
     @RequestLine("GET $REST/projects?locator={locator}&fields={fields}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getProjectsWithLocatorAndFields(
-        @Param("locator", expander = Locator::class) locator: ProjectLocator,
-        @Param("fields") fields: String
+        @Param("locator", expander = Locator::class, encoded = true) locator: ProjectLocator,
+        @Param("fields", encoded = true) fields: String
     ): TeamcityProjects
 
     @RequestLine("GET $REST/builds?locator={locator}&fields={fields}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getBuildsWithLocatorAndFields(
-        @Param("locator", expander = Locator::class) locator: BuildLocator,
-        @Param("fields") fields: String
+        @Param("locator", expander = Locator::class, encoded = true) locator: BuildLocator,
+        @Param("fields", encoded = true) fields: String
     ): TeamcityBuilds
 
     @RequestLine("GET $REST/buildTypes?locator=vcsRootInstance({locator})&fields={fields}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getBuildTypesWithVcsRootInstanceLocatorAndFields(
-        @Param("locator", expander = Locator::class) locator: VcsRootInstanceLocator,
-        @Param("fields") fields: String
+        @Param("locator", expander = Locator::class, encoded = true) locator: VcsRootInstanceLocator,
+        @Param("fields", encoded = true) fields: String
     ): TeamcityBuildTypes
 
     @RequestLine("GET $REST/investigations?locator={locator}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getInvestigationWithInvestigationLocator(
-        @Param("locator", expander = Locator::class) locator: InvestigationLocator
+        @Param("locator", expander = Locator::class, encoded = true) locator: InvestigationLocator
     ): TeamcityInvestigations
 
     @RequestLine("POST $REST/investigations")
