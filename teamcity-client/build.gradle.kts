@@ -105,8 +105,8 @@ ocTemplate {
                 "TEAMCITY_ID" to "26",
                 "CPU_REQUEST" to "500m",
                 "CPU_LIMIT" to "2000m",
-                "MEMORY_REQUEST" to "1.2Gi",
-                "MEMORY_LIMIT" to "2Gi"
+                "MEMORY_REQUEST" to "2Gi",
+                "MEMORY_LIMIT" to "3Gi"
             ))
         }
     }
