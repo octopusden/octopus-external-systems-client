@@ -391,6 +391,14 @@ interface TeamcityClient {
         @Param(value = "projectId") projectId: String
     )
 
+    @RequestLine("POST /app/recipes/private")
+    @Headers("Content-Type: multipart/form-data", "Accept: application/json")
+    fun uploadRecipeV2026(
+        @Param(value = "projectId") projectId: String,
+        @Param(value = "recipeId") recipeId: String,
+        @Param(value = "file") file: FormData
+    )
+
     @RequestLine("POST $REST/buildQueue")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild
@@ -543,9 +551,12 @@ fun TeamcityClient.getInvestigationWithInvestigationLocator(buildTypeId: String)
 
 fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileContent: ByteArray) {
     val majorVersion = getServer().version.substringBefore(".").toInt()
-    if (majorVersion < 2025) {
-        uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
-    } else {
-        uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
+    when {
+        majorVersion < 2025 ->
+            uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
+        majorVersion < 2026 ->
+            uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
+        else ->
+            uploadRecipeV2026(projectId, fileName.removeSuffix(".xml"), FormData("text/xml", fileName, fileContent))
     }
 }
