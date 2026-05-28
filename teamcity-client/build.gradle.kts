@@ -135,12 +135,22 @@ tasks.named("ocCreateTeamcityServers").configure {
     dependsOn(seedTeamcity)
 }
 
+val confirmTeamcity2026FirstStart = tasks.register<Exec>("confirmTeamcity2026FirstStart") {
+    dependsOn("ocCreateTeamcityServers")
+    onlyIf { "testPlatform".getExt() == "okd" }
+    commandLine(
+        "bash",
+        layout.projectDirectory.file("scripts/confirm-tc-first-start.sh").asFile.absolutePath,
+        provider { ocTemplate.getOkdHost("teamcity26") }.get()
+    )
+}
+
 tasks.withType<Test> {
     when ("testPlatform".getExt()) {
         "okd" -> {
             systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity22")
             systemProperties["test.teamcity-2026-host"] = ocTemplate.getOkdHost("teamcity26")
-            dependsOn("ocCreateTeamcityServers")
+            dependsOn("ocCreateTeamcityServers", confirmTeamcity2026FirstStart)
             finalizedBy("ocLogsTeamcityServers", "ocDeleteTeamcityServers", "ocDeleteTeamcityPVCs")
         }
         "docker" -> {
