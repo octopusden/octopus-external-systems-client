@@ -34,7 +34,7 @@ objects:
               protocol: TCP
           readinessProbe:
             httpGet:
-              path: /img/icons/favicon.ico
+              path: /login.html
               port: 8111
             initialDelaySeconds: 60
             periodSeconds: 10
