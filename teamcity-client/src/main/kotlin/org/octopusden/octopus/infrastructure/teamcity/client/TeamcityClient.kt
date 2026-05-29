@@ -46,6 +46,8 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.TeamcityLocatorExpander as Locator
 
+// Use `/app/rest/latest` — `/app/rest/2018.1` is no longer reliable on TC 2026.
+// Cross-version compatibility is guarded by integration tests in TeamcityClassicClientTest.
 private const val REST: String = "/app/rest/latest"
 
 interface TeamcityClient {
