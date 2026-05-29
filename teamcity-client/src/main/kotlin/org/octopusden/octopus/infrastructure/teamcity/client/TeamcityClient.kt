@@ -406,6 +406,13 @@ interface TeamcityClient {
         @Param(value = "projectId") projectId: String
     ): org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityRecipeOverview
 
+    @RequestLine("DELETE /app/recipes/private?recipeId={recipeId}&projectId={projectId}")
+    @Headers("Accept: application/json")
+    fun deleteRecipeV2026(
+        @Param(value = "recipeId") recipeId: String,
+        @Param(value = "projectId") projectId: String
+    )
+
     @RequestLine("POST $REST/buildQueue")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild
@@ -563,7 +570,12 @@ fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileCon
             uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
         majorVersion < 2026 ->
             uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
-        else ->
+        else -> {
+            // TC 2026's POST /app/recipes/private is create-only and rejects duplicate IDs.
+            // To preserve upsert semantics of this function, delete first (ignore if absent),
+            // then create.
+            runCatching { deleteRecipeV2026(fileName.removeSuffix(".xml"), projectId) }
             uploadRecipeV2026(projectId, fileName, FormData("text/xml", fileName, fileContent))
+        }
     }
 }
