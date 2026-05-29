@@ -399,6 +399,13 @@ interface TeamcityClient {
         @Param(value = "file") file: FormData
     )
 
+    @RequestLine("GET /app/recipes/overview?recipeId={recipeId}&recipeType=PRIVATE_RECIPE&projectId={projectId}")
+    @Headers("Accept: application/json")
+    fun getRecipeOverviewV2026(
+        @Param(value = "recipeId") recipeId: String,
+        @Param(value = "projectId") projectId: String
+    ): org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityRecipeOverview
+
     @RequestLine("POST $REST/buildQueue")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild

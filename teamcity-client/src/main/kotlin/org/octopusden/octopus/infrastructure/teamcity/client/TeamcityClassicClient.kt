@@ -183,6 +183,9 @@ class TeamcityClassicClient(
     override fun uploadRecipeV2026(projectId: String, fileName: String, file: FormData) =
         client.uploadRecipeV2026(projectId, fileName, file)
 
+    override fun getRecipeOverviewV2026(recipeId: String, projectId: String) =
+        client.getRecipeOverviewV2026(recipeId, projectId)
+
     override fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild = client.queueBuild(build)
 
     override fun getProjectsWithLocatorAndFields(locator: ProjectLocator, fields: String): TeamcityProjects =
