@@ -46,7 +46,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.TeamcityLocatorExpander as Locator
 
-private const val REST: String = "/app/rest/latest"
+private const val REST: String = "/app/rest/2022.04.7"
 
 interface TeamcityClient {
     @RequestLine("GET $REST/server")
