@@ -395,7 +395,7 @@ interface TeamcityClient {
     @Headers("Content-Type: multipart/form-data", "Accept: application/json")
     fun uploadRecipeV2026(
         @Param(value = "projectId") projectId: String,
-        @Param(value = "recipeId") recipeId: String,
+        @Param(value = "fileName") fileName: String,
         @Param(value = "file") file: FormData
     )
 
@@ -557,6 +557,6 @@ fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileCon
         majorVersion < 2026 ->
             uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
         else ->
-            uploadRecipeV2026(projectId, fileName.removeSuffix(".xml"), FormData("text/xml", fileName, fileContent))
+            uploadRecipeV2026(projectId, fileName, FormData("text/xml", fileName, fileContent))
     }
 }

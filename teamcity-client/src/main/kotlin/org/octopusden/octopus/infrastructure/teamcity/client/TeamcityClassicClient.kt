@@ -180,8 +180,8 @@ class TeamcityClassicClient(
     override fun uploadRecipe(fileName: String, file: FormData, action: String, projectId: String) =
         client.uploadRecipe(fileName, file, action, projectId)
 
-    override fun uploadRecipeV2026(projectId: String, recipeId: String, file: FormData) =
-        client.uploadRecipeV2026(projectId, recipeId, file)
+    override fun uploadRecipeV2026(projectId: String, fileName: String, file: FormData) =
+        client.uploadRecipeV2026(projectId, fileName, file)
 
     override fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild = client.queueBuild(build)
 
