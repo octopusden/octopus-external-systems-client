@@ -13,6 +13,7 @@ import feign.form.FormEncoder
 import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
+import org.apache.http.impl.client.HttpClients
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInvestigation
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
@@ -179,6 +180,15 @@ class TeamcityClassicClient(
     override fun uploadRecipe(fileName: String, file: FormData, action: String, projectId: String) =
         client.uploadRecipe(fileName, file, action, projectId)
 
+    override fun uploadRecipeV2026(projectId: String, fileName: String, file: FormData) =
+        client.uploadRecipeV2026(projectId, fileName, file)
+
+    override fun getRecipeOverviewV2026(recipeId: String, projectId: String) =
+        client.getRecipeOverviewV2026(recipeId, projectId)
+
+    override fun deleteRecipeV2026(recipeId: String, projectId: String) =
+        client.deleteRecipeV2026(recipeId, projectId)
+
     override fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild = client.queueBuild(build)
 
     override fun getProjectsWithLocatorAndFields(locator: ProjectLocator, fields: String): TeamcityProjects =
@@ -213,7 +223,8 @@ class TeamcityClassicClient(
 
         private fun createClient(apiUrl: String, interceptor: RequestInterceptor, objectMapper: ObjectMapper) =
             Feign.builder().requestInterceptor { requestTemplate -> requestTemplate?.header("Origin", apiUrl) }
-                .client(ApacheHttpClient()).encoder(FormEncoder(JacksonEncoder(objectMapper)))
+                .client(ApacheHttpClient(HttpClients.custom().disableCookieManagement().build()))
+                .encoder(FormEncoder(JacksonEncoder(objectMapper)))
                 .decoder(TeamcityClientDecoder(objectMapper)).requestInterceptor(interceptor)
                 .logger(Slf4jLogger(TeamcityClient::class.java)).logLevel(Logger.Level.FULL)
                 .target(TeamcityClient::class.java, apiUrl)

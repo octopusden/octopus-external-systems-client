@@ -46,7 +46,9 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.TeamcityLocatorExpander as Locator
 
-private const val REST: String = "/app/rest/2018.1"
+// Use `/app/rest/latest` — `/app/rest/2018.1` is no longer reliable on TC 2026.
+// Cross-version compatibility is guarded by integration tests in TeamcityClassicClientTest.
+private const val REST: String = "/app/rest/latest"
 
 interface TeamcityClient {
     @RequestLine("GET $REST/server")
@@ -391,6 +393,28 @@ interface TeamcityClient {
         @Param(value = "projectId") projectId: String
     )
 
+    @RequestLine("POST /app/recipes/private")
+    @Headers("Content-Type: multipart/form-data", "Accept: application/json")
+    fun uploadRecipeV2026(
+        @Param(value = "projectId") projectId: String,
+        @Param(value = "fileName") fileName: String,
+        @Param(value = "file") file: FormData
+    )
+
+    @RequestLine("GET /app/recipes/overview?recipeId={recipeId}&recipeType=PRIVATE_RECIPE&projectId={projectId}")
+    @Headers("Accept: application/json")
+    fun getRecipeOverviewV2026(
+        @Param(value = "recipeId") recipeId: String,
+        @Param(value = "projectId") projectId: String
+    ): org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityRecipeOverview
+
+    @RequestLine("DELETE /app/recipes/private?recipeId={recipeId}&projectId={projectId}")
+    @Headers("Accept: application/json")
+    fun deleteRecipeV2026(
+        @Param(value = "recipeId") recipeId: String,
+        @Param(value = "projectId") projectId: String
+    )
+
     @RequestLine("POST $REST/buildQueue")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild
@@ -543,9 +567,17 @@ fun TeamcityClient.getInvestigationWithInvestigationLocator(buildTypeId: String)
 
 fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileContent: ByteArray) {
     val majorVersion = getServer().version.substringBefore(".").toInt()
-    if (majorVersion < 2025) {
-        uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
-    } else {
-        uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
+    when {
+        majorVersion < 2025 ->
+            uploadMetarunner(fileName, FormData("text/xml", fileName, fileContent), "uploadMetarunner", projectId)
+        majorVersion < 2026 ->
+            uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
+        else -> {
+            // TC 2026's POST /app/recipes/private is create-only and rejects duplicate IDs.
+            // To preserve upsert semantics of this function, delete first (ignore if absent),
+            // then create.
+            runCatching { deleteRecipeV2026(fileName.removeSuffix(".xml"), projectId) }
+            uploadRecipeV2026(projectId, fileName, FormData("text/xml", fileName, fileContent))
+        }
     }
 }

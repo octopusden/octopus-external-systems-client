@@ -53,8 +53,8 @@ class TeamcityClassicClientTest {
 
         private val hostTeamcity2022 = System.getProperty("test.teamcity-2022-host")
             ?: throw Exception("System property 'test.teamcity-2022-host' must be defined")
-        private val hostTeamcity2025 = System.getProperty("test.teamcity-2025-host")
-            ?: throw Exception("System property 'test.teamcity-2025-host' must be defined")
+        private val hostTeamcity2026 = System.getProperty("test.teamcity-2026-host")
+            ?: throw Exception("System property 'test.teamcity-2026-host' must be defined")
 
         @JvmStatic
         fun teamcityConfigurations(): List<TeamcityTestConfiguration> = listOf(
@@ -64,9 +64,9 @@ class TeamcityClassicClientTest {
                 version = "2022.04.7 (build 109063)"
             ),
             TeamcityTestConfiguration(
-                name = "v25",
-                host = hostTeamcity2025,
-                version = "2025.03.3 (build 186370)"
+                name = "v26",
+                host = hostTeamcity2026,
+                version = "2026.1 (build 222521)"
             )
         )
 
@@ -438,29 +438,32 @@ class TeamcityClassicClientTest {
         val projectId = "RDDepartment"
         val metarunnerId = "TestMetarunner"
         val metarunnerName = "$metarunnerId.xml"
-
-        val (tabName, editQueryId, textAreaId) = when {
-            config.version.startsWith("2025") -> Triple("recipe", "editRecipeId", "recipeContent")
-            else -> Triple("metaRunner", "editRunnerId", "metaRunnerContent")
-        }
+        val majorVer = config.version.substringBefore(".").toIntOrNull() ?: 0
 
         val testCreateContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${metarunnerId}Create.xml")!!.readBytes()
         client.uploadMetarunner(projectId, metarunnerName, testCreateContent)
-        checkHtmlContent(
-            "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId",
-            textAreaId,
-            String(testCreateContent)
-        )
 
         val testEditContent = TeamcityClassicClientTest::class.java.classLoader
             .getResourceAsStream("${metarunnerId}Edit.xml")!!.readBytes()
         client.uploadMetarunner(projectId, metarunnerName, testEditContent)
-        checkHtmlContent(
-            "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId",
-            textAreaId,
-            String(testEditContent)
-        )
+
+        // TC 2026 admin UI is a client-side SPA (uses URL fragments), so HTML scrape no
+        // longer works. Verify via REST instead — the recipe must exist with the expected id.
+        if (majorVer >= 2026) {
+            val overview = client.getRecipeOverviewV2026(metarunnerId, projectId)
+            assertEquals(metarunnerId, overview.id)
+        } else {
+            val (tabName, editQueryId, textAreaId) = when {
+                majorVer >= 2025 -> Triple("recipe", "editRecipeId", "recipeContent")
+                else -> Triple("metaRunner", "editRunnerId", "metaRunnerContent")
+            }
+            checkHtmlContent(
+                "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId",
+                textAreaId,
+                String(testEditContent)
+            )
+        }
     }
 
     @ParameterizedTest

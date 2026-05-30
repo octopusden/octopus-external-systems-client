@@ -33,7 +33,7 @@ configure<ComposeExtension> {
         mapOf(
             "DOCKER_REGISTRY" to project.properties["docker.registry"],
             "TEAMCITY_2022_IMAGE_TAG" to project.properties["teamcity-2022.image-tag"],
-            "TEAMCITY_2025_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"]
+            "TEAMCITY_2026_IMAGE_TAG" to project.properties["teamcity-2026.image-tag"]
         )
     )
 }
@@ -63,10 +63,10 @@ ocTemplate {
                 "TEAMCITY_ID" to "22"
             ))
         }
-        service("teamcity25-pvc") {
+        service("teamcity26-pvc") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-pvc.yaml"))
             parameters.set(mapOf(
-                "TEAMCITY_ID" to "25"
+                "TEAMCITY_ID" to "26"
             ))
         }
     }
@@ -78,10 +78,10 @@ ocTemplate {
                 "TEAMCITY_ID" to "22"
             ))
         }
-        service("teamcity25-uploader") {
+        service("teamcity26-uploader") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-uploader.yaml"))
             parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_ID" to "25"
+                "TEAMCITY_ID" to "26"
             ))
         }
     }
@@ -98,11 +98,11 @@ ocTemplate {
                 "MEMORY_LIMIT" to "2Gi"
             ))
         }
-        service("teamcity25") {
+        service("teamcity26") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity.yaml"))
             parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_IMAGE_TAG" to project.properties["teamcity-2025.image-tag"] as String,
-                "TEAMCITY_ID" to "25",
+                "TEAMCITY_IMAGE_TAG" to project.properties["teamcity-2026.image-tag"] as String,
+                "TEAMCITY_ID" to "26",
                 "CPU_REQUEST" to "500m",
                 "CPU_LIMIT" to "2000m",
                 "MEMORY_REQUEST" to "1.2Gi",
@@ -119,15 +119,15 @@ val copyFilesTeamcity2022 = tasks.register<Exec>("copyFilesTeamcity2022") {
         "${ocTemplate.getPod("teamcity22-uploader")}:/seed/seed.zip")
 }
 
-val copyFilesTeamcity2025 = tasks.register<Exec>("copyFilesTeamcity2025") {
+val copyFilesTeamcity2026 = tasks.register<Exec>("copyFilesTeamcity2026") {
     dependsOn("ocCreateTeamcityPVCs", "ocCreateTeamcitySeedUploaders")
-    val localFile = layout.projectDirectory.dir("docker/dataV25.zip").asFile.absolutePath
+    val localFile = layout.projectDirectory.dir("docker/dataV26.zip").asFile.absolutePath
     commandLine("oc", "cp", localFile, "-n", "okdProject".getExt(),
-        "${ocTemplate.getPod("teamcity25-uploader")}:/seed/seed.zip")
+        "${ocTemplate.getPod("teamcity26-uploader")}:/seed/seed.zip")
 }
 
 val seedTeamcity = tasks.register("seedTeamcity") {
-    dependsOn(copyFilesTeamcity2022, copyFilesTeamcity2025)
+    dependsOn(copyFilesTeamcity2022, copyFilesTeamcity2026)
     finalizedBy("ocLogsTeamcitySeedUploaders", "ocDeleteTeamcitySeedUploaders")
 }
 
@@ -139,13 +139,13 @@ tasks.withType<Test> {
     when ("testPlatform".getExt()) {
         "okd" -> {
             systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity22")
-            systemProperties["test.teamcity-2025-host"] = ocTemplate.getOkdHost("teamcity25")
+            systemProperties["test.teamcity-2026-host"] = ocTemplate.getOkdHost("teamcity26")
             dependsOn("ocCreateTeamcityServers")
             finalizedBy("ocLogsTeamcityServers", "ocDeleteTeamcityServers", "ocDeleteTeamcityPVCs")
         }
         "docker" -> {
             systemProperties["test.teamcity-2022-host"] = "localhost:8111"
-            systemProperties["test.teamcity-2025-host"] = "localhost:8112"
+            systemProperties["test.teamcity-2026-host"] = "localhost:8112"
             dockerCompose.isRequiredBy(this)
         }
     }
@@ -153,7 +153,7 @@ tasks.withType<Test> {
 
 tasks.named("composeUp") {
     dependsOn(prepareTeamcity2022Data)
-    dependsOn(prepareTeamcity2025Data)
+    dependsOn(prepareTeamcity2026Data)
 }
 
 val prepareTeamcity2022Data = tasks.register<Sync>("prepareTeamcity2022Data") {
@@ -161,7 +161,7 @@ val prepareTeamcity2022Data = tasks.register<Sync>("prepareTeamcity2022Data") {
     into(layout.buildDirectory.dir("teamcity-server-2022"))
 }
 
-val prepareTeamcity2025Data = tasks.register<Sync>("prepareTeamcity2025Data") {
-    from(zipTree(layout.projectDirectory.file("docker/dataV25.zip")))
-    into(layout.buildDirectory.dir("teamcity-server-2025"))
+val prepareTeamcity2026Data = tasks.register<Sync>("prepareTeamcity2026Data") {
+    from(zipTree(layout.projectDirectory.file("docker/dataV26.zip")))
+    into(layout.buildDirectory.dir("teamcity-server-2026"))
 }
