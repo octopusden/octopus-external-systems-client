@@ -189,6 +189,9 @@ class TeamcityClassicClient(
     override fun deleteRecipeV2026(recipeId: String, projectId: String) =
         client.deleteRecipeV2026(recipeId, projectId)
 
+    override fun updateRecipeV2026(recipeId: String, projectId: String, content: String) =
+        client.updateRecipeV2026(recipeId, projectId, content)
+
     override fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild = client.queueBuild(build)
 
     override fun getProjectsWithLocatorAndFields(locator: ProjectLocator, fields: String): TeamcityProjects =
