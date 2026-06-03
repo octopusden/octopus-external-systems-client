@@ -415,6 +415,14 @@ interface TeamcityClient {
         @Param(value = "projectId") projectId: String
     )
 
+    @RequestLine("PUT /app/recipes/private?recipeId={recipeId}&projectId={projectId}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun updateRecipeV2026(
+        @Param(value = "recipeId") recipeId: String,
+        @Param(value = "projectId") projectId: String,
+        content: String
+    )
+
     @RequestLine("POST $REST/buildQueue")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun queueBuild(build: TeamcityCreateQueuedBuild): TeamcityQueuedBuild
@@ -573,11 +581,15 @@ fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileCon
         majorVersion < 2026 ->
             uploadRecipe(fileName, FormData("text/xml", fileName, fileContent), "uploadRecipe", projectId)
         else -> {
-            // TC 2026's POST /app/recipes/private is create-only and rejects duplicate IDs.
-            // To preserve upsert semantics of this function, delete first (ignore if absent),
-            // then create.
-            runCatching { deleteRecipeV2026(fileName.removeSuffix(".xml"), projectId) }
-            uploadRecipeV2026(projectId, fileName, FormData("text/xml", fileName, fileContent))
+            // TC 2026's POST /app/recipes/private is create-only; in-use recipes also cannot be
+            // deleted. Probe existence and PUT to update, otherwise POST to create.
+            val recipeId = fileName.removeSuffix(".xml")
+            val exists = runCatching { getRecipeOverviewV2026(recipeId, projectId) }.isSuccess
+            if (exists) {
+                updateRecipeV2026(recipeId, projectId, String(fileContent))
+            } else {
+                uploadRecipeV2026(projectId, fileName, FormData("text/xml", fileName, fileContent))
+            }
         }
     }
 }
