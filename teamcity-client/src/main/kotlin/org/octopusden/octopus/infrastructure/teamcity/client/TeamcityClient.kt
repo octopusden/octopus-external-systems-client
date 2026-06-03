@@ -2,6 +2,7 @@ package org.octopusden.octopus.infrastructure.teamcity.client
 
 import com.fasterxml.jackson.annotation.JsonValue
 import feign.Body
+import feign.FeignException
 import feign.Headers
 import feign.Param
 import feign.RequestLine
@@ -583,8 +584,15 @@ fun TeamcityClient.uploadMetarunner(projectId: String, fileName: String, fileCon
         else -> {
             // TC 2026's POST /app/recipes/private is create-only; in-use recipes also cannot be
             // deleted. Probe existence and PUT to update, otherwise POST to create.
+            // Only treat 404 as "not found" — let auth/server errors propagate so we don't mask
+            // them by falling through to the create-only path.
             val recipeId = fileName.removeSuffix(".xml")
-            val exists = runCatching { getRecipeOverviewV2026(recipeId, projectId) }.isSuccess
+            val exists = try {
+                getRecipeOverviewV2026(recipeId, projectId)
+                true
+            } catch (e: FeignException.NotFound) {
+                false
+            }
             if (exists) {
                 updateRecipeV2026(recipeId, projectId, String(fileContent))
             } else {
