@@ -10,8 +10,6 @@ import org.octopusden.octopus.infrastructure.confluence.client.dto.ConfluencePag
 const val REST_API_PATH = "rest/api"
 const val CONTENT_PATH = "$REST_API_PATH/content"
 
-const val DEFAULT_EXPAND = "body.storage,version,space,ancestors"
-
 interface ConfluenceClient {
 
     @RequestLine("GET $CONTENT_PATH/{id}")
@@ -24,8 +22,3 @@ interface ConfluenceClient {
     @Headers("Content-Type: application/json")
     fun updatePage(@Param("id") id: String, page: ConfluencePageUpdateRequest): ConfluencePage
 }
-
-fun ConfluenceClient.getPageById(
-    id: String,
-    expand: String = DEFAULT_EXPAND
-): ConfluencePage = getPageById(id, mapOf("expand" to expand))
