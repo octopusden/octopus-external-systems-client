@@ -52,7 +52,7 @@ class ConfluenceClassicClient(
             .decoder(JacksonDecoder(objectMapper))
             .requestInterceptor(interceptor)
             .logger(Slf4jLogger(ConfluenceClient::class.java))
-            .logLevel(Logger.Level.FULL)
+            .logLevel(Logger.Level.BASIC)
             .target(ConfluenceClient::class.java, apiUrl)
     }
 }
