@@ -63,7 +63,7 @@ ocTemplate {
                 "CPU_REQUEST" to "150m",
                 "CPU_LIMIT" to "2000m",
                 "MEMORY_REQUEST" to "3Gi",
-                "MEMORY_LIMIT" to "4Gi"
+                "MEMORY_LIMIT" to "6Gi"
             ))
             dependsOn.set(listOf("bitbucket-db"))
         }
