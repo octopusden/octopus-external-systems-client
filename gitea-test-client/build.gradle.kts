@@ -48,9 +48,9 @@ ocTemplate {
                 "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
                 "GITEA_ID" to "1",
                 "CPU_REQUEST" to "50m",
-                "CPU_LIMIT" to "500m",
+                "CPU_LIMIT" to "1000m",
                 "MEMORY_REQUEST" to "256Mi",
-                "MEMORY_LIMIT" to "512Mi"
+                "MEMORY_LIMIT" to "1Gi"
             ))
         }
 
@@ -60,9 +60,9 @@ ocTemplate {
                 "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
                 "GITEA_ID" to "2",
                 "CPU_REQUEST" to "50m",
-                "CPU_LIMIT" to "500m",
+                "CPU_LIMIT" to "1000m",
                 "MEMORY_REQUEST" to "256Mi",
-                "MEMORY_LIMIT" to "512Mi"
+                "MEMORY_LIMIT" to "1Gi"
             ))
         }
     }
