@@ -200,6 +200,13 @@ class TeamcityClassicClient(
     override fun getBuildsWithLocatorAndFields(locator: BuildLocator, fields: String) =
         client.getBuildsWithLocatorAndFields(locator, fields)
 
+    override fun getBuild(locator: BuildLocator) = client.getBuild(locator)
+
+    override fun getBuildWithFields(locator: BuildLocator, fields: String) =
+        client.getBuildWithFields(locator, fields)
+
+    override fun getVcsRootInstance(locator: VcsRootInstanceLocator) = client.getVcsRootInstance(locator)
+
     override fun getBuildTypesWithVcsRootInstanceLocatorAndFields(
         locator: VcsRootInstanceLocator,
         fields: String

@@ -651,6 +651,11 @@ class TeamcityClassicClientTest {
             )
             val instances = client.getVcsRootInstances(locator).vcsRootInstances
             assertEquals(vcsRoot.id, instances.first().vcsRootId)
+
+            val instanceId = instances.first().id
+            val single = client.getVcsRootInstance(instanceId)
+            assertEquals(instanceId, single.id)
+            assertEquals(vcsRoot.id, single.vcsRootId)
         } finally {
             client.deleteProject(project.id)
         }
