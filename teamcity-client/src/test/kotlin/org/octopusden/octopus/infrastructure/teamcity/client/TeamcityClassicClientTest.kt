@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -519,6 +520,39 @@ class TeamcityClassicClientTest {
             assertNotNull(withFields.webUrl)
             assertNotNull(withFields.lastChanges)
             assertNotNull(withFields.snapshotDependencies)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetBuildWithFieldsRespectsFieldSelector(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetBuildFieldSelector")
+        try {
+            val buildType = createBuildType(client, "TestGetBuildFieldSelectorType", project.id)
+            val queued = client.queueBuild(
+                TeamcityCreateQueuedBuild(
+                    buildType = BuildTypeLocator(id = buildType.id),
+                    branchName = "master"
+                )
+            )
+            val buildId = queued.id
+
+            val minimal = client.getBuildWithFields(buildId, "id,state")
+            assertEquals(buildId, minimal.id)
+            assertNotNull(minimal.state)
+            assertNull(minimal.buildTypeId)
+            assertNull(minimal.buildType)
+            assertNull(minimal.number)
+            assertNull(minimal.branchName)
+            assertNull(minimal.defaultBranch)
+            assertEquals("", minimal.href)
+            assertEquals("", minimal.webUrl)
+            assertNull(minimal.finishDate)
+            assertNull(minimal.lastChanges)
+            assertNull(minimal.snapshotDependencies)
         } finally {
             client.deleteProject(project.id)
         }
