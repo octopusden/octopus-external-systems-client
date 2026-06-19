@@ -487,6 +487,45 @@ class TeamcityClassicClientTest {
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
+    fun testGetBuildAndGetBuildWithFields(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetBuild")
+        try {
+            val buildType = createBuildType(client, "TestGetBuildType", project.id)
+            val queued = client.queueBuild(
+                TeamcityCreateQueuedBuild(
+                    buildType = BuildTypeLocator(id = buildType.id),
+                    branchName = "master"
+                )
+            )
+            val buildId = queued.id
+
+            val build = client.getBuild(buildId)
+            assertEquals(buildId, build.id)
+            assertEquals(buildType.id, build.buildTypeId)
+
+            val fields = "id,buildTypeId,buildType(id,name),number,status,state," +
+                    "branchName,defaultBranch,href,webUrl,finishDate," +
+                    "lastChanges(change(id)),snapshot-dependencies(build(id))"
+            val withFields = client.getBuildWithFields(buildId, fields)
+            assertEquals(buildId, withFields.id)
+            assertEquals(buildType.id, withFields.buildTypeId)
+            assertNotNull(withFields.buildType)
+            assertEquals(buildType.id, withFields.buildType!!.id)
+            assertNotNull(withFields.state)
+            assertEquals("master", withFields.branchName)
+            assertNotNull(withFields.defaultBranch)
+            assertNotNull(withFields.href)
+            assertNotNull(withFields.webUrl)
+            assertNotNull(withFields.lastChanges)
+            assertNotNull(withFields.snapshotDependencies)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
     fun testGetProjectsWithLocatorAndFields(config: TeamcityTestConfiguration) {
         val client = createClient(config)
         val project = createProject(client, "testGetProjectsWithFields")
