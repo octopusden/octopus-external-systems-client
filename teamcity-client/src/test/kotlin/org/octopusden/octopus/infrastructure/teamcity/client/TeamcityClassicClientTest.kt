@@ -545,8 +545,8 @@ class TeamcityClassicClientTest {
             assertNull(minimal.number)
             assertNull(minimal.branchName)
             assertNull(minimal.defaultBranch)
-            assertEquals("", minimal.href)
-            assertEquals("", minimal.webUrl)
+            assertNull(minimal.href)
+            assertNull(minimal.webUrl)
             assertNull(minimal.finishDate)
         } finally {
             client.deleteProject(project.id)

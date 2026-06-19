@@ -11,8 +11,8 @@ data class TeamcityBuild(
     val state: String? = null,
     val branchName: String? = null,
     val defaultBranch: Boolean? = null,
-    val href: String = "",
-    val webUrl: String = "",
+    val href: String? = null,
+    val webUrl: String? = null,
     val finishDate: String? = null,
     val lastChanges: TeamcityChanges? = null,
     @JsonProperty("snapshot-dependencies")
