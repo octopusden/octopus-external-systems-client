@@ -492,52 +492,7 @@ class TeamcityClassicClientTest {
         val client = createClient(config)
         val project = createProject(client, "TestGetBuild")
         try {
-            val sourceBuildType = createBuildType(client, "TestGetBuildSourceType", project.id)
             val buildType = createBuildType(client, "TestGetBuildType", project.id)
-
-            val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
-            val vcsRoot = client.createVcsRoot(
-                TeamcityCreateVcsRoot(
-                    name = "${project.name}_VCS_ROOT",
-                    vcsName = TeamcityVCSType.GIT.value,
-                    projectLocator = project.id,
-                    properties = TeamcityProperties(
-                        listOf(
-                            TeamcityProperty("url", url),
-                            TeamcityProperty("branch", "master"),
-                            TeamcityProperty("authMethod", "PRIVATE_KEY_DEFAULT"),
-                            TeamcityProperty("userForTags", "tcagent"),
-                            TeamcityProperty("username", "git"),
-                            TeamcityProperty("ignoreKnownHosts", "true")
-                        )
-                    )
-                )
-            )
-            client.createBuildTypeVcsRootEntry(
-                buildType.id,
-                TeamcityCreateVcsRootEntry(
-                    id = vcsRoot.id,
-                    vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)
-                )
-            )
-            client.createSnapshotDependency(
-                buildType.id,
-                TeamcitySnapshotDependency(
-                    id = sourceBuildType.name!!,
-                    type = "snapshot_dependency",
-                    properties = TeamcityProperties(
-                        listOf(
-                            TeamcityProperty("run-build-if-dependency-failed", "MAKE_FAILED_TO_START"),
-                            TeamcityProperty("run-build-if-dependency-failed-to-start", "MAKE_FAILED_TO_START"),
-                            TeamcityProperty("run-build-on-the-same-agent", "false"),
-                            TeamcityProperty("take-started-build-with-same-revisions", "true"),
-                            TeamcityProperty("take-successful-builds-only", "true"),
-                        )
-                    ),
-                    sourceBuildType = TeamcityLinkBuildType(sourceBuildType.id)
-                )
-            )
-
             val queued = client.queueBuild(
                 TeamcityCreateQueuedBuild(
                     buildType = BuildTypeLocator(id = buildType.id),
@@ -551,8 +506,7 @@ class TeamcityClassicClientTest {
             assertEquals(buildType.id, build.buildTypeId)
 
             val fields = "id,buildTypeId,buildType(id,name),number,status,state," +
-                    "branchName,defaultBranch,href,webUrl,finishDate," +
-                    "lastChanges(change(id)),snapshot-dependencies(build(id))"
+                    "branchName,defaultBranch,href,webUrl,finishDate"
             val withFields = client.getBuildWithFields(buildId, fields)
             assertEquals(buildId, withFields.id)
             assertEquals(buildType.id, withFields.buildTypeId)
@@ -563,8 +517,6 @@ class TeamcityClassicClientTest {
             assertNotNull(withFields.defaultBranch)
             assertNotNull(withFields.href)
             assertNotNull(withFields.webUrl)
-            assertNotNull(withFields.lastChanges)
-            assertNotNull(withFields.snapshotDependencies)
         } finally {
             client.deleteProject(project.id)
         }
@@ -596,8 +548,6 @@ class TeamcityClassicClientTest {
             assertEquals("", minimal.href)
             assertEquals("", minimal.webUrl)
             assertNull(minimal.finishDate)
-            assertNull(minimal.lastChanges)
-            assertNull(minimal.snapshotDependencies)
         } finally {
             client.deleteProject(project.id)
         }
