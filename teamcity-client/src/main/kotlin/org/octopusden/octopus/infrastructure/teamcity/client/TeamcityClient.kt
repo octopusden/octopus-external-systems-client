@@ -10,6 +10,7 @@ import feign.form.FormData
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAddInvestigation
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirement
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityAgentRequirements
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuild
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildType
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuildTypes
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityBuilds
@@ -36,6 +37,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySteps
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoot
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootEntries
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootEntry
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootInstance
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRootInstances
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityVcsRoots
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
@@ -442,6 +444,25 @@ interface TeamcityClient {
         @Param("fields", encoded = true) fields: String
     ): TeamcityBuilds
 
+    @RequestLine("GET $REST/builds/{locator}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuild(
+        @Param("locator", expander = Locator::class) locator: BuildLocator
+    ): TeamcityBuild
+
+    @RequestLine("GET $REST/builds/{locator}?fields={fields}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuildWithFields(
+        @Param("locator", expander = Locator::class) locator: BuildLocator,
+        @Param("fields", encoded = true) fields: String
+    ): TeamcityBuild
+
+    @RequestLine("GET $REST/vcs-root-instances/{locator}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getVcsRootInstance(
+        @Param("locator", expander = Locator::class) locator: VcsRootInstanceLocator
+    ): TeamcityVcsRootInstance
+
     @RequestLine("GET $REST/buildTypes?locator=vcsRootInstance({locator})&fields={fields}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getBuildTypesWithVcsRootInstanceLocatorAndFields(
@@ -562,6 +583,14 @@ fun TeamcityClient.updateBuildTypeVcsRootEntryCheckoutRules(
 ) = updateBuildTypeVcsRootEntryCheckoutRules(BuildTypeLocator(id = buildTypeId), vcsRootEntryId, checkoutRules)
 
 fun TeamcityClient.getVcsRoot(vcsRootId: String) = getVcsRoot(VcsRootLocator(id = vcsRootId))
+
+fun TeamcityClient.getBuild(buildId: String) = getBuild(BuildLocator(id = buildId))
+
+fun TeamcityClient.getBuildWithFields(buildId: String, fields: String) =
+    getBuildWithFields(BuildLocator(id = buildId), fields)
+
+fun TeamcityClient.getVcsRootInstance(vcsRootInstanceId: String) =
+    getVcsRootInstance(VcsRootInstanceLocator(id = vcsRootInstanceId))
 
 fun TeamcityClient.getBuildTypeTemplate(buildTypeId: String) = getBuildTypeTemplate(BuildTypeLocator(id = buildTypeId))
 

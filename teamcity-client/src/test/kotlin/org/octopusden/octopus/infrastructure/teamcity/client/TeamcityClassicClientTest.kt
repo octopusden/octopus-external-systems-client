@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -487,6 +488,73 @@ class TeamcityClassicClientTest {
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
+    fun testGetBuildAndGetBuildWithFields(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetBuild")
+        try {
+            val buildType = createBuildType(client, "TestGetBuildType", project.id)
+            val queued = client.queueBuild(
+                TeamcityCreateQueuedBuild(
+                    buildType = BuildTypeLocator(id = buildType.id),
+                    branchName = "master"
+                )
+            )
+            val buildId = queued.id
+
+            val build = client.getBuild(buildId)
+            assertEquals(buildId, build.id)
+            assertEquals(buildType.id, build.buildTypeId)
+
+            val fields = "id,buildTypeId,buildType(id,name),number,status,state," +
+                    "branchName,defaultBranch,href,webUrl,finishDate"
+            val withFields = client.getBuildWithFields(buildId, fields)
+            assertEquals(buildId, withFields.id)
+            assertEquals(buildType.id, withFields.buildTypeId)
+            assertNotNull(withFields.buildType)
+            assertEquals(buildType.id, withFields.buildType!!.id)
+            assertNotNull(withFields.state)
+            assertEquals("master", withFields.branchName)
+            assertNotNull(withFields.defaultBranch)
+            assertNotNull(withFields.href)
+            assertNotNull(withFields.webUrl)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetBuildWithFieldsRespectsFieldSelector(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetBuildFieldSelector")
+        try {
+            val buildType = createBuildType(client, "TestGetBuildFieldSelectorType", project.id)
+            val queued = client.queueBuild(
+                TeamcityCreateQueuedBuild(
+                    buildType = BuildTypeLocator(id = buildType.id),
+                    branchName = "master"
+                )
+            )
+            val buildId = queued.id
+
+            val minimal = client.getBuildWithFields(buildId, "id,state")
+            assertEquals(buildId, minimal.id)
+            assertNotNull(minimal.state)
+            assertNull(minimal.buildTypeId)
+            assertNull(minimal.buildType)
+            assertNull(minimal.number)
+            assertNull(minimal.branchName)
+            assertNull(minimal.defaultBranch)
+            assertNull(minimal.href)
+            assertNull(minimal.webUrl)
+            assertNull(minimal.finishDate)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
     fun testGetProjectsWithLocatorAndFields(config: TeamcityTestConfiguration) {
         val client = createClient(config)
         val project = createProject(client, "testGetProjectsWithFields")
@@ -651,6 +719,11 @@ class TeamcityClassicClientTest {
             )
             val instances = client.getVcsRootInstances(locator).vcsRootInstances
             assertEquals(vcsRoot.id, instances.first().vcsRootId)
+
+            val instanceId = instances.first().id
+            val single = client.getVcsRootInstance(instanceId)
+            assertEquals(instanceId, single.id)
+            assertEquals(vcsRoot.id, single.vcsRootId)
         } finally {
             client.deleteProject(project.id)
         }
