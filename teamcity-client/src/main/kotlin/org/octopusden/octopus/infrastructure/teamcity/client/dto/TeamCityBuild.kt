@@ -16,5 +16,6 @@ data class TeamcityBuild(
     val finishDate: String? = null,
     val lastChanges: TeamcityChanges? = null,
     @JsonProperty("snapshot-dependencies")
-    val snapshotDependencies: TeamcityBuildSnapshotDependencies? = null
+    val snapshotDependencies: TeamcityBuildSnapshotDependencies? = null,
+    val revisions: TeamcityRevisions? = null
 )
