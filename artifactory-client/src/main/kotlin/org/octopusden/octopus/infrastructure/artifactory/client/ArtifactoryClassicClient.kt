@@ -9,11 +9,13 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
 import feign.Logger
 import feign.RequestInterceptor
+import feign.codec.Encoder
 import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
-import org.octopusden.octopus.infrastructure.artifactory.client.dto.ArtifactoryResponse
+import java.nio.charset.StandardCharsets
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlSearchResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfoResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.DeleteBuildRequest
@@ -58,6 +60,8 @@ class ArtifactoryClassicClient(
     override fun promoteDockerImage(repoKey: String, request: PromoteDockerImageRequest) =
         client.promoteDockerImage(repoKey, request)
 
+    override fun searchByAQL(query: String): AqlSearchResponse = client.searchByAQL(query)
+
     companion object {
         private fun getMapper(): ObjectMapper {
             val objectMapper = jacksonObjectMapper()
@@ -73,16 +77,22 @@ class ArtifactoryClassicClient(
             interceptor: RequestInterceptor,
             objectMapper: ObjectMapper
         ): ArtifactoryClient {
+            val jacksonEncoder: Encoder = JacksonEncoder(objectMapper)
             return Feign.builder()
                 .client(ApacheHttpClient())
-                .encoder(JacksonEncoder(objectMapper))
+                .encoder { body, bodyType, template ->
+                    if (body is String) {
+                        template.body(body.toByteArray(StandardCharsets.UTF_8), StandardCharsets.UTF_8)
+                    } else {
+                        jacksonEncoder.encode(body, bodyType, template)
+                    }
+                }
                 .decoder(JacksonDecoder(objectMapper))
                 .errorDecoder(
                     ArtifactoryClientErrorDecoder(
                         objectMapper
                     )
                 )
-                .encoder(JacksonEncoder(objectMapper))
                 .decoder(JacksonDecoder(objectMapper))
                 .requestInterceptor(interceptor)
                 .logger(Slf4jLogger(ArtifactoryClient::class.java))
