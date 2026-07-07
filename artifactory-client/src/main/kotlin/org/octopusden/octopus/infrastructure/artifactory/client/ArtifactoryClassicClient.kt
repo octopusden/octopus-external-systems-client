@@ -93,7 +93,6 @@ class ArtifactoryClassicClient(
                         objectMapper
                     )
                 )
-                .decoder(JacksonDecoder(objectMapper))
                 .requestInterceptor(interceptor)
                 .logger(Slf4jLogger(ArtifactoryClient::class.java))
                 .logLevel(Logger.Level.FULL)
