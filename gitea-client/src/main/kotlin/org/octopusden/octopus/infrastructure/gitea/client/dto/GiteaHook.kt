@@ -13,5 +13,8 @@ data class GiteaHook(
     val events: Collection<GiteaHookEvent>,
 ) : BaseGiteaEntity() {
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
-    data class Config(val url: String, val contentType: GiteaHookContentType = GiteaHookContentType.JSON)
+    data class Config(
+        val url: String,
+        val contentType: GiteaHookContentType = GiteaHookContentType.JSON,
+    )
 }

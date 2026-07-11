@@ -5,5 +5,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class TeamcityRevisions(
     val count: Int? = null,
     @JsonProperty("revision")
-    val revision: List<TeamcityRevision> = emptyList()
+    val revision: List<TeamcityRevision> = emptyList(),
 )

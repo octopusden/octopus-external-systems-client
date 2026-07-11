@@ -11,5 +11,5 @@ data class Dependency(
     val sha256: String?,
     val md5: String?,
     val scopes: List<String>?,
-    val requestedBy: List<List<String>>?
+    val requestedBy: List<List<String>>?,
 )

@@ -1,0 +1,30 @@
+name: Merge Gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+
+  quality:
+    uses: ./.github/workflows/quality.yml
+
+  security:
+    uses: ./.github/workflows/security.yml
+
+  gate-merge:
+    name: gate/merge
+    if: ${{ always() }}
+    needs: [build, quality, security]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: octopusden/octopus-base/.github/actions/merge-gate@v2.3.5
+        with:
+          needs: ${{ toJson(needs) }}

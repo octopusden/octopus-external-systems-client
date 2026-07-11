@@ -6,5 +6,5 @@ data class PromoteDockerImageRequest(
     val targetRepo: String,
     val targetDockerRepository: String? = null,
     val targetTag: String? = null,
-    val copy: Boolean = false
+    val copy: Boolean = false,
 )

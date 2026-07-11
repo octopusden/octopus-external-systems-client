@@ -8,5 +8,5 @@ data class GiteaOrganization(
     val id: Long,
     val name: String,
     val fullName: String,
-    val avatarUrl: String
+    val avatarUrl: String,
 ) : BaseGiteaEntity()

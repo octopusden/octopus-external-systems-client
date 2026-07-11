@@ -1,6 +1,7 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+
 data class TeamcityCreateBuildType(
     val id: String? = null,
     val name: String,
@@ -10,7 +11,6 @@ data class TeamcityCreateBuildType(
     @JsonProperty("vcs-root-entries")
     val vcsRoots: TeamcityVcsRootEntries? = null,
     val parameters: TeamcityProperties? = null,
-
     val templateFlag: Boolean? = null,
     val project: TeamcityLinkProject,
     val templates: TeamcityBuildTypes? = null,

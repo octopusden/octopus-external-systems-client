@@ -11,9 +11,7 @@ data class TeamcityBuildType(
     @JsonProperty("vcs-root-entries")
     val vcsRoots: TeamcityVcsRootEntries? = null,
     val parameters: TeamcityProperties? = null,
-
     val webUrl: String? = null,
-
     val templateFlag: Boolean? = null,
     val project: TeamcityProject? = null,
     val templates: TeamcityBuildTypes? = null,
@@ -25,6 +23,5 @@ data class TeamcityBuildType(
     @JsonProperty("snapshot-dependencies")
     val snapshotDependencies: TeamcitySnapshotDependencies? = null,
     val paused: Boolean? = null,
-    val builds: TeamcityBuilds? = null
+    val builds: TeamcityBuilds? = null,
 )
-

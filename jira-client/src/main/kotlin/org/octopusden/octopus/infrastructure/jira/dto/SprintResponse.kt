@@ -11,5 +11,5 @@ data class SprintResponse(
     val startDate: String,
     val endDate: String,
     val activatedDate: String,
-    val originBoardId: Long
+    val originBoardId: Long,
 )

@@ -6,5 +6,5 @@ data class TeamcityChanges(
     val count: Int? = null,
     val href: String? = null,
     @JsonProperty("change")
-    val change: List<TeamcityChange> = emptyList()
+    val change: List<TeamcityChange> = emptyList(),
 )

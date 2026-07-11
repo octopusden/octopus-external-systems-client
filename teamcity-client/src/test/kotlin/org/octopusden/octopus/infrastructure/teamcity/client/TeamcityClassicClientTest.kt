@@ -3,11 +3,6 @@ package org.octopusden.octopus.infrastructure.teamcity.client
 import it.skrape.core.htmlDocument
 import it.skrape.matchers.toBe
 import it.skrape.selects.html5.textarea
-import java.net.URI
-import java.util.UUID
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -46,6 +41,11 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.Project
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.util.UUID
 
 class TeamcityClassicClientTest {
     companion object {
@@ -58,48 +58,55 @@ class TeamcityClassicClientTest {
             ?: throw Exception("System property 'test.teamcity-2026-host' must be defined")
 
         @JvmStatic
-        fun teamcityConfigurations(): List<TeamcityTestConfiguration> = listOf(
-            TeamcityTestConfiguration(
-                name = "v22",
-                host = hostTeamcity2022,
-                version = "2022.04.7 (build 109063)"
-            ),
-            TeamcityTestConfiguration(
-                name = "v26",
-                host = hostTeamcity2026,
-                version = "2026.1 (build 222521)"
+        fun teamcityConfigurations(): List<TeamcityTestConfiguration> =
+            listOf(
+                TeamcityTestConfiguration(
+                    name = "v22",
+                    host = hostTeamcity2022,
+                    version = "2022.04.7 (build 109063)",
+                ),
+                TeamcityTestConfiguration(
+                    name = "v26",
+                    host = hostTeamcity2026,
+                    version = "2026.1 (build 222521)",
+                ),
             )
-        )
 
         @JvmStatic
         fun teamcityContexts(): List<TeamcityTestConfiguration> =
             teamcityConfigurations().map { TeamcityTestConfiguration(it.name, it.host, it.version) }
     }
 
-    private fun createClient(config: TeamcityTestConfiguration): TeamcityClassicClient {
-        return TeamcityClassicClient(
+    private fun createClient(config: TeamcityTestConfiguration): TeamcityClassicClient =
+        TeamcityClassicClient(
             object : ClientParametersProvider {
                 override fun getApiUrl() = "http://${config.host}"
+
                 override fun getAuth() = StandardBasicCredCredentialProvider(USER, PASSWORD)
-            }
-        )
-    }
-
-    private fun createProject(client: TeamcityClient, projectName: String, parentId: String = "RDDepartment") =
-        client.createProject(
-            TeamcityCreateProject(
-                name = projectName,
-                parentProject = TeamcityLinkProject(id = parentId)
-            )
+            },
         )
 
-    private fun createBuildType(client: TeamcityClient, buildName: String, projectId: String) =
-        client.createBuildType(
-            TeamcityCreateBuildType(
-                name = buildName,
-                project = TeamcityLinkProject(id = projectId)
-            )
-        )
+    private fun createProject(
+        client: TeamcityClient,
+        projectName: String,
+        parentId: String = "RDDepartment",
+    ) = client.createProject(
+        TeamcityCreateProject(
+            name = projectName,
+            parentProject = TeamcityLinkProject(id = parentId),
+        ),
+    )
+
+    private fun createBuildType(
+        client: TeamcityClient,
+        buildName: String,
+        projectId: String,
+    ) = client.createBuildType(
+        TeamcityCreateBuildType(
+            name = buildName,
+            project = TeamcityLinkProject(id = projectId),
+        ),
+    )
 
     private fun addInvestigation(
         client: TeamcityClient,
@@ -108,31 +115,30 @@ class TeamcityClassicClientTest {
         assigneeUsername: String,
         assigneeName: String,
         assigneeId: Long,
-        resolutionType: String
-    ) =
-        client.addInvestigation(
-            TeamcityAddInvestigation(
-                state = state,
-                assignee = TeamcityAssignee(
-                    username = assigneeUsername,
-                    name = assigneeName,
-                    id = assigneeId
+        resolutionType: String,
+    ) = client.addInvestigation(
+        TeamcityAddInvestigation(
+            state = state,
+            assignee = TeamcityAssignee(
+                username = assigneeUsername,
+                name = assigneeName,
+                id = assigneeId,
+            ),
+            scope = TeamcityScope(
+                buildTypes = TeamcityAddInvestigationBuildTypes(
+                    listOf(
+                        TeamcityAddInvestigationBuildType(
+                            id = buildTypeId,
+                        ),
+                    ),
                 ),
-                scope = TeamcityScope(
-                    buildTypes = TeamcityAddInvestigationBuildTypes(
-                        listOf(
-                            TeamcityAddInvestigationBuildType(
-                                id = buildTypeId
-                            )
-                        )
-                    )
-                ),
-                target = TeamcityTarget(anyProblem = true),
-                resolution = TeamcityResolution(
-                    type = resolutionType
-                )
-            )
-        )
+            ),
+            target = TeamcityTarget(anyProblem = true),
+            resolution = TeamcityResolution(
+                type = resolutionType,
+            ),
+        ),
+    )
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
@@ -179,7 +185,8 @@ class TeamcityClassicClientTest {
         val project = createProject(client, "TestBuildTypeFeature")
         val buildType = createBuildType(client, "TestBuildTypeFeature", project.id)
         client.addBuildTypeFeature(
-            buildType.id, TeamcityLinkFeature(
+            buildType.id,
+            TeamcityLinkFeature(
                 type = "VcsLabeling",
                 id = "VcsLabeling",
                 properties = TeamcityProperties(
@@ -187,15 +194,16 @@ class TeamcityClassicClientTest {
                         TeamcityProperty("labelingPattern", "%LABELING_PATTERN%"),
                         TeamcityProperty("successfulOnly", "true"),
                         TeamcityProperty("vcsRootId", "vcsId"),
-                    )
-                )
-            )
+                    ),
+                ),
+            ),
         )
         val features = client.getBuildTypeFeatures(buildType.id).features
         assertEquals(1, features.size)
         val feature = features.first()
         assertEquals("VcsLabeling", feature.type)
         val featureId = feature.id
+
         fun getVcsRootId() = client.getBuildTypeFeatureParameter(buildType.id, featureId, "vcsRootId")
         assertEquals("vcsId", getVcsRootId())
         client.updateBuildTypeFeatureParameter(buildType.id, featureId, "vcsRootId", "newVcsId")
@@ -222,10 +230,10 @@ class TeamcityClassicClientTest {
                         TeamcityProperty("run-build-on-the-same-agent", "false"),
                         TeamcityProperty("take-started-build-with-same-revisions", "true"),
                         TeamcityProperty("take-successful-builds-only", "true"),
-                    )
+                    ),
                 ),
-                sourceBuildType = TeamcityLinkBuildType(sourceBuildType.id)
-            )
+                sourceBuildType = TeamcityLinkBuildType(sourceBuildType.id),
+            ),
         )
         val dependency = client.getSnapshotDependencies(buildType.id).snapshotDependencies.first()
         client.deleteSnapshotDependency(buildType.id, dependency.id)
@@ -251,12 +259,12 @@ class TeamcityClassicClientTest {
                     TeamcityProperty("script.content", "echo 1"),
                     TeamcityProperty("teamcity.step.mode", "default"),
                     TeamcityProperty("use.custom.script", "true"),
-                )
-            )
+                ),
+            ),
         )
         client.createBuildStep(
             buildType.id,
-            step
+            step,
         )
         client.disableBuildStep(buildType.id, "RUNNER_1", true)
         val steps = client.getBuildSteps(buildType.id).steps
@@ -285,29 +293,30 @@ class TeamcityClassicClientTest {
                         TeamcityProperty("userForTags", "tcagent"),
                         TeamcityProperty("username", "git"),
                         TeamcityProperty("ignoreKnownHosts", "true"),
-                    )
-                )
-            )
+                    ),
+                ),
+            ),
         )
         client.createBuildTypeVcsRootEntry(
             buildType.id,
             TeamcityCreateVcsRootEntry(
                 id = vcsRoot.id,
-                vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)
-            )
+                vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id),
+            ),
         )
         val btVcsRootEntry = client.getBuildTypeVcsRootEntries(buildType.id).entries.first()
         val btVcsRoot = client.getBuildTypeVcsRootEntry(buildType.id, vcsRoot.id)
         val tcVcsRoot = client.getVcsRoot(vcsRoot.id)
 
         assertEquals(url, client.getVcsRootProperty(tcVcsRoot.id, "url"))
-        val vcsRootsByLocator = client.getVcsRoots(
-            VcsRootLocator(
-                property = listOf(
-                    PropertyLocator("url", url)
-                )
-            )
-        ).vcsRoots
+        val vcsRootsByLocator = client
+            .getVcsRoots(
+                VcsRootLocator(
+                    property = listOf(
+                        PropertyLocator("url", url),
+                    ),
+                ),
+            ).vcsRoots
         assertEquals(1, vcsRootsByLocator.size)
         assertEquals(tcVcsRoot.id, vcsRootsByLocator.first().id)
         val newUrl = "ssh://git@github.com:octopusden/octopus-teamcity-automation.git"
@@ -328,13 +337,19 @@ class TeamcityClassicClientTest {
             TeamcityCreateBuildType(
                 name = "Template",
                 project = TeamcityLinkProject(id = project.id),
-                templateFlag = true
-            )
+                templateFlag = true,
+            ),
         )
         client.attachTemplateToBuildType(buildType.id, template.id)
         var modifiedBuildType = client.getBuildType(buildType.id)
         assertEquals(1, modifiedBuildType.templates!!.buildTypes.size)
-        assertEquals("Template", modifiedBuildType.templates!!.buildTypes.first().name)
+        assertEquals(
+            "Template",
+            modifiedBuildType.templates!!
+                .buildTypes
+                .first()
+                .name,
+        )
         client.detachTemplatesFromBuildType(buildType.id)
         modifiedBuildType = client.getBuildType(buildType.id)
         assertEquals(0, modifiedBuildType.templates!!.buildTypes.size)
@@ -347,7 +362,14 @@ class TeamcityClassicClientTest {
         val client = createClient(config)
         val project = createProject(client, "TestProjectBuildTypes")
         val buildType = client.createBuildType(project.id, "ProjectBuildType")
-        assertEquals(buildType.name, client.getBuildTypes(project.id).buildTypes.first().name)
+        assertEquals(
+            buildType.name,
+            client
+                .getBuildTypes(project.id)
+                .buildTypes
+                .first()
+                .name,
+        )
         client.deleteProject(project.id)
     }
 
@@ -359,19 +381,20 @@ class TeamcityClassicClientTest {
         val buildType = client.createBuildType(project.id, "ProjectBuildType")
         val properties = TeamcityProperties(
             listOf(
-                TeamcityProperty("property-name", "property-value")
-            )
+                TeamcityProperty("property-name", "property-value"),
+            ),
         )
         val requirement = client.addAgentRequirementToBuildType(
-            BuildTypeLocator(id = buildType.id), TeamcityAgentRequirement(
+            BuildTypeLocator(id = buildType.id),
+            TeamcityAgentRequirement(
                 id = null,
                 type = "matches",
                 properties = properties,
                 name = "requirementName",
                 disabled = false,
                 inherited = false,
-                href = ""
-            )
+                href = "",
+            ),
         )
         val actualResponse = client.getAgentRequirements(buildType.id)
         assertEquals(1, actualResponse.count)
@@ -392,7 +415,7 @@ class TeamcityClassicClientTest {
         val buildType = createBuildType(client, "TestParameters", project.id)
         listOf(
             Pair(ConfigurationType.PROJECT, project.id),
-            Pair(ConfigurationType.BUILD_TYPE, buildType.id)
+            Pair(ConfigurationType.BUILD_TYPE, buildType.id),
         ).forEach { (type, id) ->
             client.createParameter(type, id, "empty_parameter")
             client.setParameter(type, id, "empty_parameter", "123")
@@ -415,17 +438,18 @@ class TeamcityClassicClientTest {
         val project = createProject(client, "TestProjectLocator")
         val secondProject = createProject(client, "AnotherTestProjectLocator")
         client.createParameter(ConfigurationType.PROJECT, project.id, "ParameterName", "ParameterValue")
-        val projects = client.getProjects(
-            ProjectLocator(
-                count = 2000,
-                parameter = listOf(
-                    PropertyLocator(
-                        name = "ParameterName",
-                        value = "ParameterValue"
-                    )
-                )
-            )
-        ).projects
+        val projects = client
+            .getProjects(
+                ProjectLocator(
+                    count = 2000,
+                    parameter = listOf(
+                        PropertyLocator(
+                            name = "ParameterName",
+                            value = "ParameterValue",
+                        ),
+                    ),
+                ),
+            ).projects
         assertEquals(1, projects.size)
         assertEquals("TestProjectLocator", projects.first().name)
         client.deleteProject(secondProject.id)
@@ -442,11 +466,13 @@ class TeamcityClassicClientTest {
         val majorVer = config.version.substringBefore(".").toIntOrNull() ?: 0
 
         val testCreateContent = TeamcityClassicClientTest::class.java.classLoader
-            .getResourceAsStream("${metarunnerId}Create.xml")!!.readBytes()
+            .getResourceAsStream("${metarunnerId}Create.xml")!!
+            .readBytes()
         client.uploadMetarunner(projectId, metarunnerName, testCreateContent)
 
         val testEditContent = TeamcityClassicClientTest::class.java.classLoader
-            .getResourceAsStream("${metarunnerId}Edit.xml")!!.readBytes()
+            .getResourceAsStream("${metarunnerId}Edit.xml")!!
+            .readBytes()
         client.uploadMetarunner(projectId, metarunnerName, testEditContent)
 
         // TC 2026 admin UI is a client-side SPA (uses URL fragments), so HTML scrape no
@@ -462,7 +488,7 @@ class TeamcityClassicClientTest {
             checkHtmlContent(
                 "http://${config.host}/admin/editProject.html?projectId=$projectId&tab=$tabName&$editQueryId=$metarunnerId",
                 textAreaId,
-                String(testEditContent)
+                String(testEditContent),
             )
         }
     }
@@ -476,7 +502,7 @@ class TeamcityClassicClientTest {
             val buildType = createBuildType(client, "TestQueueBuildType", project.id)
             val request = TeamcityCreateQueuedBuild(
                 buildType = BuildTypeLocator(id = buildType.id),
-                branchName = "master"
+                branchName = "master",
             )
             val queued = client.queueBuild(request)
             assertNotNull(queued.id)
@@ -496,8 +522,8 @@ class TeamcityClassicClientTest {
             val queued = client.queueBuild(
                 TeamcityCreateQueuedBuild(
                     buildType = BuildTypeLocator(id = buildType.id),
-                    branchName = "master"
-                )
+                    branchName = "master",
+                ),
             )
             val buildId = queued.id
 
@@ -506,7 +532,7 @@ class TeamcityClassicClientTest {
             assertEquals(buildType.id, build.buildTypeId)
 
             val fields = "id,buildTypeId,buildType(id,name),number,status,state," +
-                    "branchName,defaultBranch,href,webUrl,finishDate"
+                "branchName,defaultBranch,href,webUrl,finishDate"
             val withFields = client.getBuildWithFields(buildId, fields)
             assertEquals(buildId, withFields.id)
             assertEquals(buildType.id, withFields.buildTypeId)
@@ -532,8 +558,8 @@ class TeamcityClassicClientTest {
             val queued = client.queueBuild(
                 TeamcityCreateQueuedBuild(
                     buildType = BuildTypeLocator(id = buildType.id),
-                    branchName = "master"
-                )
+                    branchName = "master",
+                ),
             )
             val buildId = queued.id
 
@@ -562,8 +588,8 @@ class TeamcityClassicClientTest {
             val subProject = createProject(client, "SubProject_WithFields", project.id)
             val buildType = createBuildType(client, "testGetProjectsWithFieldsBuildType", project.id)
             val fields = "project(id,name,webUrl,archived,href," +
-                    "buildTypes(buildType(id,name,projectId,projectName,href,template,vcs-root-entries))," +
-                    "projects(project(id,name,webUrl,archived,href)))"
+                "buildTypes(buildType(id,name,projectId,projectName,href,template,vcs-root-entries))," +
+                "projects(project(id,name,webUrl,archived,href)))"
             val locator = ProjectLocator(name = project.name)
             val actualProject = client.getProjectsWithLocatorAndFields(locator, fields).projects.first()
             val expectedProject = client.getProject(project.id)
@@ -645,21 +671,21 @@ class TeamcityClassicClientTest {
                             TeamcityProperty("authMethod", "PRIVATE_KEY_DEFAULT"),
                             TeamcityProperty("userForTags", "tcagent"),
                             TeamcityProperty("username", "git"),
-                            TeamcityProperty("ignoreKnownHosts", "true")
-                        )
-                    )
-                )
+                            TeamcityProperty("ignoreKnownHosts", "true"),
+                        ),
+                    ),
+                ),
             )
             client.createBuildTypeVcsRootEntry(
                 buildType.id,
                 TeamcityCreateVcsRootEntry(
                     id = vcsRoot.id,
-                    vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)
-                )
+                    vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id),
+                ),
             )
             val locator = VcsRootInstanceLocator(
                 property = listOf(PropertyLocator("url", url, PropertyLocator.MatchType.EQUALS, ignoreCase = true)),
-                count = 2000
+                count = 2000,
             )
             val fields = "buildType(id,name,projectId,projectName,href)"
             val result = client.getBuildTypesWithVcsRootInstanceLocatorAndFields(locator, fields)
@@ -669,7 +695,6 @@ class TeamcityClassicClientTest {
             val actual = found.first()
             assertEquals(buildType.id, actual.id)
             assertEquals(buildType.name, actual.name)
-
         } finally {
             client.deleteProject(project.id)
         }
@@ -695,17 +720,17 @@ class TeamcityClassicClientTest {
                             TeamcityProperty("authMethod", "PRIVATE_KEY_DEFAULT"),
                             TeamcityProperty("userForTags", "tcagent"),
                             TeamcityProperty("username", "git"),
-                            TeamcityProperty("ignoreKnownHosts", "true")
-                        )
-                    )
-                )
+                            TeamcityProperty("ignoreKnownHosts", "true"),
+                        ),
+                    ),
+                ),
             )
             client.createBuildTypeVcsRootEntry(
                 buildTypeId = buildType.id,
                 vcsRootEntry = TeamcityCreateVcsRootEntry(
                     id = vcsRoot.id,
-                    vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)
-                )
+                    vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id),
+                ),
             )
             val locator = VcsRootInstanceLocator(
                 property = listOf(
@@ -713,9 +738,9 @@ class TeamcityClassicClientTest {
                         "url",
                         url,
                         PropertyLocator.MatchType.EQUALS,
-                        ignoreCase = true
-                    )
-                )
+                        ignoreCase = true,
+                    ),
+                ),
             )
             val instances = client.getVcsRootInstances(locator).vcsRootInstances
             assertEquals(vcsRoot.id, instances.first().vcsRootId)
@@ -743,7 +768,6 @@ class TeamcityClassicClientTest {
         } finally {
             client.deleteProject(project.id)
         }
-
     }
 
     @ParameterizedTest
@@ -758,11 +782,16 @@ class TeamcityClassicClientTest {
             val investigations = client.getInvestigationWithInvestigationLocator(buildType.id)
 
             assertEquals(1, investigations.investigation.size)
-            assertEquals("admin", investigations.investigation.get(0)?.assignee?.username)
+            assertEquals(
+                "admin",
+                investigations.investigation
+                    .get(0)
+                    ?.assignee
+                    ?.username,
+            )
         } finally {
             client.deleteProject(project.id)
         }
-
     }
 
     @ParameterizedTest
@@ -777,7 +806,6 @@ class TeamcityClassicClientTest {
         } finally {
             client.deleteProject(project.id)
         }
-
     }
 
     @ParameterizedTest
@@ -796,12 +824,12 @@ class TeamcityClassicClientTest {
                     assignment = TeamcityAssignment(text = comment),
                     scope = TeamcityScope(
                         buildTypes = TeamcityAddInvestigationBuildTypes(
-                            listOf(TeamcityAddInvestigationBuildType(id = buildType.id))
-                        )
+                            listOf(TeamcityAddInvestigationBuildType(id = buildType.id)),
+                        ),
                     ),
                     target = TeamcityTarget(anyProblem = true),
-                    resolution = TeamcityResolution(type = "whenFixed")
-                )
+                    resolution = TeamcityResolution(type = "whenFixed"),
+                ),
             )
             val investigations = client.getInvestigationWithInvestigationLocator(buildType.id)
             assertEquals(1, investigations.investigation.size)
@@ -821,7 +849,9 @@ class TeamcityClassicClientTest {
         createTestUser(config.host, username, password)
         try {
             val projectRole = client.assignProjectRoleToUser(
-                username, TeamcityRole.PROJECT_ADMIN, "RDDepartment"
+                username,
+                TeamcityRole.PROJECT_ADMIN,
+                "RDDepartment",
             )
             assertEquals("PROJECT_ADMIN", projectRole.roleId)
             assertEquals("RDDepartment", projectRole.scope?.project)
@@ -840,7 +870,8 @@ class TeamcityClassicClientTest {
         createTestUser(config.host, username, password)
         try {
             val globalRole = client.assignGlobalRoleToUser(
-                username, TeamcityRole.SYSTEM_ADMIN
+                username,
+                TeamcityRole.SYSTEM_ADMIN,
             )
             assertEquals("SYSTEM_ADMIN", globalRole.roleId)
         } finally {
@@ -848,29 +879,38 @@ class TeamcityClassicClientTest {
         }
     }
 
-    private fun createTestUser(host: String, username: String, password: String) {
+    private fun createTestUser(
+        host: String,
+        username: String,
+        password: String,
+    ) {
         val response = HttpClient.newHttpClient().send(
-            HttpRequest.newBuilder()
+            HttpRequest
+                .newBuilder()
                 .uri(URI("http://$host/app/rest/users"))
                 .header("Authorization", "Basic YWRtaW46YWRtaW4=")
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString("""{"username":"$username","password":"$password"}"""))
                 .build(),
-            HttpResponse.BodyHandlers.ofString()
+            HttpResponse.BodyHandlers.ofString(),
         )
         check(response.statusCode() in 200..299) {
             "Failed to create test user '$username': HTTP ${response.statusCode()} ${response.body()}"
         }
     }
 
-    private fun deleteTestUser(host: String, username: String) {
+    private fun deleteTestUser(
+        host: String,
+        username: String,
+    ) {
         val response = HttpClient.newHttpClient().send(
-            HttpRequest.newBuilder()
+            HttpRequest
+                .newBuilder()
                 .uri(URI("http://$host/app/rest/users/username:$username"))
                 .header("Authorization", "Basic YWRtaW46YWRtaW4=")
                 .DELETE()
                 .build(),
-            HttpResponse.BodyHandlers.ofString()
+            HttpResponse.BodyHandlers.ofString(),
         )
         check(response.statusCode() in 200..299) {
             "Failed to delete test user '$username': HTTP ${response.statusCode()} ${response.body()}"
@@ -882,14 +922,16 @@ class TeamcityClassicClientTest {
         textareaId: String,
         expectedContent: String,
     ) {
-        val responseBody = HttpClient.newHttpClient()
+        val responseBody = HttpClient
+            .newHttpClient()
             .send(
-                HttpRequest.newBuilder()
+                HttpRequest
+                    .newBuilder()
                     .uri(URI(url))
                     .header("Authorization", "Basic YWRtaW46YWRtaW4=")
                     .GET()
                     .build(),
-                HttpResponse.BodyHandlers.ofString()
+                HttpResponse.BodyHandlers.ofString(),
             ).body()
 
         htmlDocument(responseBody) {

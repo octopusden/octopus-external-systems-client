@@ -5,5 +5,5 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class AqlItemProperty(
     val key: String? = null,
-    val value: String? = null
+    val value: String? = null,
 )

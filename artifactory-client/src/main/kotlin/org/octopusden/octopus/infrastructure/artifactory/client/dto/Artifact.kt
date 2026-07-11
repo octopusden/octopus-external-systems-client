@@ -9,5 +9,5 @@ data class Artifact(
     val type: String?,
     val sha1: String?,
     val sha256: String?,
-    val md5: String?
+    val md5: String?,
 )

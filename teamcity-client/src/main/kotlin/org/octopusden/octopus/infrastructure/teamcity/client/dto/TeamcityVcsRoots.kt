@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class TeamcityVcsRoots(
     @JsonProperty("vcs-root")
-    val vcsRoots: List<TeamcityVcsRoot> = ArrayList<TeamcityVcsRoot>()
+    val vcsRoots: List<TeamcityVcsRoot> = ArrayList<TeamcityVcsRoot>(),
 )

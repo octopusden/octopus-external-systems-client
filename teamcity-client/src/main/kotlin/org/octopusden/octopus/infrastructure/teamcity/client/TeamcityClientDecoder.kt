@@ -6,14 +6,18 @@ import feign.Util
 import feign.jackson.JacksonDecoder
 import java.lang.reflect.Type
 
-class TeamcityClientDecoder(val mapper: ObjectMapper) : JacksonDecoder(mapper) {
-    override fun decode(response: Response, type: Type): Any {
-        return if (type.typeName == String::class.java.typeName) {
+class TeamcityClientDecoder(
+    val mapper: ObjectMapper,
+) : JacksonDecoder(mapper) {
+    override fun decode(
+        response: Response,
+        type: Type,
+    ): Any =
+        if (type.typeName == String::class.java.typeName) {
             Util.toString(
-                response.body().asReader(response.charset())
+                response.body().asReader(response.charset()),
             )
         } else {
             super.decode(response, type)
         }
-    }
 }

@@ -1,3 +1,5 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto
 
-data class TeamcityServer(val version: String)
+data class TeamcityServer(
+    val version: String,
+)

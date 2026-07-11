@@ -5,5 +5,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class TeamcityBuildSnapshotDependencies(
     val count: Int? = null,
     @JsonProperty("build")
-    val build: List<TeamcityBuild> = emptyList()
+    val build: List<TeamcityBuild> = emptyList(),
 )

@@ -9,10 +9,16 @@ import org.octopusden.octopus.infrastructure.artifactory.client.dto.ArtifactoryR
 import org.octopusden.octopus.infrastructure.artifactory.client.exception.InternalServerError
 import org.octopusden.octopus.infrastructure.artifactory.client.exception.NotFoundException
 
-class ArtifactoryClientErrorDecoder(private val objectMapper: ObjectMapper) : ErrorDecoder {
-    override fun decode(methodKey: String, response: Response): Exception {
-        return response.use { closableResponse ->
-            val message = closableResponse.body()
+class ArtifactoryClientErrorDecoder(
+    private val objectMapper: ObjectMapper,
+) : ErrorDecoder {
+    override fun decode(
+        methodKey: String,
+        response: Response,
+    ): Exception =
+        response.use { closableResponse ->
+            val message = closableResponse
+                .body()
                 .asInputStream()
                 .use { inputStream ->
                     inputStream.readBytes().let { bytes ->
@@ -32,5 +38,4 @@ class ArtifactoryClientErrorDecoder(private val objectMapper: ObjectMapper) : Er
                 else -> InternalServerError(message)
             }
         }
-    }
 }

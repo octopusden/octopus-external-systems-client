@@ -5,4 +5,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
-data class IssueType(val name: IssueTypeName)
+data class IssueType(
+    val name: IssueTypeName,
+)

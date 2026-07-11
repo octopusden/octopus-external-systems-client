@@ -4,7 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonValue
 
-enum class GiteaHookEvent(@get:JsonValue val jsonValue: String) {
+enum class GiteaHookEvent(
+    @get:JsonValue val jsonValue: String,
+) {
     CREATE("create"),
     DELETE("delete"),
     PUSH("push"),
@@ -27,12 +29,15 @@ enum class GiteaHookEvent(@get:JsonValue val jsonValue: String) {
     REPOSITORY("repository"),
     RELEASE("release"),
     PACKAGE("package"),
-    WIKI("wiki");
+    WIKI("wiki"),
+    ;
 
     companion object {
         @JvmStatic
         @JsonCreator
-        fun forValue(@JsonProperty event: String): GiteaHookEvent =
+        fun forValue(
+            @JsonProperty event: String,
+        ): GiteaHookEvent =
             values().find { it.jsonValue == event }
                 ?: throw IllegalStateException("event must be in: '${values().joinToString { it.jsonValue }}' but it is $event")
     }

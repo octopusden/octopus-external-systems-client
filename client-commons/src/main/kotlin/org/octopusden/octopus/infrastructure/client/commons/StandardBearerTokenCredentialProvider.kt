@@ -1,4 +1,5 @@
 package org.octopusden.octopus.infrastructure.client.commons
 
-class StandardBearerTokenCredentialProvider(token: String) :
-    CredentialProvider({ StandardBearerTokenRequestInterceptor(token) })
+class StandardBearerTokenCredentialProvider(
+    token: String,
+) : CredentialProvider({ StandardBearerTokenRequestInterceptor(token) })

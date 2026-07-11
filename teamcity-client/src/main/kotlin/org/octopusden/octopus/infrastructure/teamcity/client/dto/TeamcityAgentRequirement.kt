@@ -10,5 +10,5 @@ data class TeamcityAgentRequirement(
     val disabled: Boolean?,
     val inherited: Boolean?,
     val href: String?,
-    val properties: TeamcityProperties
+    val properties: TeamcityProperties,
 )

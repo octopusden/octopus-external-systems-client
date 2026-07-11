@@ -14,12 +14,16 @@ data class GiteaTeam(
     val organization: GiteaOrganization? = null,
     val permission: GiteaTeamPermission? = null,
     val units: List<String>? = null,
-    val unitsMap: Map<String, String>? = null
+    val unitsMap: Map<String, String>? = null,
 ) : BaseGiteaEntity() {
     enum class GiteaTeamPermission(
         @get:JsonValue
-        val jsonValue: String
+        val jsonValue: String,
     ) {
-        NONE("none"), READ("read"), WRITE("write"), ADMIN("admin"), OWNER("owner")
+        NONE("none"),
+        READ("read"),
+        WRITE("write"),
+        ADMIN("admin"),
+        OWNER("owner"),
     }
 }

@@ -6,5 +6,5 @@ data class TeamcityAddInvestigation(
     val assignment: TeamcityAssignment? = null,
     val scope: TeamcityScope,
     val target: TeamcityTarget,
-    val resolution: TeamcityResolution
+    val resolution: TeamcityResolution,
 )

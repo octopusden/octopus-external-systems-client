@@ -9,8 +9,20 @@ plugins {
     id("org.octopusden.octopus.oc-template")
     id("org.jetbrains.kotlin.jvm")
     id("io.github.gradle-nexus.publish-plugin")
+    id("io.gitlab.arturbosch.detekt") apply false
+    id("org.jlleitschuh.gradle.ktlint") apply false
+    id("org.octopusden.octopus-quality")
     signing
     `maven-publish`
+}
+
+octopusQuality {
+    kotlin {
+        failOnViolation.set(true)
+    }
+    coverage {
+        enabled.set(false)
+    }
 }
 
 nexusPublishing {
@@ -48,6 +60,9 @@ subprojects {
     apply(plugin = "java")
     apply(plugin = "signing")
     apply(plugin = "maven-publish")
+    // Kotlin static analysis — configured by the octopus-quality convention plugin
+    apply(plugin = "io.gitlab.arturbosch.detekt")
+    apply(plugin = "org.jlleitschuh.gradle.ktlint")
 
     repositories {
         mavenCentral()

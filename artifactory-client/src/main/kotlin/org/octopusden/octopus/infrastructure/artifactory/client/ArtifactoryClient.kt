@@ -31,7 +31,10 @@ interface ArtifactoryClient {
 
     @RequestLine("GET $BUILD_PATH/{buildName}/{buildNumber}")
     @Headers("Accept: application/json")
-    fun getBuildInfo(@Param("buildName") buildName: String, @Param("buildNumber") buildNumber: String): BuildInfoResponse
+    fun getBuildInfo(
+        @Param("buildName") buildName: String,
+        @Param("buildNumber") buildNumber: String,
+    ): BuildInfoResponse
 
     @RequestLine("PUT $BUILD_PATH")
     @Headers("Content-Type: application/json", "Accept: application/json")
@@ -43,11 +46,18 @@ interface ArtifactoryClient {
 
     @RequestLine("POST $BUILD_PATH/promote/{buildName}/{buildNumber}")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun promoteBuild(@Param("buildName") buildName: String, @Param("buildNumber") buildNumber: String, request: PromoteBuildRequest): ArtifactoryResponse
+    fun promoteBuild(
+        @Param("buildName") buildName: String,
+        @Param("buildNumber") buildNumber: String,
+        request: PromoteBuildRequest,
+    ): ArtifactoryResponse
 
     @RequestLine("POST $DOCKER_PATH/{repoKey}/v2/promote")
     @Headers("Content-Type: application/json")
-    fun promoteDockerImage(@Param("repoKey") repoKey: String, request: PromoteDockerImageRequest)
+    fun promoteDockerImage(
+        @Param("repoKey") repoKey: String,
+        request: PromoteDockerImageRequest,
+    )
 
     @RequestLine("POST $ARTIFACTORY_PATH/search/aql")
     @Headers("Content-Type: text/plain", "Accept: application/json")

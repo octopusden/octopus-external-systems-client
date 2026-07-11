@@ -10,5 +10,5 @@ data class UpdateIssueFields(
     val issuetype: IssueType? = null,
     val summary: String? = null,
     val description: String? = null,
-    val assignee: Assignee? = null
+    val assignee: Assignee? = null,
 ) : IssueFields

@@ -1,6 +1,5 @@
 package org.octopusden.octopus.infrastructure.gitea.client.dto
 
-
 import com.fasterxml.jackson.databind.PropertyNamingStrategies
 import com.fasterxml.jackson.databind.annotation.JsonNaming
 
@@ -8,5 +7,5 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming
 data class GiteaPermission(
     val admin: Boolean? = null,
     val pull: Boolean? = null,
-    val push: Boolean? = null
+    val push: Boolean? = null,
 ) : BaseGiteaEntity()

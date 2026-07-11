@@ -9,5 +9,5 @@ data class Module(
     val type: String?,
     val properties: Map<String, String>?,
     val artifacts: Collection<Artifact>?,
-    val dependencies: Collection<Dependency>?
+    val dependencies: Collection<Dependency>?,
 )

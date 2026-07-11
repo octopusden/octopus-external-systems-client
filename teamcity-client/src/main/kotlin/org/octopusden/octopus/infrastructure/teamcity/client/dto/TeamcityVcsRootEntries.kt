@@ -5,5 +5,5 @@ import java.util.*
 
 data class TeamcityVcsRootEntries(
     @JsonProperty("vcs-root-entry")
-    val entries: List<TeamcityVcsRootEntry> = LinkedList<TeamcityVcsRootEntry>()
+    val entries: List<TeamcityVcsRootEntry> = LinkedList<TeamcityVcsRootEntry>(),
 )

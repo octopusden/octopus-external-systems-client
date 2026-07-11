@@ -1,8 +1,8 @@
-package org.octopusden.octopus.infrastructure.jira.dto;
+package org.octopusden.octopus.infrastructure.jira.dto
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ActiveSprintResponse(
-        val values: List<SprintResponse> = emptyList()
+    val values: List<SprintResponse> = emptyList(),
 )

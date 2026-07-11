@@ -7,5 +7,5 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming
 data class GiteaUser(
     val id: Long,
     val username: String,
-    val avatarUrl: String
+    val avatarUrl: String,
 )

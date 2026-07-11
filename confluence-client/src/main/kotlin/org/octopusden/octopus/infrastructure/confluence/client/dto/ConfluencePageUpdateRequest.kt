@@ -7,5 +7,5 @@ data class ConfluencePageUpdateRequest(
     val space: ConfluenceSpace? = null,
     val body: ConfluencePageBody,
     val version: ConfluencePageVersion,
-    val ancestors: List<ConfluencePageAncestor>? = null
+    val ancestors: List<ConfluencePageAncestor>? = null,
 )

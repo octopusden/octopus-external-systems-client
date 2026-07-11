@@ -1,14 +1,13 @@
 package org.octopusden.octopus.infrastructure.gitea.client.dto
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies
+import com.fasterxml.jackson.databind.annotation.JsonNaming
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaExternalTracker
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaExternalWiki
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaInternalTracker
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaPermission
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepoTransfer
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaUser
-
-import com.fasterxml.jackson.databind.PropertyNamingStrategies
-import com.fasterxml.jackson.databind.annotation.JsonNaming
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy::class)
 data class GiteaRepository(
@@ -68,5 +67,5 @@ data class GiteaRepository(
     val updatedAt: String? = null, // java.time.OffsetDateTime
     val url: String? = null,
     val watchersCount: Long? = null,
-    val website: String? = null
+    val website: String? = null,
 ) : BaseGiteaEntity()

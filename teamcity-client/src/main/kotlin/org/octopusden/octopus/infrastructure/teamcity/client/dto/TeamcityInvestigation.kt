@@ -4,5 +4,5 @@ data class TeamcityInvestigation(
     val id: String? = null,
     val state: String,
     val assignee: TeamcityAssignee? = null,
-    val assignment: TeamcityAssignment? = null
+    val assignment: TeamcityAssignment? = null,
 )

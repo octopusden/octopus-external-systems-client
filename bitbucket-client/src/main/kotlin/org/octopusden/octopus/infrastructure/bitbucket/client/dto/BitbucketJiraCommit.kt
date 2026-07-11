@@ -6,5 +6,5 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 class BitbucketJiraCommit(
     val toCommit: BitbucketCommit,
     val id: String = toCommit.id,
-    val repository: BitbucketRepository
+    val repository: BitbucketRepository,
 )

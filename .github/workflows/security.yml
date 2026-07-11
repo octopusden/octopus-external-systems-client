@@ -1,0 +1,23 @@
+name: Security Reports
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security:
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-security-reports.yml@v2.3.5
+    with:
+      java-version: '21'
+      enable-codeql: true
+      enable-trivy: true
+      enable-dependency-check: false

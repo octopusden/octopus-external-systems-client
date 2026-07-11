@@ -17,43 +17,42 @@ import org.octopusden.octopus.infrastructure.sonarqubeclient.dto.SonarQubeMeasur
 
 class SonarQubeClassicClient(
     apiParametersProvider: ClientParametersProvider,
-    mapper: ObjectMapper
+    mapper: ObjectMapper,
 ) : SonarQubeClient {
-
     private val client: SonarQubeClient = createClient(
         apiParametersProvider.getApiUrl(),
         apiParametersProvider.getAuth().getInterceptor(),
-        mapper
+        mapper,
     )
 
     constructor(apiParametersProvider: ClientParametersProvider) : this(
         apiParametersProvider,
-        getMapper()
+        getMapper(),
     )
 
-    override fun getProjects(requestParams: Map<String, Any>): SonarQubeComponentList {
-        return client.getProjects(requestParams)
-    }
+    override fun getProjects(requestParams: Map<String, Any>): SonarQubeComponentList = client.getProjects(requestParams)
 
-    override fun getMetricsHistory(requestParams: Map<String, Any>): SonarQubeMeasureList {
-        return client.getMetricsHistory(requestParams)
-    }
+    override fun getMetricsHistory(requestParams: Map<String, Any>): SonarQubeMeasureList = client.getMetricsHistory(requestParams)
 
     companion object {
-        private fun getMapper() = jacksonObjectMapper().apply {
-            this.registerModule(JavaTimeModule())
-            this.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        }
+        private fun getMapper() =
+            jacksonObjectMapper().apply {
+                this.registerModule(JavaTimeModule())
+                this.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            }
 
-        private fun createClient(apiUrl: String, interceptor: RequestInterceptor, objectMapper: ObjectMapper) =
-            Feign.builder()
-                .client(ApacheHttpClient())
-                .encoder(JacksonEncoder(objectMapper))
-                .decoder(JacksonDecoder(objectMapper))
-                .requestInterceptor(interceptor)
-                .logger(Slf4jLogger(SonarQubeClient::class.java))
-                .logLevel(Logger.Level.FULL)
-                .target(SonarQubeClient::class.java, apiUrl)
-
+        private fun createClient(
+            apiUrl: String,
+            interceptor: RequestInterceptor,
+            objectMapper: ObjectMapper,
+        ) = Feign
+            .builder()
+            .client(ApacheHttpClient())
+            .encoder(JacksonEncoder(objectMapper))
+            .decoder(JacksonDecoder(objectMapper))
+            .requestInterceptor(interceptor)
+            .logger(Slf4jLogger(SonarQubeClient::class.java))
+            .logLevel(Logger.Level.FULL)
+            .target(SonarQubeClient::class.java, apiUrl)
     }
 }

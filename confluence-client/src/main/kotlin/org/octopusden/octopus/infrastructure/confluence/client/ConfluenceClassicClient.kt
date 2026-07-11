@@ -4,36 +4,40 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
+import feign.Logger
 import feign.RequestInterceptor
 import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
-import feign.Logger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.confluence.client.dto.ConfluencePage
 import org.octopusden.octopus.infrastructure.confluence.client.dto.ConfluencePageUpdateRequest
 
 class ConfluenceClassicClient(
     apiParametersProvider: ClientParametersProvider,
-    mapper: ObjectMapper
+    mapper: ObjectMapper,
 ) : ConfluenceClient {
-
     private val client: ConfluenceClient = createClient(
         apiParametersProvider.getApiUrl(),
         apiParametersProvider.getAuth().getInterceptor(),
-        mapper
+        mapper,
     )
 
     constructor(apiParametersProvider: ClientParametersProvider) : this(
         apiParametersProvider,
-        getMapper()
+        getMapper(),
     )
 
-    override fun getPageById(id: String, queryParams: Map<String, String>): ConfluencePage =
-        client.getPageById(id, queryParams)
+    override fun getPageById(
+        id: String,
+        queryParams: Map<String, String>,
+    ): ConfluencePage = client.getPageById(id, queryParams)
 
-    override fun updatePage(id: String, page: ConfluencePageUpdateRequest): ConfluencePage = client.updatePage(id, page)
+    override fun updatePage(
+        id: String,
+        page: ConfluencePageUpdateRequest,
+    ): ConfluencePage = client.updatePage(id, page)
 
     companion object {
         private fun getMapper(): ObjectMapper {
@@ -45,8 +49,9 @@ class ConfluenceClassicClient(
         private fun createClient(
             apiUrl: String,
             interceptor: RequestInterceptor,
-            objectMapper: ObjectMapper
-        ) = Feign.builder()
+            objectMapper: ObjectMapper,
+        ) = Feign
+            .builder()
             .client(ApacheHttpClient())
             .encoder(JacksonEncoder(objectMapper))
             .decoder(JacksonDecoder(objectMapper))

@@ -6,5 +6,5 @@ data class TeamcityCreateQueuedBuild(
     val buildType: BuildTypeLocator,
     val branchName: String,
     val comment: TeamcityBuildComment? = null,
-    val properties: TeamcityProperties? = null
+    val properties: TeamcityProperties? = null,
 )

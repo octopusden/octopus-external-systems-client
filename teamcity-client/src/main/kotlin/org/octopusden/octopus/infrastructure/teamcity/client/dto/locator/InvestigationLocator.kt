@@ -1,5 +1,5 @@
 package org.octopusden.octopus.infrastructure.teamcity.client.dto.locator
 
 class InvestigationLocator(
-    val buildType: BuildTypeLocator? = null
+    val buildType: BuildTypeLocator? = null,
 ) : BaseLocator()

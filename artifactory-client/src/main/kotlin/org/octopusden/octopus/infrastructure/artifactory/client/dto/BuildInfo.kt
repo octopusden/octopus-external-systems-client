@@ -13,9 +13,7 @@ data class BuildInfo(
     val started: String?,
     val artifactoryPrincipal: String?,
     val modules: Collection<Module>?,
-    val statuses: Collection<Status>?
+    val statuses: Collection<Status>?,
 ) {
-    override fun toString(): String {
-        return "$name:$number"
-    }
+    override fun toString(): String = "$name:$number"
 }

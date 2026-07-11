@@ -14,10 +14,8 @@ data class AqlItem(
     val modified: String? = null,
     val updated: String? = null,
     val properties: List<AqlItemProperty>? = null,
-
     @field:JsonProperty("created_by")
     val createdBy: String? = null,
-
     @field:JsonProperty("modified_by")
-    val modifiedBy: String? = null
+    val modifiedBy: String? = null,
 )

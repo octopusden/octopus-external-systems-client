@@ -7,18 +7,18 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
     use = JsonTypeInfo.Id.NAME,
     include = JsonTypeInfo.As.EXISTING_PROPERTY,
     property = "type",
-    visible = true
+    visible = true,
 )
 @JsonSubTypes(
     JsonSubTypes.Type(BitbucketTag::class, name = "TAG"),
-    JsonSubTypes.Type(BitbucketBranch::class, name = "BRANCH")
+    JsonSubTypes.Type(BitbucketBranch::class, name = "BRANCH"),
 )
 abstract class BitbucketRef(
     val id: String,
     val displayId: String,
     val latestCommit: String,
     val type: BitbucketRefType,
-    val repository: BitbucketRepository? = null
+    val repository: BitbucketRepository? = null,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

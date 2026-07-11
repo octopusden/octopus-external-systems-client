@@ -6,5 +6,5 @@ data class TeamcityChange(
     val username: String? = null,
     val date: String? = null,
     val href: String? = null,
-    val webUrl: String? = null
+    val webUrl: String? = null,
 )
