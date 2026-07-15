@@ -263,6 +263,7 @@ class TeamcityClassicClientTest {
         client.deleteProject(project.id)
         assertEquals(true, steps.first().disabled)
         assertEquals(step.name, steps.first().name)
+        assertNotEquals(true, steps.first().inherited)
     }
 
     @ParameterizedTest
