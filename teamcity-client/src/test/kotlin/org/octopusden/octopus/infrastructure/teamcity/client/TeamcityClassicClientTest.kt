@@ -299,7 +299,7 @@ class TeamcityClassicClientTest {
 
         val overriddenId = client.getBuildSteps(buildType.id).steps
             .first { it.name == "overridden-step" }.id
-        client.createBuildStep(buildType.id, step(overriddenId, "overridden-step", "echo overridden locally"))
+        client.disableBuildStep(buildType.id, overriddenId, true)
         client.createBuildStep(buildType.id, step("RUNNER_OWN", "own-step", "echo own"))
 
         val steps = client.getBuildSteps(buildType.id).steps.associateBy { it.name }
