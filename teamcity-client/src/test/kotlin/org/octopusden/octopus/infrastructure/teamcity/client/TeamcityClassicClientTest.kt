@@ -270,9 +270,9 @@ class TeamcityClassicClientTest {
     fun testInheritedBuildStep(config: TeamcityTestConfiguration) {
         val client = createClient(config)
         val project = createProject(client, "TestInheritedBuildSteps")
-        fun step(id: String, script: String) = TeamcityStep(
+        fun step(id: String, name: String, script: String) = TeamcityStep(
             id = id,
-            name = id,
+            name = name,
             type = "simpleRunner",
             disabled = false,
             properties = TeamcityProperties(
@@ -291,27 +291,23 @@ class TeamcityClassicClientTest {
                 templateFlag = true
             )
         )
-
-        client.createBuildStep(template.id, step("RUNNER_1", "echo inherited"))
-        client.createBuildStep(template.id, step("RUNNER_2", "echo from template"))
+        client.createBuildStep(template.id, step("RUNNER_1", "inherited-step", "echo inherited"))
+        client.createBuildStep(template.id, step("RUNNER_2", "overridden-step", "echo from template"))
 
         val buildType = createBuildType(client, "TestInheritedBuildSteps", project.id)
         client.attachTemplateToBuildType(buildType.id, template.id)
 
-        client.createBuildStep(buildType.id, step("RUNNER_2", "echo overridden locally"))
-        client.createBuildStep(buildType.id, step("RUNNER_3", "echo own"))
+        val overriddenId = client.getBuildSteps(buildType.id).steps
+            .first { it.name == "overridden-step" }.id
+        client.createBuildStep(buildType.id, step(overriddenId, "overridden-step", "echo overridden locally"))
+        client.createBuildStep(buildType.id, step("RUNNER_OWN", "own-step", "echo own"))
 
-        val steps = client.getBuildSteps(buildType.id).steps.associateBy { it.id }
+        val steps = client.getBuildSteps(buildType.id).steps.associateBy { it.name }
         client.deleteProject(project.id)
 
-        assertEquals("RUNNER_1", steps["RUNNER_1"]?.name)
-        assertEquals(true, steps["RUNNER_1"]?.inherited)
-
-        assertEquals("RUNNER_2", steps["RUNNER_2"]?.name)
-        assertEquals(false, steps["RUNNER_2"]?.inherited)
-
-        assertEquals("RUNNER_3", steps["RUNNER_3"]?.name)
-        assertNull(steps["RUNNER_3"]?.inherited)
+        assertEquals(true, steps["inherited-step"]?.inherited)
+        assertEquals(false, steps["overridden-step"]?.inherited)
+        assertNull(steps["own-step"]?.inherited)
     }
 
     @ParameterizedTest
