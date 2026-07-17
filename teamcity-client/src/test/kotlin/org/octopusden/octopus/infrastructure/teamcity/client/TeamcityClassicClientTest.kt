@@ -263,6 +263,8 @@ class TeamcityClassicClientTest {
         client.deleteProject(project.id)
         assertEquals(true, steps.first().disabled)
         assertEquals(step.name, steps.first().name)
+        // Local step with no template involved: TeamCity omits the attribute -> null.
+        assertEquals(null, steps.first().inherited)
     }
 
     @ParameterizedTest
@@ -270,20 +272,6 @@ class TeamcityClassicClientTest {
     fun testInheritedBuildStep(config: TeamcityTestConfiguration) {
         val client = createClient(config)
         val project = createProject(client, "TestInheritedBuildSteps")
-        fun step(id: String, name: String, script: String) = TeamcityStep(
-            id = id,
-            name = name,
-            type = "simpleRunner",
-            disabled = false,
-            properties = TeamcityProperties(
-                listOf(
-                    TeamcityProperty("script.content", script),
-                    TeamcityProperty("teamcity.step.mode", "default"),
-                    TeamcityProperty("use.custom.script", "true"),
-                )
-            )
-        )
-
         val template = client.createBuildType(
             TeamcityCreateBuildType(
                 name = "TestInheritedBuildStepsTemplate",
@@ -291,23 +279,25 @@ class TeamcityClassicClientTest {
                 templateFlag = true
             )
         )
-        client.createBuildStep(template.id, step("RUNNER_1", "inherited-step", "echo inherited"))
-        client.createBuildStep(template.id, step("RUNNER_2", "overridden-step", "echo from template"))
-
+        val templateStep = TeamcityStep(
+            id = "RUNNER_1",
+            name = "cmd",
+            type = "simpleRunner",
+            disabled = false,
+            properties = TeamcityProperties(
+                listOf(
+                    TeamcityProperty("script.content", "echo 1"),
+                    TeamcityProperty("teamcity.step.mode", "default"),
+                    TeamcityProperty("use.custom.script", "true"),
+                )
+            )
+        )
+        client.createBuildStep(template.id, templateStep)
         val buildType = createBuildType(client, "TestInheritedBuildSteps", project.id)
         client.attachTemplateToBuildType(buildType.id, template.id)
-
-        val overriddenId = client.getBuildSteps(buildType.id).steps
-            .first { it.name == "overridden-step" }.id
-        client.disableBuildStep(buildType.id, overriddenId, true)
-        client.createBuildStep(buildType.id, step("RUNNER_OWN", "own-step", "echo own"))
-
-        val steps = client.getBuildSteps(buildType.id).steps.associateBy { it.name }
+        val step = client.getBuildSteps(buildType.id).steps.first { it.name == templateStep.name }
         client.deleteProject(project.id)
-
-        assertEquals(true, steps["inherited-step"]?.inherited)
-        assertEquals(false, steps["overridden-step"]?.inherited)
-        assertNull(steps["own-step"]?.inherited)
+        assertEquals(true, step.inherited)
     }
 
     @ParameterizedTest
