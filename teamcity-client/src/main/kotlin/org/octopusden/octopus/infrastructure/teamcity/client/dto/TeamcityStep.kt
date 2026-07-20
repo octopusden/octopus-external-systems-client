@@ -6,4 +6,5 @@ data class TeamcityStep(
     val type: String,
     val disabled: Boolean? = null,
     val properties: TeamcityProperties,
+    val inherited: Boolean? = null,
 )
