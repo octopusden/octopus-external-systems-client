@@ -28,6 +28,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkBui
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkFeature
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityLinkVcsRoot
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProject
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperties
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityProperty
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityResolution
@@ -97,6 +98,24 @@ class TeamcityClassicClientTest {
         ),
     )
 
+    /**
+     * Creates a project, runs [block] against it, and guarantees the project is deleted
+     * afterward (via `finally`) even if setup or assertions inside [block] throw.
+     */
+    private fun <T> withProject(
+        client: TeamcityClient,
+        projectName: String,
+        parentId: String = "RDDepartment",
+        block: (TeamcityProject) -> T,
+    ): T {
+        val project = createProject(client, projectName, parentId)
+        try {
+            return block(project)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
     private fun createBuildType(
         client: TeamcityClient,
         buildName: String,
@@ -151,13 +170,13 @@ class TeamcityClassicClientTest {
     @MethodSource("teamcityContexts")
     fun testProject(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestCreateProject")
-        assertEquals(project, client.getProject(project.id))
-        assertEquals(project, client.getProject(ProjectLocator(name = project.name)))
-        val subProject = createProject(client, "SubProject", project.id)
-        assertEquals(subProject.parentProjectId, project.id)
-        assertEquals(subProject.parentProject?.name, project.name)
-        client.deleteProject(project.id)
+        withProject(client, "TestCreateProject") { project ->
+            assertEquals(project, client.getProject(project.id))
+            assertEquals(project, client.getProject(ProjectLocator(name = project.name)))
+            val subProject = createProject(client, "SubProject", project.id)
+            assertEquals(subProject.parentProjectId, project.id)
+            assertEquals(subProject.parentProject?.name, project.name)
+        }
     }
 
     @ParameterizedTest
@@ -171,289 +190,324 @@ class TeamcityClassicClientTest {
     @MethodSource("teamcityContexts")
     fun createBuildType(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestCreateBuildType")
-        val buildType = createBuildType(client, "TestCreateBuildType", project.id)
-        client.setBuildCounter(buildType.id, "21")
-        assertEquals(buildType.name, "TestCreateBuildType")
-        client.deleteProject(project.id)
+        withProject(client, "TestCreateBuildType") { project ->
+            val buildType = createBuildType(client, "TestCreateBuildType", project.id)
+            client.setBuildCounter(buildType.id, "21")
+            assertEquals(buildType.name, "TestCreateBuildType")
+        }
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testBuildTypeFeature(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestBuildTypeFeature")
-        val buildType = createBuildType(client, "TestBuildTypeFeature", project.id)
-        client.addBuildTypeFeature(
-            buildType.id,
-            TeamcityLinkFeature(
-                type = "VcsLabeling",
-                id = "VcsLabeling",
-                properties = TeamcityProperties(
-                    listOf(
-                        TeamcityProperty("labelingPattern", "%LABELING_PATTERN%"),
-                        TeamcityProperty("successfulOnly", "true"),
-                        TeamcityProperty("vcsRootId", "vcsId"),
+        withProject(client, "TestBuildTypeFeature") { project ->
+            val buildType = createBuildType(client, "TestBuildTypeFeature", project.id)
+            client.addBuildTypeFeature(
+                buildType.id,
+                TeamcityLinkFeature(
+                    type = "VcsLabeling",
+                    id = "VcsLabeling",
+                    properties = TeamcityProperties(
+                        listOf(
+                            TeamcityProperty("labelingPattern", "%LABELING_PATTERN%"),
+                            TeamcityProperty("successfulOnly", "true"),
+                            TeamcityProperty("vcsRootId", "vcsId"),
+                        ),
                     ),
                 ),
-            ),
-        )
-        val features = client.getBuildTypeFeatures(buildType.id).features
-        assertEquals(1, features.size)
-        val feature = features.first()
-        assertEquals("VcsLabeling", feature.type)
-        val featureId = feature.id
+            )
+            val features = client.getBuildTypeFeatures(buildType.id).features
+            assertEquals(1, features.size)
+            val feature = features.first()
+            assertEquals("VcsLabeling", feature.type)
+            val featureId = feature.id
 
-        fun getVcsRootId() = client.getBuildTypeFeatureParameter(buildType.id, featureId, "vcsRootId")
-        assertEquals("vcsId", getVcsRootId())
-        client.updateBuildTypeFeatureParameter(buildType.id, featureId, "vcsRootId", "newVcsId")
-        assertEquals("newVcsId", getVcsRootId())
-        client.deleteProject(project.id)
+            fun getVcsRootId() = client.getBuildTypeFeatureParameter(buildType.id, featureId, "vcsRootId")
+            assertEquals("vcsId", getVcsRootId())
+            client.updateBuildTypeFeatureParameter(buildType.id, featureId, "vcsRootId", "newVcsId")
+            assertEquals("newVcsId", getVcsRootId())
+        }
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testSnapshotDependencies(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestSnapshotDependencies")
-        val sourceBuildType = createBuildType(client, "SourceBuild", project.id)
-        val buildType = createBuildType(client, "TestSnapshotDependencies", project.id)
-        client.createSnapshotDependency(
-            buildType.id,
-            TeamcitySnapshotDependency(
-                id = sourceBuildType.name!!,
-                type = "snapshot_dependency",
-                properties = TeamcityProperties(
-                    listOf(
-                        TeamcityProperty("run-build-if-dependency-failed", "MAKE_FAILED_TO_START"),
-                        TeamcityProperty("run-build-if-dependency-failed-to-start", "MAKE_FAILED_TO_START"),
-                        TeamcityProperty("run-build-on-the-same-agent", "false"),
-                        TeamcityProperty("take-started-build-with-same-revisions", "true"),
-                        TeamcityProperty("take-successful-builds-only", "true"),
+        withProject(client, "TestSnapshotDependencies") { project ->
+            val sourceBuildType = createBuildType(client, "SourceBuild", project.id)
+            val buildType = createBuildType(client, "TestSnapshotDependencies", project.id)
+            client.createSnapshotDependency(
+                buildType.id,
+                TeamcitySnapshotDependency(
+                    id = sourceBuildType.name!!,
+                    type = "snapshot_dependency",
+                    properties = TeamcityProperties(
+                        listOf(
+                            TeamcityProperty("run-build-if-dependency-failed", "MAKE_FAILED_TO_START"),
+                            TeamcityProperty("run-build-if-dependency-failed-to-start", "MAKE_FAILED_TO_START"),
+                            TeamcityProperty("run-build-on-the-same-agent", "false"),
+                            TeamcityProperty("take-started-build-with-same-revisions", "true"),
+                            TeamcityProperty("take-successful-builds-only", "true"),
+                        ),
                     ),
+                    sourceBuildType = TeamcityLinkBuildType(sourceBuildType.id),
                 ),
-                sourceBuildType = TeamcityLinkBuildType(sourceBuildType.id),
-            ),
-        )
-        val dependency = client.getSnapshotDependencies(buildType.id).snapshotDependencies.first()
-        client.deleteSnapshotDependency(buildType.id, dependency.id)
-        client.deleteProject(project.id)
-        assertNotEquals(sourceBuildType.name, dependency.id)
-        assertEquals(sourceBuildType.id, dependency.id)
-        assertEquals(sourceBuildType.id, dependency.sourceBuildType.id)
+            )
+            val dependency = client.getSnapshotDependencies(buildType.id).snapshotDependencies.first()
+            client.deleteSnapshotDependency(buildType.id, dependency.id)
+            assertNotEquals(sourceBuildType.name, dependency.id)
+            assertEquals(sourceBuildType.id, dependency.id)
+            assertEquals(sourceBuildType.id, dependency.sourceBuildType.id)
+        }
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testBuildSteps(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestBuildSteps")
-        val buildType = createBuildType(client, "TestBuildSteps", project.id)
-        val step = TeamcityStep(
-            id = "RUNNER_1",
-            name = "cmd",
-            type = "simpleRunner",
-            disabled = false,
-            properties = TeamcityProperties(
-                listOf(
-                    TeamcityProperty("script.content", "echo 1"),
-                    TeamcityProperty("teamcity.step.mode", "default"),
-                    TeamcityProperty("use.custom.script", "true"),
+        withProject(client, "TestBuildSteps") { project ->
+            val buildType = createBuildType(client, "TestBuildSteps", project.id)
+            val step = TeamcityStep(
+                id = "RUNNER_1",
+                name = "cmd",
+                type = "simpleRunner",
+                disabled = false,
+                properties = TeamcityProperties(
+                    listOf(
+                        TeamcityProperty("script.content", "echo 1"),
+                        TeamcityProperty("teamcity.step.mode", "default"),
+                        TeamcityProperty("use.custom.script", "true"),
+                    ),
                 ),
-            ),
-        )
-        client.createBuildStep(
-            buildType.id,
-            step,
-        )
-        client.disableBuildStep(buildType.id, "RUNNER_1", true)
-        val steps = client.getBuildSteps(buildType.id).steps
-        client.deleteProject(project.id)
-        assertEquals(true, steps.first().disabled)
-        assertEquals(step.name, steps.first().name)
+            )
+            client.createBuildStep(
+                buildType.id,
+                step,
+            )
+            client.disableBuildStep(buildType.id, "RUNNER_1", true)
+            val steps = client.getBuildSteps(buildType.id).steps
+            assertEquals(true, steps.first().disabled)
+            assertEquals(step.name, steps.first().name)
+            // Local step with no template involved: TeamCity omits the attribute -> null.
+            assertEquals(null, steps.first().inherited)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testInheritedBuildStep(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        withProject(client, "TestInheritedBuildSteps") { project ->
+            val template = client.createBuildType(
+                TeamcityCreateBuildType(
+                    name = "TestInheritedBuildStepsTemplate",
+                    project = TeamcityLinkProject(id = project.id),
+                    templateFlag = true,
+                ),
+            )
+            val templateStep = TeamcityStep(
+                id = "RUNNER_1",
+                name = "cmd",
+                type = "simpleRunner",
+                disabled = false,
+                properties = TeamcityProperties(
+                    listOf(
+                        TeamcityProperty("script.content", "echo 1"),
+                        TeamcityProperty("teamcity.step.mode", "default"),
+                        TeamcityProperty("use.custom.script", "true"),
+                    ),
+                ),
+            )
+            client.createBuildStep(template.id, templateStep)
+            val buildType = createBuildType(client, "TestInheritedBuildSteps", project.id)
+            client.attachTemplateToBuildType(buildType.id, template.id)
+            val step = client.getBuildSteps(buildType.id).steps.first { it.name == templateStep.name }
+            assertEquals(true, step.inherited)
+        }
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testBuildVcsRoots(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestBuildVcsRoots")
-        val buildType = createBuildType(client, "TestBuildVcsRoots", project.id)
-        val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
-        val vcsRoot = client.createVcsRoot(
-            TeamcityCreateVcsRoot(
-                name = "${project.name}_VCS_ROOT",
-                vcsName = TeamcityVCSType.GIT.value,
-                projectLocator = project.id,
-                properties = TeamcityProperties(
-                    listOf(
-                        TeamcityProperty("url", url),
-                        TeamcityProperty("branch", "master"),
-                        TeamcityProperty("authMethod", "PRIVATE_KEY_DEFAULT"),
-                        TeamcityProperty("userForTags", "tcagent"),
-                        TeamcityProperty("username", "git"),
-                        TeamcityProperty("ignoreKnownHosts", "true"),
+        withProject(client, "TestBuildVcsRoots") { project ->
+            val buildType = createBuildType(client, "TestBuildVcsRoots", project.id)
+            val url = "ssh://git@github.com:octopusden/octopus-external-systems-client.git"
+            val vcsRoot = client.createVcsRoot(
+                TeamcityCreateVcsRoot(
+                    name = "${project.name}_VCS_ROOT",
+                    vcsName = TeamcityVCSType.GIT.value,
+                    projectLocator = project.id,
+                    properties = TeamcityProperties(
+                        listOf(
+                            TeamcityProperty("url", url),
+                            TeamcityProperty("branch", "master"),
+                            TeamcityProperty("authMethod", "PRIVATE_KEY_DEFAULT"),
+                            TeamcityProperty("userForTags", "tcagent"),
+                            TeamcityProperty("username", "git"),
+                            TeamcityProperty("ignoreKnownHosts", "true"),
+                        ),
                     ),
                 ),
-            ),
-        )
-        client.createBuildTypeVcsRootEntry(
-            buildType.id,
-            TeamcityCreateVcsRootEntry(
-                id = vcsRoot.id,
-                vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id),
-            ),
-        )
-        val btVcsRootEntry = client.getBuildTypeVcsRootEntries(buildType.id).entries.first()
-        val btVcsRoot = client.getBuildTypeVcsRootEntry(buildType.id, vcsRoot.id)
-        val tcVcsRoot = client.getVcsRoot(vcsRoot.id)
+            )
+            client.createBuildTypeVcsRootEntry(
+                buildType.id,
+                TeamcityCreateVcsRootEntry(
+                    id = vcsRoot.id,
+                    vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id),
+                ),
+            )
+            val btVcsRootEntry = client.getBuildTypeVcsRootEntries(buildType.id).entries.first()
+            val btVcsRoot = client.getBuildTypeVcsRootEntry(buildType.id, vcsRoot.id)
+            val tcVcsRoot = client.getVcsRoot(vcsRoot.id)
 
-        assertEquals(url, client.getVcsRootProperty(tcVcsRoot.id, "url"))
-        val vcsRootsByLocator = client
-            .getVcsRoots(
-                VcsRootLocator(
-                    property = listOf(
-                        PropertyLocator("url", url),
+            assertEquals(url, client.getVcsRootProperty(tcVcsRoot.id, "url"))
+            val vcsRootsByLocator = client
+                .getVcsRoots(
+                    VcsRootLocator(
+                        property = listOf(
+                            PropertyLocator("url", url),
+                        ),
                     ),
-                ),
-            ).vcsRoots
-        assertEquals(1, vcsRootsByLocator.size)
-        assertEquals(tcVcsRoot.id, vcsRootsByLocator.first().id)
-        val newUrl = "ssh://git@github.com:octopusden/octopus-teamcity-automation.git"
-        client.updateVcsRootProperty(tcVcsRoot.id, "url", newUrl)
-        assertEquals(newUrl, client.getVcsRootProperty(tcVcsRoot.id, "url"))
-        client.deleteProject(project.id)
-        assertEquals("${project.name}_VCS_ROOT", tcVcsRoot.name)
-        assertEquals(btVcsRootEntry.vcsRoot.href, btVcsRoot.vcsRoot.href)
+                ).vcsRoots
+            assertEquals(1, vcsRootsByLocator.size)
+            assertEquals(tcVcsRoot.id, vcsRootsByLocator.first().id)
+            val newUrl = "ssh://git@github.com:octopusden/octopus-teamcity-automation.git"
+            client.updateVcsRootProperty(tcVcsRoot.id, "url", newUrl)
+            assertEquals(newUrl, client.getVcsRootProperty(tcVcsRoot.id, "url"))
+            assertEquals("${project.name}_VCS_ROOT", tcVcsRoot.name)
+            assertEquals(btVcsRootEntry.vcsRoot.href, btVcsRoot.vcsRoot.href)
+        }
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testTemplates(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestTemplates")
-        val buildType = createBuildType(client, "TestTemplates", project.id)
-        val template = client.createBuildType(
-            TeamcityCreateBuildType(
-                name = "Template",
-                project = TeamcityLinkProject(id = project.id),
-                templateFlag = true,
-            ),
-        )
-        client.attachTemplateToBuildType(buildType.id, template.id)
-        var modifiedBuildType = client.getBuildType(buildType.id)
-        assertEquals(1, modifiedBuildType.templates!!.buildTypes.size)
-        assertEquals(
-            "Template",
-            modifiedBuildType.templates!!
-                .buildTypes
-                .first()
-                .name,
-        )
-        client.detachTemplatesFromBuildType(buildType.id)
-        modifiedBuildType = client.getBuildType(buildType.id)
-        assertEquals(0, modifiedBuildType.templates!!.buildTypes.size)
-        client.deleteProject(project.id)
+        withProject(client, "TestTemplates") { project ->
+            val buildType = createBuildType(client, "TestTemplates", project.id)
+            val template = client.createBuildType(
+                TeamcityCreateBuildType(
+                    name = "Template",
+                    project = TeamcityLinkProject(id = project.id),
+                    templateFlag = true,
+                ),
+            )
+            client.attachTemplateToBuildType(buildType.id, template.id)
+            var modifiedBuildType = client.getBuildType(buildType.id)
+            assertEquals(1, modifiedBuildType.templates!!.buildTypes.size)
+            assertEquals(
+                "Template",
+                modifiedBuildType.templates!!
+                    .buildTypes
+                    .first()
+                    .name,
+            )
+            client.detachTemplatesFromBuildType(buildType.id)
+            modifiedBuildType = client.getBuildType(buildType.id)
+            assertEquals(0, modifiedBuildType.templates!!.buildTypes.size)
+        }
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testProjectBuildTypes(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestProjectBuildTypes")
-        val buildType = client.createBuildType(project.id, "ProjectBuildType")
-        assertEquals(
-            buildType.name,
-            client
-                .getBuildTypes(project.id)
-                .buildTypes
-                .first()
-                .name,
-        )
-        client.deleteProject(project.id)
+        withProject(client, "TestProjectBuildTypes") { project ->
+            val buildType = client.createBuildType(project.id, "ProjectBuildType")
+            assertEquals(
+                buildType.name,
+                client
+                    .getBuildTypes(project.id)
+                    .buildTypes
+                    .first()
+                    .name,
+            )
+        }
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testBuildTypesAgentRequirements(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestProjectBuildTypes")
-        val buildType = client.createBuildType(project.id, "ProjectBuildType")
-        val properties = TeamcityProperties(
-            listOf(
-                TeamcityProperty("property-name", "property-value"),
-            ),
-        )
-        val requirement = client.addAgentRequirementToBuildType(
-            BuildTypeLocator(id = buildType.id),
-            TeamcityAgentRequirement(
-                id = null,
-                type = "matches",
-                properties = properties,
-                name = "requirementName",
-                disabled = false,
-                inherited = false,
-                href = "",
-            ),
-        )
-        val actualResponse = client.getAgentRequirements(buildType.id)
-        assertEquals(1, actualResponse.count)
-        val actual = actualResponse.agentRequirements.first()
-        assertEquals(requirement.id, actual.id)
-        assertEquals("matches", actual.type)
-        assertIterableEquals(properties.properties, actual.properties.properties)
-        assertEquals(requirement, actual)
-        client.deleteAgentRequirement(BuildTypeLocator(id = buildType.id), AgentRequirementLocator(id = requirement.id))
-        client.deleteProject(project.id)
+        withProject(client, "TestProjectBuildTypes") { project ->
+            val buildType = client.createBuildType(project.id, "ProjectBuildType")
+            val properties = TeamcityProperties(
+                listOf(
+                    TeamcityProperty("property-name", "property-value"),
+                ),
+            )
+            val requirement = client.addAgentRequirementToBuildType(
+                BuildTypeLocator(id = buildType.id),
+                TeamcityAgentRequirement(
+                    id = null,
+                    type = "matches",
+                    properties = properties,
+                    name = "requirementName",
+                    disabled = false,
+                    inherited = false,
+                    href = "",
+                ),
+            )
+            val actualResponse = client.getAgentRequirements(buildType.id)
+            assertEquals(1, actualResponse.count)
+            val actual = actualResponse.agentRequirements.first()
+            assertEquals(requirement.id, actual.id)
+            assertEquals("matches", actual.type)
+            assertIterableEquals(properties.properties, actual.properties.properties)
+            assertEquals(requirement, actual)
+            client.deleteAgentRequirement(BuildTypeLocator(id = buildType.id), AgentRequirementLocator(id = requirement.id))
+        }
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testParameters(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestParameters")
-        val buildType = createBuildType(client, "TestParameters", project.id)
-        listOf(
-            Pair(ConfigurationType.PROJECT, project.id),
-            Pair(ConfigurationType.BUILD_TYPE, buildType.id),
-        ).forEach { (type, id) ->
-            client.createParameter(type, id, "empty_parameter")
-            client.setParameter(type, id, "empty_parameter", "123")
-            assertEquals("123", client.getParameter(type, id, "empty_parameter"))
-            client.createParameter(type, id, "not_empty_parameter", "sun")
-            assertEquals("sun", client.getParameter(type, id, "not_empty_parameter"))
-            client.createParameter(type, id, TeamcityProperty("parameter", "someone"))
-            assertEquals("someone", client.getParameter(type, id, "parameter"))
-            client.setParameter(type, id, "parameter", "other")
-            assertEquals("other", client.getParameter(type, id, "parameter"))
-            client.deleteParameter(type, id, "parameter")
+        withProject(client, "TestParameters") { project ->
+            val buildType = createBuildType(client, "TestParameters", project.id)
+            listOf(
+                Pair(ConfigurationType.PROJECT, project.id),
+                Pair(ConfigurationType.BUILD_TYPE, buildType.id),
+            ).forEach { (type, id) ->
+                client.createParameter(type, id, "empty_parameter")
+                client.setParameter(type, id, "empty_parameter", "123")
+                assertEquals("123", client.getParameter(type, id, "empty_parameter"))
+                client.createParameter(type, id, "not_empty_parameter", "sun")
+                assertEquals("sun", client.getParameter(type, id, "not_empty_parameter"))
+                client.createParameter(type, id, TeamcityProperty("parameter", "someone"))
+                assertEquals("someone", client.getParameter(type, id, "parameter"))
+                client.setParameter(type, id, "parameter", "other")
+                assertEquals("other", client.getParameter(type, id, "parameter"))
+                client.deleteParameter(type, id, "parameter")
+            }
         }
-        client.deleteProject(project.id)
     }
 
     @ParameterizedTest
     @MethodSource("teamcityContexts")
     fun testProjectLocator(config: TeamcityTestConfiguration) {
         val client = createClient(config)
-        val project = createProject(client, "TestProjectLocator")
-        val secondProject = createProject(client, "AnotherTestProjectLocator")
-        client.createParameter(ConfigurationType.PROJECT, project.id, "ParameterName", "ParameterValue")
-        val projects = client
-            .getProjects(
-                ProjectLocator(
-                    count = 2000,
-                    parameter = listOf(
-                        PropertyLocator(
-                            name = "ParameterName",
-                            value = "ParameterValue",
+        withProject(client, "TestProjectLocator") { project ->
+            withProject(client, "AnotherTestProjectLocator") {
+                client.createParameter(ConfigurationType.PROJECT, project.id, "ParameterName", "ParameterValue")
+                val projects = client
+                    .getProjects(
+                        ProjectLocator(
+                            count = 2000,
+                            parameter = listOf(
+                                PropertyLocator(
+                                    name = "ParameterName",
+                                    value = "ParameterValue",
+                                ),
+                            ),
                         ),
-                    ),
-                ),
-            ).projects
-        assertEquals(1, projects.size)
-        assertEquals("TestProjectLocator", projects.first().name)
-        client.deleteProject(secondProject.id)
-        client.deleteProject(project.id)
+                    ).projects
+                assertEquals(1, projects.size)
+                assertEquals("TestProjectLocator", projects.first().name)
+            }
+        }
     }
 
     @ParameterizedTest
