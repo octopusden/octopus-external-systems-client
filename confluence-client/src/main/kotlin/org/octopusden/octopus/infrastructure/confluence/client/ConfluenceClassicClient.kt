@@ -12,7 +12,9 @@ import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.confluence.client.dto.ConfluencePage
+import org.octopusden.octopus.infrastructure.confluence.client.dto.ConfluencePageCreateRequest
 import org.octopusden.octopus.infrastructure.confluence.client.dto.ConfluencePageUpdateRequest
+import org.octopusden.octopus.infrastructure.confluence.client.dto.ConfluenceSearchResponse
 
 class ConfluenceClassicClient(
     apiParametersProvider: ClientParametersProvider,
@@ -38,6 +40,10 @@ class ConfluenceClassicClient(
         id: String,
         page: ConfluencePageUpdateRequest,
     ): ConfluencePage = client.updatePage(id, page)
+
+    override fun searchPages(queryParams: Map<String, String>): ConfluenceSearchResponse = client.searchPages(queryParams)
+
+    override fun createPage(request: ConfluencePageCreateRequest): ConfluencePage = client.createPage(request)
 
     companion object {
         private fun getMapper(): ObjectMapper {
