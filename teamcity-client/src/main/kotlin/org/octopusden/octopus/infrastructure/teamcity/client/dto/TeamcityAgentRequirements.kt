@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 /**
  * Represents a list of AgentRequirement entities.
  */
-data class TeamcityAgentRequirements (
+data class TeamcityAgentRequirements(
     val count: Int,
     @JsonProperty("agent-requirement")
-    val agentRequirements: List<TeamcityAgentRequirement> = ArrayList()
+    val agentRequirements: List<TeamcityAgentRequirement> = ArrayList(),
 )

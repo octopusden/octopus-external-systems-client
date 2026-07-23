@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<baseline version="1.0">
+    <file name="src/main/kotlin/org/octopusden/octopus/infrastructure/gitea/client/GiteaClient.kt">
+        <error line="31" column="13" source="standard:backing-property-naming" />
+    </file>
+    <file name="src/main/kotlin/org/octopusden/octopus/infrastructure/gitea/client/dto/GiteaEditRepoOption.kt">
+        <error line="9" column="141" source="standard:max-line-length" />
+        <error line="11" column="141" source="standard:max-line-length" />
+        <error line="15" column="141" source="standard:max-line-length" />
+        <error line="19" column="141" source="standard:max-line-length" />
+        <error line="31" column="141" source="standard:max-line-length" />
+        <error line="35" column="141" source="standard:max-line-length" />
+    </file>
+    <file name="src/main/kotlin/org/octopusden/octopus/infrastructure/gitea/client/dto/GiteaExternalTracker.kt">
+        <error line="8" column="141" source="standard:max-line-length" />
+    </file>
+</baseline>

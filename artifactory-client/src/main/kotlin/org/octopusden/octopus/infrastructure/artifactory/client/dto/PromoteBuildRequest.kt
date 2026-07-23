@@ -12,5 +12,5 @@ class PromoteBuildRequest(
     val copy: Boolean = false,
     val artifacts: Boolean = true,
     val dependencies: Boolean = false,
-    val failFast: Boolean = true
+    val failFast: Boolean = true,
 )

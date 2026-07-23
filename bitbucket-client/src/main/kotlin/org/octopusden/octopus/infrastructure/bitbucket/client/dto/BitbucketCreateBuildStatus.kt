@@ -4,5 +4,5 @@ data class BitbucketCreateBuildStatus(
     val state: String,
     val key: String,
     val name: String,
-    val url: String
+    val url: String,
 )

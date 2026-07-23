@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>SwallowedException:BaseTestClient.kt$BaseTestClient$e: RefNotFoundException</ID>
+    <ID>UseRequire:BaseTestClient.kt$BaseTestClient$throw IllegalArgumentException("[$vcsUrlHost] repository '$repository' exists already, can not import")</ID>
+  </CurrentIssues>
+</SmellBaseline>

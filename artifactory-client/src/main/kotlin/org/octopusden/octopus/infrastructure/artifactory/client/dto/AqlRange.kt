@@ -7,9 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class AqlRange(
     @field:JsonProperty("start_pos")
     val startPos: Int? = null,
-
     @field:JsonProperty("end_pos")
     val endPos: Int? = null,
-
-    val total: Int? = null
+    val total: Int? = null,
 )

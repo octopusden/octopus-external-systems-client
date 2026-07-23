@@ -13,7 +13,11 @@ class BitbucketPullRequest(
     val state: BitbucketPullRequestState,
     val createdDate: Date,
     val updatedDate: Date,
-    val version: Int
+    val version: Int,
 ) {
-    class BitbucketPullRequestUser(val user: BitbucketUser, val approved: Boolean, val status: BitbucketPullRequestUserStatus)
+    class BitbucketPullRequestUser(
+        val user: BitbucketUser,
+        val approved: Boolean,
+        val status: BitbucketPullRequestUserStatus,
+    )
 }

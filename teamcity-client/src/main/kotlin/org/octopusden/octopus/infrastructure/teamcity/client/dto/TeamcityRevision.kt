@@ -6,5 +6,5 @@ data class TeamcityRevision(
     val version: String? = null,
     val vcsBranchName: String? = null,
     @JsonProperty("vcs-root-instance")
-    val vcsRootInstance: TeamcityVcsRootInstance? = null
+    val vcsRootInstance: TeamcityVcsRootInstance? = null,
 )

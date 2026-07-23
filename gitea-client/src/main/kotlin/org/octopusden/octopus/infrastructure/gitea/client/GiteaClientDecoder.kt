@@ -8,20 +8,25 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEntityList
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 
-class GiteaClientDecoder(val mapper: ObjectMapper) : JacksonDecoder(mapper) {
-    override fun decode(response: Response, type: Type): Any {
+class GiteaClientDecoder(
+    val mapper: ObjectMapper,
+) : JacksonDecoder(mapper) {
+    override fun decode(
+        response: Response,
+        type: Type,
+    ): Any {
         val parameterizedType = type as? ParameterizedType
         return if (parameterizedType
                 ?.rawType
                 ?.typeName == GiteaEntityList::class.java.typeName
         ) {
-
             val collection = super.decode(
                 response,
-                CollectionType(parameterizedType!!.actualTypeArguments)
+                CollectionType(parameterizedType!!.actualTypeArguments),
             ) as? Collection<BaseGiteaEntity> ?: emptyList()
 
-            val hasMore = response.headers()["X-HasMore"]
+            val hasMore = response
+                .headers()["X-HasMore"]
                 ?.firstOrNull()
                 ?.toBoolean()
 
@@ -31,9 +36,13 @@ class GiteaClientDecoder(val mapper: ObjectMapper) : JacksonDecoder(mapper) {
         }
     }
 
-    private class CollectionType(private val actualTypeArguments: Array<Type>) : ParameterizedType {
+    private class CollectionType(
+        private val actualTypeArguments: Array<Type>,
+    ) : ParameterizedType {
         override fun getActualTypeArguments() = actualTypeArguments
+
         override fun getRawType() = Collection::class.java
+
         override fun getOwnerType() = null
     }
 }

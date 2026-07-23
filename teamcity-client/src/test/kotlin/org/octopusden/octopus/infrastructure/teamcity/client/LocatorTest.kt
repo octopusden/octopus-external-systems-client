@@ -26,10 +26,10 @@ class LocatorTest {
                         name = "fieldName",
                         value = "fieldValue",
                         matchType = PropertyLocator.MatchType.EQUALS,
-                        ignoreCase = true
-                    )
-                )
-            )
+                        ignoreCase = true,
+                    ),
+                ),
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -47,16 +47,16 @@ class LocatorTest {
                         name = "url",
                         value = url,
                         matchType = PropertyLocator.MatchType.EQUALS,
-                        ignoreCase = true
+                        ignoreCase = true,
                     ),
                     PropertyLocator(
                         name = "branch",
                         value = "main",
                         matchType = PropertyLocator.MatchType.EQUALS,
-                        ignoreCase = true
-                    )
-                )
-            )
+                        ignoreCase = true,
+                    ),
+                ),
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -70,10 +70,10 @@ class LocatorTest {
                 parameter = listOf(
                     PropertyLocator(
                         name = "ParameterName",
-                        value = "ParameterValue"
-                    )
-                )
-            )
+                        value = "ParameterValue",
+                    ),
+                ),
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -84,7 +84,7 @@ class LocatorTest {
         val actual = locatorExpander.expand(
             ProjectLocator(
                 id = "TestProjectId",
-            )
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -95,9 +95,9 @@ class LocatorTest {
         val actual = locatorExpander.expand(
             ProjectLocator(
                 parentProject = ProjectLocator(
-                    id = "TestParentProjectId"
-                )
-            )
+                    id = "TestParentProjectId",
+                ),
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -108,7 +108,7 @@ class LocatorTest {
         val actual = locatorExpander.expand(
             BuildTypeLocator(
                 id = "TestBuildTypeId",
-            )
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -124,7 +124,7 @@ class LocatorTest {
                 state = "finished",
                 branch = "default:any",
                 count = 100,
-            )
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -134,8 +134,8 @@ class LocatorTest {
         val expected = "template:(id:WlValidator)"
         val actual = locatorExpander.expand(
             BuildTypeLocator(
-                template = TemplateLocator(id = "WlValidator")
-            )
+                template = TemplateLocator(id = "WlValidator"),
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -146,9 +146,9 @@ class LocatorTest {
         val actual = locatorExpander.expand(
             InvestigationLocator(
                 BuildTypeLocator(
-                    id = "TestBuildTypeId"
-                )
-            )
+                    id = "TestBuildTypeId",
+                ),
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -159,8 +159,8 @@ class LocatorTest {
         val actual = locatorExpander.expand(
             ProjectLocator(
                 count = 50,
-                start = 100
-            )
+                start = 100,
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -171,9 +171,9 @@ class LocatorTest {
         val actual = locatorExpander.expand(
             ProjectLocator(
                 affectedProject = ProjectLocator(
-                    id = "TestRootProjectId"
-                )
-            )
+                    id = "TestRootProjectId",
+                ),
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -184,9 +184,9 @@ class LocatorTest {
         val actual = locatorExpander.expand(
             ProjectLocator(
                 parameter = listOf(
-                    PropertyLocator(name = "COMPONENT_NAME")
-                )
-            )
+                    PropertyLocator(name = "COMPONENT_NAME"),
+                ),
+            ),
         )
         assertEquals(expected, actual)
     }
@@ -201,13 +201,12 @@ class LocatorTest {
                 parameter = listOf(
                     PropertyLocator(
                         name = "url",
-                        value = "https://host/repo.git?x=1&y=2#frag with+plus 100%"
-                    )
-                )
-            )
+                        value = "https://host/repo.git?x=1&y=2#frag with+plus 100%",
+                    ),
+                ),
+            ),
         )
         val expected = "parameter:(name:url,value:https://host/repo.git%3Fx=1%26y=2%23frag%20with%2Bplus%20100%25)"
         assertEquals(expected, actual)
     }
-
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ClassOrdering:TeamcityClassicClientTest.kt$TeamcityClassicClientTest$Companion</ID>
+    <ID>LargeClass:TeamcityClassicClientTest.kt$TeamcityClassicClientTest</ID>
+    <ID>MatchingDeclarationName:TeamCityBuild.kt$TeamcityBuild</ID>
+    <ID>MatchingDeclarationName:TeamCityBuilds.kt$TeamcityBuilds</ID>
+    <ID>MaxLineLength:LocatorTest.kt$LocatorTest$"count:99999,property:(ignoreCase:true,matchType:equals,name:url,value:$url),property:(ignoreCase:true,matchType:equals,name:branch,value:main)"</ID>
+    <ID>SwallowedException:TeamcityClient.kt$e: FeignException.NotFound</ID>
+    <ID>TooGenericExceptionThrown:TeamcityClassicClientTest.kt$TeamcityClassicClientTest.Companion$throw Exception("System property 'test.teamcity-2022-host' must be defined")</ID>
+    <ID>TooGenericExceptionThrown:TeamcityClassicClientTest.kt$TeamcityClassicClientTest.Companion$throw Exception("System property 'test.teamcity-2026-host' must be defined")</ID>
+    <ID>TooGenericExceptionThrown:TeamcityClient.kt$ConfigurationType.ConfigurationTypeExpander$throw Exception("Unknown class $value")</ID>
+    <ID>TooManyFunctions:TeamcityClassicClient.kt$TeamcityClassicClient : TeamcityClient</ID>
+    <ID>TooManyFunctions:TeamcityClient.kt$TeamcityClient</ID>
+    <ID>TooManyFunctions:TeamcityClient.kt$org.octopusden.octopus.infrastructure.teamcity.client.TeamcityClient.kt</ID>
+  </CurrentIssues>
+</SmellBaseline>

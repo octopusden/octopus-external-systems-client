@@ -15,6 +15,6 @@ data class GiteaCreateHook(
     data class Config(
         val url: String,
         val secret: String,
-        val contentType: GiteaHookContentType = GiteaHookContentType.JSON
+        val contentType: GiteaHookContentType = GiteaHookContentType.JSON,
     )
 }

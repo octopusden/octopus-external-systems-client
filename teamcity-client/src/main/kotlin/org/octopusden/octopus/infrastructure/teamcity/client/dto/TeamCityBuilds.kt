@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class TeamcityBuilds(
     @JsonProperty("build")
-    var builds: List<TeamcityBuild> = ArrayList<TeamcityBuild>()
+    var builds: List<TeamcityBuild> = ArrayList<TeamcityBuild>(),
 )

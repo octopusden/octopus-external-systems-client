@@ -26,15 +26,19 @@ dependencies {
 }
 
 configure<ComposeExtension> {
-    useComposeFiles.add(layout.projectDirectory.file("docker/docker-compose.yml").asFile.path)
+    useComposeFiles.add(
+        layout.projectDirectory
+            .file("docker/docker-compose.yml")
+            .asFile.path,
+    )
     waitForTcpPorts.set(true)
     captureContainersOutputToFiles.set(layout.buildDirectory.dir("docker-logs"))
     environment.putAll(
         mapOf(
             "DOCKER_REGISTRY" to project.properties["docker.registry"],
             "TEAMCITY_2022_IMAGE_TAG" to project.properties["teamcity-2022.image-tag"],
-            "TEAMCITY_2026_IMAGE_TAG" to project.properties["teamcity-2026.image-tag"]
-        )
+            "TEAMCITY_2026_IMAGE_TAG" to project.properties["teamcity-2026.image-tag"],
+        ),
     )
 }
 
@@ -43,7 +47,7 @@ fun String.getExt() = project.ext[this] as String
 val commonOkdParameters = mapOf(
     "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
     "DOCKER_REGISTRY" to "dockerRegistry".getExt(),
-    "SERVICE_ACCOUNT_ANYUID" to project.properties["okd.service-account-anyuid"] as String
+    "SERVICE_ACCOUNT_ANYUID" to project.properties["okd.service-account-anyuid"] as String,
 )
 
 ocTemplate {
@@ -52,78 +56,106 @@ ocTemplate {
     namespace.set("okdProject".getExt())
     prefix.set("ext-clients")
 
-    "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let{
+    "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let {
         webConsoleUrl.set(it)
     }
 
     group("teamcityPVCs").apply {
         service("teamcity22-pvc") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-pvc.yaml"))
-            parameters.set(mapOf(
-                "TEAMCITY_ID" to "22"
-            ))
+            parameters.set(
+                mapOf(
+                    "TEAMCITY_ID" to "22",
+                ),
+            )
         }
         service("teamcity26-pvc") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-pvc.yaml"))
-            parameters.set(mapOf(
-                "TEAMCITY_ID" to "26"
-            ))
+            parameters.set(
+                mapOf(
+                    "TEAMCITY_ID" to "26",
+                ),
+            )
         }
     }
 
     group("teamcitySeedUploaders").apply {
         service("teamcity22-uploader") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-uploader.yaml"))
-            parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_ID" to "22"
-            ))
+            parameters.set(
+                commonOkdParameters + mapOf(
+                    "TEAMCITY_ID" to "22",
+                ),
+            )
         }
         service("teamcity26-uploader") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity-uploader.yaml"))
-            parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_ID" to "26"
-            ))
+            parameters.set(
+                commonOkdParameters + mapOf(
+                    "TEAMCITY_ID" to "26",
+                ),
+            )
         }
     }
 
     group("teamcityServers").apply {
         service("teamcity22") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity.yaml"))
-            parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String,
-                "TEAMCITY_ID" to "22",
-                "CPU_REQUEST" to "500m",
-                "CPU_LIMIT" to "2000m",
-                "MEMORY_REQUEST" to "1.5Gi",
-                "MEMORY_LIMIT" to "2Gi"
-            ))
+            parameters.set(
+                commonOkdParameters + mapOf(
+                    "TEAMCITY_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String,
+                    "TEAMCITY_ID" to "22",
+                    "CPU_REQUEST" to "500m",
+                    "CPU_LIMIT" to "2000m",
+                    "MEMORY_REQUEST" to "1.5Gi",
+                    "MEMORY_LIMIT" to "2Gi",
+                ),
+            )
         }
         service("teamcity26") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/teamcity.yaml"))
-            parameters.set(commonOkdParameters + mapOf(
-                "TEAMCITY_IMAGE_TAG" to project.properties["teamcity-2026.image-tag"] as String,
-                "TEAMCITY_ID" to "26",
-                "CPU_REQUEST" to "500m",
-                "CPU_LIMIT" to "2000m",
-                "MEMORY_REQUEST" to "1.2Gi",
-                "MEMORY_LIMIT" to "2Gi"
-            ))
+            parameters.set(
+                commonOkdParameters + mapOf(
+                    "TEAMCITY_IMAGE_TAG" to project.properties["teamcity-2026.image-tag"] as String,
+                    "TEAMCITY_ID" to "26",
+                    "CPU_REQUEST" to "500m",
+                    "CPU_LIMIT" to "2000m",
+                    "MEMORY_REQUEST" to "1.2Gi",
+                    "MEMORY_LIMIT" to "2Gi",
+                ),
+            )
         }
     }
 }
 
 val copyFilesTeamcity2022 = tasks.register<Exec>("copyFilesTeamcity2022") {
     dependsOn("ocCreateTeamcityPVCs", "ocCreateTeamcitySeedUploaders")
-    val localFile = layout.projectDirectory.dir("docker/data.zip").asFile.absolutePath
-    commandLine("oc", "cp", localFile, "-n", "okdProject".getExt(),
-        "${ocTemplate.getPod("teamcity22-uploader")}:/seed/seed.zip")
+    val localFile = layout.projectDirectory
+        .dir("docker/data.zip")
+        .asFile.absolutePath
+    commandLine(
+        "oc",
+        "cp",
+        localFile,
+        "-n",
+        "okdProject".getExt(),
+        "${ocTemplate.getPod("teamcity22-uploader")}:/seed/seed.zip",
+    )
 }
 
 val copyFilesTeamcity2026 = tasks.register<Exec>("copyFilesTeamcity2026") {
     dependsOn("ocCreateTeamcityPVCs", "ocCreateTeamcitySeedUploaders")
-    val localFile = layout.projectDirectory.dir("docker/dataV26.zip").asFile.absolutePath
-    commandLine("oc", "cp", localFile, "-n", "okdProject".getExt(),
-        "${ocTemplate.getPod("teamcity26-uploader")}:/seed/seed.zip")
+    val localFile = layout.projectDirectory
+        .dir("docker/dataV26.zip")
+        .asFile.absolutePath
+    commandLine(
+        "oc",
+        "cp",
+        localFile,
+        "-n",
+        "okdProject".getExt(),
+        "${ocTemplate.getPod("teamcity26-uploader")}:/seed/seed.zip",
+    )
 }
 
 val seedTeamcity = tasks.register("seedTeamcity") {

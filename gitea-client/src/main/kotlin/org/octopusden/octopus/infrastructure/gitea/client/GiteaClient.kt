@@ -4,9 +4,6 @@ import feign.Headers
 import feign.Param
 import feign.QueryMap
 import feign.RequestLine
-import java.util.Date
-import java.util.LinkedList
-import java.util.concurrent.atomic.AtomicReference
 import org.octopusden.octopus.infrastructure.gitea.client.dto.BaseGiteaEntity
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaBranch
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCommit
@@ -27,6 +24,9 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaTag
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.Date
+import java.util.LinkedList
+import java.util.concurrent.atomic.AtomicReference
 
 private val _log: Logger = LoggerFactory.getLogger(GiteaClient::class.java)
 
@@ -36,19 +36,24 @@ const val REPO_PATH = "api/v1/repos"
 const val ENTITY_LIMIT = 50
 
 interface GiteaClient {
-
     @RequestLine("POST $HOOK_PATH")
     @Headers("Content-Type: application/json")
     fun createDefaultHook(dto: GiteaCreateHook): GiteaHook
 
     @RequestLine("GET $HOOK_PATH/{id}")
-    fun getDefaultHook(@Param("id") id: Long): GiteaHook
+    fun getDefaultHook(
+        @Param("id") id: Long,
+    ): GiteaHook
 
     @RequestLine("DELETE $HOOK_PATH/{id}")
-    fun deleteDefaultHook(@Param("id") id: Long)
+    fun deleteDefaultHook(
+        @Param("id") id: Long,
+    )
 
     @RequestLine("GET $ORG_PATH")
-    fun getOrganizations(@QueryMap requestParams: Map<String, Any>): GiteaEntityList<GiteaOrganization>
+    fun getOrganizations(
+        @QueryMap requestParams: Map<String, Any>,
+    ): GiteaEntityList<GiteaOrganization>
 
     @RequestLine("POST $ORG_PATH")
     @Headers("Content-Type: application/json")
@@ -56,24 +61,29 @@ interface GiteaClient {
 
     @RequestLine("GET $ORG_PATH/{organization}")
     @Throws(NotFoundException::class)
-    fun getOrganization(@Param("organization") organization: String): GiteaOrganization
+    fun getOrganization(
+        @Param("organization") organization: String,
+    ): GiteaOrganization
 
     @RequestLine("GET $ORG_PATH/{organization}/repos")
     fun getRepositories(
         @Param("organization") organization: String,
-        @QueryMap requestParams: Map<String, Any>
+        @QueryMap requestParams: Map<String, Any>,
     ): GiteaEntityList<GiteaRepository>
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}")
     @Throws(NotFoundException::class)
     fun getRepository(
         @Param("organization") organization: String,
-        @Param("repository") repository: String
+        @Param("repository") repository: String,
     ): GiteaRepository
 
     @RequestLine("POST $ORG_PATH/{organization}/repos")
     @Headers("Content-Type: application/json")
-    fun createRepository(@Param("organization") organization: String, dto: GiteaCreateRepository)
+    fun createRepository(
+        @Param("organization") organization: String,
+        dto: GiteaCreateRepository,
+    )
 
     @RequestLine("DELETE $REPO_PATH/{organization}/{repository}")
     fun deleteRepository(
@@ -85,7 +95,7 @@ interface GiteaClient {
     fun getRepositoryHooks(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        @QueryMap requestParams: Map<String, Any>
+        @QueryMap requestParams: Map<String, Any>,
     ): GiteaEntityList<GiteaHook>
 
     @RequestLine("POST $REPO_PATH/{organization}/{repository}/hooks")
@@ -93,14 +103,14 @@ interface GiteaClient {
     fun createRepositoryHook(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        dto: GiteaCreateHook
+        dto: GiteaCreateHook,
     ): GiteaHook
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/commits")
     fun getCommits(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        @QueryMap requestParams: Map<String, Any>
+        @QueryMap requestParams: Map<String, Any>,
     ): GiteaEntityList<GiteaCommit>
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/git/commits/{sha}", decodeSlash = false)
@@ -109,7 +119,7 @@ interface GiteaClient {
         @Param("organization") organization: String,
         @Param("repository") repository: String,
         @Param("sha") sha: String,
-        @QueryMap requestParams: Map<String, Any>
+        @QueryMap requestParams: Map<String, Any>,
     ): GiteaCommit
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/tags")
@@ -124,7 +134,7 @@ interface GiteaClient {
     fun createTag(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        dto: GiteaCreateTag
+        dto: GiteaCreateTag,
     ): GiteaTag
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/tags/{tag}", decodeSlash = false)
@@ -132,7 +142,7 @@ interface GiteaClient {
     fun getTag(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        @Param("tag") tag: String
+        @Param("tag") tag: String,
     ): GiteaTag
 
     @RequestLine("DELETE $REPO_PATH/{organization}/{repository}/tags/{tag}", decodeSlash = false)
@@ -140,7 +150,7 @@ interface GiteaClient {
     fun deleteTag(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        @Param("tag") tag: String
+        @Param("tag") tag: String,
     )
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/branches")
@@ -155,14 +165,14 @@ interface GiteaClient {
     fun getBranch(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        @Param("branch") branch: String
+        @Param("branch") branch: String,
     ): GiteaBranch
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/pulls")
     fun getPullRequests(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        @QueryMap requestParams: Map<String, Any>
+        @QueryMap requestParams: Map<String, Any>,
     ): GiteaEntityList<GiteaPullRequest>
 
     @RequestLine("POST $REPO_PATH/{organization}/{repository}/pulls")
@@ -170,14 +180,14 @@ interface GiteaClient {
     fun createPullRequest(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        dto: GiteaCreatePullRequest
+        dto: GiteaCreatePullRequest,
     ): GiteaPullRequest
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/pulls/{number}")
     fun getPullRequest(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        @Param("number") number: Long
+        @Param("number") number: Long,
     ): GiteaPullRequest
 
     @RequestLine("GET $REPO_PATH/{organization}/{repository}/pulls/{number}/reviews")
@@ -185,7 +195,7 @@ interface GiteaClient {
         @Param("organization") organization: String,
         @Param("repository") repository: String,
         @Param("number") number: Long,
-        @QueryMap requestParams: Map<String, Any>
+        @QueryMap requestParams: Map<String, Any>,
     ): GiteaEntityList<GiteaPullRequestReview>
 
     @RequestLine("PATCH $REPO_PATH/{organization}/{repository}")
@@ -193,7 +203,7 @@ interface GiteaClient {
     fun updateRepositoryConfiguration(
         @Param("organization") organization: String,
         @Param("repository") repository: String,
-        dto: GiteaEditRepoOption
+        dto: GiteaEditRepoOption,
     )
 
     @RequestLine("POST $REPO_PATH/migrate")
@@ -201,9 +211,8 @@ interface GiteaClient {
     fun migrateRepository(dto: GiteaMigrateRepository): GiteaRepository
 }
 
-fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> {
-    return execute({ parameters: Map<String, Any> -> getOrganizations(parameters) })
-}
+fun GiteaClient.getOrganizations(): Collection<GiteaOrganization> =
+    execute({ parameters: Map<String, Any> -> getOrganizations(parameters) })
 
 @Suppress("unused")
 fun GiteaClient.getRepositories(organization: String): Collection<GiteaRepository> =
@@ -213,11 +222,16 @@ fun GiteaClient.getCommit(
     organization: String,
     repository: String,
     sha: String,
-    files: Boolean = false
+    files: Boolean = false,
 ) = getCommit(
-    organization, repository, sha, mapOf(
-        "stat" to false, "verification" to false, "files" to files
-    )
+    organization,
+    repository,
+    sha,
+    mapOf(
+        "stat" to false,
+        "verification" to false,
+        "files" to files,
+    ),
 )
 
 fun GiteaClient.getCommits(
@@ -225,12 +239,17 @@ fun GiteaClient.getCommits(
     repository: String,
     until: String,
     sinceDate: Date? = null,
-    files: Boolean = false
+    files: Boolean = false,
 ) = execute({ parameters: Map<String, Any> ->
     getCommits(
-        organization, repository, parameters + mapOf(
-            "stat" to false, "verification" to false, "files" to files, "sha" to until
-        )
+        organization,
+        repository,
+        parameters + mapOf(
+            "stat" to false,
+            "verification" to false,
+            "files" to files,
+            "sha" to until,
+        ),
     )
 }, { commit: GiteaCommit -> sinceDate == null || commit.created > sinceDate })
 
@@ -240,7 +259,7 @@ fun GiteaClient.getCommits(
     repository: String,
     until: String,
     since: String,
-    files: Boolean = false
+    files: Boolean = false,
 ): List<GiteaCommit> {
     val toSha = getCommit(organization, repository, until).sha
     val fromSha = getCommit(organization, repository, since).sha
@@ -248,7 +267,11 @@ fun GiteaClient.getCommits(
         return emptyList()
     }
     val parameters = mapOf(
-        "limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to files, "sha" to toSha
+        "limit" to ENTITY_LIMIT,
+        "stat" to false,
+        "verification" to false,
+        "files" to files,
+        "sha" to toSha,
     )
     val commits = mutableMapOf<String, GiteaCommit>()
     var page = 0
@@ -273,7 +296,7 @@ fun GiteaClient.getCommits(
         orphanedCommits = (orphanedCommits + includedCommits).filter { commit ->
             commit.parents.any { parentCommit ->
                 !excludedCommits.contains(parentCommit.sha) &&
-                        !commits.containsKey(parentCommit.sha)
+                    !commits.containsKey(parentCommit.sha)
             }
         }
     } while ((giteaResponse.hasMore ?: (giteaResponse.values.isNotEmpty())) && orphanedCommits.isNotEmpty())
@@ -284,29 +307,33 @@ fun GiteaClient.getCommits(
     return commits.map { it.value }
 }
 
-fun GiteaClient.getBranchesCommitGraph(organization: String, repository: String, files: Boolean = false)
-        : Sequence<GiteaCommit> {
+fun GiteaClient.getBranchesCommitGraph(
+    organization: String,
+    repository: String,
+    files: Boolean = false,
+): Sequence<GiteaCommit> {
     val parameters = mapOf("limit" to ENTITY_LIMIT, "stat" to false, "verification" to false, "files" to files)
     return GiteaCommitGraphSequence(getBranches(organization, repository)) { branch, page ->
         getCommits(organization, repository, parameters + mapOf<String, Any>("sha" to branch, "page" to page))
     }
 }
 
-fun GiteaClient.getRepositoryHooks(organization: String, repository: String): List<GiteaHook> =
-    execute({ parameters: Map<String, Any> -> getRepositoryHooks(organization, repository, parameters) })
+fun GiteaClient.getRepositoryHooks(
+    organization: String,
+    repository: String,
+): List<GiteaHook> = execute({ parameters: Map<String, Any> -> getRepositoryHooks(organization, repository, parameters) })
 
 class GiteaCommitGraphSequence(
     branches: Collection<GiteaBranch>,
-    pageRequest: (branchSha: String, page: Int) -> GiteaEntityList<GiteaCommit>
+    pageRequest: (branchSha: String, page: Int) -> GiteaEntityList<GiteaCommit>,
 ) : Sequence<GiteaCommit> {
     private val iteratorRef = AtomicReference(GiteaCommitGraphIterator(branches, pageRequest))
 
-    override operator fun iterator() =
-        iteratorRef.getAndSet(null) ?: throw IllegalStateException("This iterator can be consumed only once")
+    override operator fun iterator() = iteratorRef.getAndSet(null) ?: throw IllegalStateException("This iterator can be consumed only once")
 
     class GiteaCommitGraphIterator(
         branches: Collection<GiteaBranch>,
-        private val pageRequest: (branchSha: String, page: Int) -> GiteaEntityList<GiteaCommit>
+        private val pageRequest: (branchSha: String, page: Int) -> GiteaEntityList<GiteaCommit>,
     ) : Iterator<GiteaCommit> {
         private val branchBuffer = LinkedList(branches)
         private val commitBuffer = LinkedList<GiteaCommit>()
@@ -322,9 +349,10 @@ class GiteaCommitGraphSequence(
 
         override fun hasNext() = synchronized(this) { commitBuffer.isNotEmpty() }
 
-        override fun next(): GiteaCommit = synchronized(this) {
-            commitBuffer.pop().also { if (commitBuffer.isEmpty()) fetch() }
-        }
+        override fun next(): GiteaCommit =
+            synchronized(this) {
+                commitBuffer.pop().also { if (commitBuffer.isEmpty()) fetch() }
+            }
 
         private fun fetch() {
             while (currentBranch != null && commitBuffer.isEmpty()) {
@@ -351,15 +379,16 @@ class GiteaCommitGraphSequence(
 
 fun GiteaClient.getTags(
     organization: String,
-    repository: String
+    repository: String,
 ): Collection<GiteaTag> = execute({ parameters: Map<String, Any> -> getTags(organization, repository, parameters) })
 
 fun GiteaClient.getBranches(
     organization: String,
-    repository: String
-): Collection<GiteaBranch> = execute({ parameters: Map<String, Any> ->
-    getBranches(organization, repository, parameters) ?: GiteaEntityList(false, emptyList())
-})
+    repository: String,
+): Collection<GiteaBranch> =
+    execute({ parameters: Map<String, Any> ->
+        getBranches(organization, repository, parameters) ?: GiteaEntityList(false, emptyList())
+    })
 
 fun GiteaClient.createPullRequestWithDefaultReviewers(
     organization: String,
@@ -368,21 +397,21 @@ fun GiteaClient.createPullRequestWithDefaultReviewers(
     targetBranch: String,
     title: String,
     description: String,
-    assignee: String? = null
+    assignee: String? = null,
 ): GiteaPullRequest {
     val head = getBranch(organization, repository, sourceBranch).name
     val base = getBranch(organization, repository, targetBranch).name
     return createPullRequest(
         organization,
         repository,
-        GiteaCreatePullRequest(title, description, head, base, assignee)
+        GiteaCreatePullRequest(title, description, head, base, assignee),
     )
 }
 
 @Suppress("unused")
 fun GiteaClient.getPullRequests(
     organization: String,
-    repository: String
+    repository: String,
 ) = execute({ parameters: Map<String, Any> ->
     getPullRequests(organization, repository, parameters)
 })
@@ -391,14 +420,14 @@ fun GiteaClient.getPullRequests(
 fun GiteaClient.getPullRequestReviews(
     organization: String,
     repository: String,
-    number: Long
+    number: Long,
 ) = execute({ parameters: Map<String, Any> ->
     getPullRequestReviews(organization, repository, number, parameters)
 })
 
 private fun <T : BaseGiteaEntity> execute(
     function: (Map<String, Any>) -> GiteaEntityList<T>,
-    filter: (element: T) -> Boolean = { true }
+    filter: (element: T) -> Boolean = { true },
 ): MutableList<T> {
     var page = 1
     val entities = mutableListOf<T>()
@@ -422,8 +451,8 @@ private fun <T : BaseGiteaEntity> execute(
     return entities
 }
 
-fun GiteaRepository.toGiteaEditRepoOption(): GiteaEditRepoOption {
-    return GiteaEditRepoOption(
+fun GiteaRepository.toGiteaEditRepoOption(): GiteaEditRepoOption =
+    GiteaEditRepoOption(
         allowMergeCommits = allowMergeCommits,
         allowRebase = allowRebase,
         allowRebaseExplicit = allowRebaseExplicit,
@@ -453,6 +482,5 @@ fun GiteaRepository.toGiteaEditRepoOption(): GiteaEditRepoOption {
         name = name,
         private = private,
         template = template,
-        website = website
+        website = website,
     )
-}

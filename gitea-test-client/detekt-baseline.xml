@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ClassOrdering:GiteaTestClient.kt$GiteaTestClient$override val vcsUrlRegex = "(?:ssh://)?git@$vcsUrlHost[:/]([^:/]+)/([^:/]+).git".toRegex()</ID>
+    <ID>ClassOrdering:GiteaTestClient.kt$GiteaTestClient$val client = GiteaClassicClient(object : ClientParametersProvider { override fun getApiUrl(): String = apiUrl override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(username, password) })</ID>
+    <ID>SwallowedException:GiteaTestClient.kt$GiteaTestClient$e: NotFoundException</ID>
+    <ID>TooGenericExceptionThrown:GiteaTestClientTest.kt$GiteaTestClientTest.Companion$throw Exception("System property 'test.gitea-host' must be defined")</ID>
+    <ID>TooGenericExceptionThrown:GiteaTestClientTest.kt$GiteaTestClientTest.Companion$throw Exception("System property 'test.second-gitea-host' must be defined")</ID>
+  </CurrentIssues>
+</SmellBaseline>

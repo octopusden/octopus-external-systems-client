@@ -14,12 +14,17 @@ java {
 configure<ComposeExtension> {
     useComposeFiles.add("${projectDir}${File.separator}docker${File.separator}docker-compose.yml")
     waitForTcpPorts.set(true)
-    captureContainersOutputToFiles.set(layout.buildDirectory.file("docker_logs").get().asFile)
+    captureContainersOutputToFiles.set(
+        layout.buildDirectory
+            .file("docker_logs")
+            .get()
+            .asFile,
+    )
     environment.putAll(
         mapOf(
             "DOCKER_REGISTRY" to project.properties["docker.registry"],
-            "GITEA_IMAGE_TAG" to properties["gitea.image-tag"]
-        )
+            "GITEA_IMAGE_TAG" to properties["gitea.image-tag"],
+        ),
     )
 }
 
@@ -27,7 +32,7 @@ fun String.getExt() = project.ext[this] as String
 
 val commonOkdParameters = mapOf(
     "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
-    "DOCKER_REGISTRY" to "dockerRegistry".getExt()
+    "DOCKER_REGISTRY" to "dockerRegistry".getExt(),
 )
 
 ocTemplate {
@@ -37,33 +42,37 @@ ocTemplate {
     namespace.set("okdProject".getExt())
     prefix.set("ext-clients")
 
-    "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let{
+    "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let {
         webConsoleUrl.set(it)
     }
 
     group("giteaServices").apply {
         service("gitea-1") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/gitea.yaml"))
-            parameters.set(commonOkdParameters + mapOf(
-                "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
-                "GITEA_ID" to "1",
-                "CPU_REQUEST" to "50m",
-                "CPU_LIMIT" to "1000m",
-                "MEMORY_REQUEST" to "256Mi",
-                "MEMORY_LIMIT" to "1Gi"
-            ))
+            parameters.set(
+                commonOkdParameters + mapOf(
+                    "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
+                    "GITEA_ID" to "1",
+                    "CPU_REQUEST" to "50m",
+                    "CPU_LIMIT" to "1000m",
+                    "MEMORY_REQUEST" to "256Mi",
+                    "MEMORY_LIMIT" to "1Gi",
+                ),
+            )
         }
 
         service("gitea-2") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/gitea.yaml"))
-            parameters.set(commonOkdParameters + mapOf(
-                "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
-                "GITEA_ID" to "2",
-                "CPU_REQUEST" to "50m",
-                "CPU_LIMIT" to "1000m",
-                "MEMORY_REQUEST" to "256Mi",
-                "MEMORY_LIMIT" to "1Gi"
-            ))
+            parameters.set(
+                commonOkdParameters + mapOf(
+                    "GITEA_IMAGE_TAG" to properties["gitea.image-tag"] as String,
+                    "GITEA_ID" to "2",
+                    "CPU_REQUEST" to "50m",
+                    "CPU_LIMIT" to "1000m",
+                    "MEMORY_REQUEST" to "256Mi",
+                    "MEMORY_LIMIT" to "1Gi",
+                ),
+            )
         }
     }
 }
@@ -98,5 +107,3 @@ dependencies {
     implementation(project(":gitea-client"))
     testImplementation(project(":test-client-test-commons"))
 }
-
-

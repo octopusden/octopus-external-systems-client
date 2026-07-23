@@ -8,5 +8,5 @@ data class TeamcityProjects(
     val nextHref: String? = null,
     val prevHref: String? = null,
     @JsonProperty("project")
-    var projects: List<TeamcityProject> = ArrayList<TeamcityProject>()
+    var projects: List<TeamcityProject> = ArrayList<TeamcityProject>(),
 )

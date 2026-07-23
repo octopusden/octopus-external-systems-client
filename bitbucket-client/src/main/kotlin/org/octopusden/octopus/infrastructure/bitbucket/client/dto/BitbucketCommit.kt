@@ -5,10 +5,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import java.util.Date
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-class BitbucketCommit @JsonCreator constructor(
-    val id: String,
-    val message: String,
-    val author: BitbucketUser,
-    val authorTimestamp: Date,
-    val parents: List<BitbucketParent>
-)
+class BitbucketCommit
+    @JsonCreator
+    constructor(
+        val id: String,
+        val message: String,
+        val author: BitbucketUser,
+        val authorTimestamp: Date,
+        val parents: List<BitbucketParent>,
+    )

@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>SwallowedException:BitbucketClient.kt$e: InvalidCommitIdException</ID>
+    <ID>ThrowingExceptionsWithoutMessageOrCause:BitbucketClientErrorDecoder.kt$BitbucketClientErrorDecoder$IllegalStateException()</ID>
+    <ID>TooManyFunctions:BitbucketClassicClient.kt$BitbucketClassicClient : BitbucketClient</ID>
+    <ID>TooManyFunctions:BitbucketClient.kt$BitbucketClient</ID>
+    <ID>TooManyFunctions:BitbucketClient.kt$org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketClient.kt</ID>
+    <ID>UseCheckOrError:BitbucketClientResponseDecoder.kt$BitbucketClientResponseDecoder$throw IllegalStateException("Empty response body while decoding")</ID>
+    <ID>UseCheckOrError:BitbucketCreateRepository.kt$BitbucketCreateRepository.ScmType.Companion$throw IllegalStateException("scmId must be in: '${values().joinToString()}}' but it is $scmId")</ID>
+    <ID>UseCheckOrError:BitbucketLinkName.kt$BitbucketLinkName.Companion$throw IllegalStateException("Repository Link Name must be in: '${values().joinToString()}}' but got $name")</ID>
+  </CurrentIssues>
+</SmellBaseline>

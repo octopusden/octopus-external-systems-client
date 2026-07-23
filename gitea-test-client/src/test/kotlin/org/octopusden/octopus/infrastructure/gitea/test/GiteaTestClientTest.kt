@@ -1,7 +1,5 @@
 package org.octopusden.octopus.infrastructure.gitea.test
 
-import java.io.File
-import java.util.concurrent.TimeUnit
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -35,40 +33,60 @@ import org.octopusden.octopus.infrastructure.gitea.client.getTags
 import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.io.File
+import java.util.concurrent.TimeUnit
 import kotlin.text.format
 
 class GiteaTestClientTest :
     BaseTestClientTest(
         GiteaTestClient("http://$giteaHost", USER, PASSWORD, vcsFacadeUrl = "http://vcs-facade", "test-gitea", "secret"),
-        "ssh://git@$giteaHost:%s/%s.git"
+        "ssh://git@$giteaHost:%s/%s.git",
     ) {
-
     private val log: Logger = LoggerFactory.getLogger(GiteaTestClientTest::class.java)
     private val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = "http://$giteaHost"
+
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
     })
-    private val secondClient = GiteaClassicClient(object : ClientParametersProvider{
+    private val secondClient = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = "http://$secondGiteaHost"
+
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(USER, PASSWORD)
     })
 
-    override fun getTags(project: String, repository: String) =
-        client.getTags(project, repository).map { t -> t.toTestTag() }
+    override fun getTags(
+        project: String,
+        repository: String,
+    ) = client.getTags(project, repository).map { t -> t.toTestTag() }
 
-    override fun getTag(project: String, repository: String, tag: String) =
-        client.getTag(project, repository, tag).toTestTag()
+    override fun getTag(
+        project: String,
+        repository: String,
+        tag: String,
+    ) = client.getTag(project, repository, tag).toTestTag()
 
-    override fun deleteTag(project: String, repository: String, tag: String) {
-        doWithRetries { client.deleteTag(project, repository, tag)  }
+    override fun deleteTag(
+        project: String,
+        repository: String,
+        tag: String,
+    ) {
+        doWithRetries { client.deleteTag(project, repository, tag) }
     }
 
-    override fun createTag(project: String, repository: String, commitId: String, tag: String) {
+    override fun createTag(
+        project: String,
+        repository: String,
+        commitId: String,
+        tag: String,
+    ) {
         client.createTag(project, repository, GiteaCreateTag(tag, commitId, "test"))
     }
 
-    override fun getCommits(project: String, repository: String, branch: String) =
-        client.getCommits(project, repository, branch).map { c -> c.toTestCommit() }
+    override fun getCommits(
+        project: String,
+        repository: String,
+        branch: String,
+    ) = client.getCommits(project, repository, branch).map { c -> c.toTestCommit() }
 
     override fun createPullRequestWithDefaultReviewers(
         project: String,
@@ -76,39 +94,46 @@ class GiteaTestClientTest :
         sourceBranch: String,
         targetBranch: String,
         title: String,
-        description: String
-    ) = client.createPullRequestWithDefaultReviewers(
+        description: String,
+    ) = client
+        .createPullRequestWithDefaultReviewers(
             project,
             repository,
             sourceBranch,
             targetBranch,
             title,
-            description
+            description,
         ).toTestPullRequest()
 
-    override fun getPullRequest(project: String, repository: String, index: Long) =
-        client.getPullRequest(project, repository, index).toTestPullRequest()
+    override fun getPullRequest(
+        project: String,
+        repository: String,
+        index: Long,
+    ) = client.getPullRequest(project, repository, index).toTestPullRequest()
 
     private fun GiteaTag.toTestTag() = TestTag(name, commit.sha)
+
     private fun GiteaCommit.toTestCommit() = TestCommit(sha, commit.message)
+
     private fun GiteaPullRequest.toTestPullRequest() = TestPullRequest(number, title, body, head.label, base.label)
-    private fun doWithRetries(retryFunction: () -> Unit) {
-        return RetryOperation.configure<Unit> {
-            attempts = RETRY_COUNT
-            failureException { exception ->
-                NotFoundException::class.java == exception.javaClass
-            }
-            onException { exception, attempt ->
-                val message = "attempt=$attempt ($RETRY_COUNT) is failed on $exception"
-                log.warn(message, exception)
-                message
-            }
-            executeOnFail {
-                log.info("Waiting $RETRY_INTERVAL_SEC seconds before retry")
-                TimeUnit.SECONDS.sleep(RETRY_INTERVAL_SEC)
-            }
-        }.execute(retryFunction)
-    }
+
+    private fun doWithRetries(retryFunction: () -> Unit) =
+        RetryOperation
+            .configure<Unit> {
+                attempts = RETRY_COUNT
+                failureException { exception ->
+                    NotFoundException::class.java == exception.javaClass
+                }
+                onException { exception, attempt ->
+                    val message = "attempt=$attempt ($RETRY_COUNT) is failed on $exception"
+                    log.warn(message, exception)
+                    message
+                }
+                executeOnFail {
+                    log.info("Waiting $RETRY_INTERVAL_SEC seconds before retry")
+                    TimeUnit.SECONDS.sleep(RETRY_INTERVAL_SEC)
+                }
+            }.execute(retryFunction)
 
     @Test
     fun testUpdateRepositoryConfiguration() {
@@ -149,13 +174,14 @@ class GiteaTestClientTest :
         val giteaRepositoryConfigResult =
             client.getRepository(organizationName, repositoryName).toGiteaEditRepoOption()
         assertEquals(
-            giteaRepositoryConfig.copy(
-                // defaultAllowMaintainerEdit is a setting of the Pull Requests unit.
-                // This test disables the Pull Requests unit by setting hasPullRequests to false.
-                // Therefore, we do not compare defaultAllowMaintainerEdit here.
-                defaultAllowMaintainerEdit = giteaRepositoryConfigResult.defaultAllowMaintainerEdit
-            ).toString(),
-            giteaRepositoryConfigResult.toString()
+            giteaRepositoryConfig
+                .copy(
+                    // defaultAllowMaintainerEdit is a setting of the Pull Requests unit.
+                    // This test disables the Pull Requests unit by setting hasPullRequests to false.
+                    // Therefore, we do not compare defaultAllowMaintainerEdit here.
+                    defaultAllowMaintainerEdit = giteaRepositoryConfigResult.defaultAllowMaintainerEdit,
+                ).toString(),
+            giteaRepositoryConfigResult.toString(),
         )
     }
 
@@ -170,7 +196,7 @@ class GiteaTestClientTest :
             giteaRepository.defaultAllowMaintainerEdit?.let { !it } ?: true
         val giteaRepositoryConfig = giteaRepository.toGiteaEditRepoOption().copy(
             hasPullRequests = true,
-            defaultAllowMaintainerEdit = expectedDefaultAllowMaintainerEdit
+            defaultAllowMaintainerEdit = expectedDefaultAllowMaintainerEdit,
         )
         client.updateRepositoryConfiguration(organizationName, repositoryName, giteaRepositoryConfig)
         val result = client.getRepository(organizationName, repositoryName).toGiteaEditRepoOption()
@@ -186,18 +212,21 @@ class GiteaTestClientTest :
         val branchesCommitGraphSequence = client.getBranchesCommitGraph(PROJECT, repository)
 
         Assertions.assertIterableEquals(
-            mutableSetOf<TestCommit>().apply {
-                client.getBranches(PROJECT, repository).forEach { branch ->
-                    addAll(testClient.getCommits(vcsUrl, branch.name).map { TestCommit(it.id, it.message) })
-                }
-            }.sortedBy { it.commitId },
-            branchesCommitGraphSequence.map { it.toTestCommit() }.sortedBy { it.commitId }
-                .sortedBy { it.commitId }.toList()
+            mutableSetOf<TestCommit>()
+                .apply {
+                    client.getBranches(PROJECT, repository).forEach { branch ->
+                        addAll(testClient.getCommits(vcsUrl, branch.name).map { TestCommit(it.id, it.message) })
+                    }
+                }.sortedBy { it.commitId },
+            branchesCommitGraphSequence
+                .map { it.toTestCommit() }
+                .sortedBy { it.commitId }
+                .sortedBy { it.commitId }
+                .toList(),
         )
 
         val exception = assertThrows<IllegalStateException> {
             branchesCommitGraphSequence.iterator()
-
         }
         assertEquals("This iterator can be consumed only once", exception.message)
     }
@@ -208,13 +237,18 @@ class GiteaTestClientTest :
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit 1",
                 vcsUrl,
-                BaseTestClient.DEFAULT_BRANCH
-            )
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
         )
         val commit = client.getCommit(PROJECT, REPOSITORY, changeSet.id, true)
         assertEquals(1, commit.files!!.size)
         assertEquals(GiteaCommit.GiteaCommitAffectedFileStatus.ADDED, commit.files!!.first().status)
-        assertTrue(commit.files!!.first().filename.endsWith(".commit"))
+        assertTrue(
+            commit.files!!
+                .first()
+                .filename
+                .endsWith(".commit"),
+        )
         assertEquals(commit, client.getCommits(PROJECT, REPOSITORY, changeSet.id, null, true).first())
     }
 
@@ -224,8 +258,8 @@ class GiteaTestClientTest :
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit 1",
                 vcsUrl,
-                BaseTestClient.DEFAULT_BRANCH
-            )
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
         )
         val hooks = client.getRepositoryHooks(PROJECT, REPOSITORY)
         assertEquals(1, hooks.size)
@@ -242,15 +276,15 @@ class GiteaTestClientTest :
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit 1",
                 vcsUrl,
-                BaseTestClient.DEFAULT_BRANCH
-            )
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
         )
         testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit 2",
                 vcsUrl,
-                BaseTestClient.DEFAULT_BRANCH
-            )
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
         )
         val sourceRepository = client.getRepository(organizationName, repositoryName)
         secondClient.createOrganization(GiteaCreateOrganization(organizationName))
@@ -265,18 +299,20 @@ class GiteaTestClientTest :
                 repoName = repositoryName,
                 repoOwner = organizationName,
                 authUsername = USER,
-                authPassword = PASSWORD
-            )
+                authPassword = PASSWORD,
+            ),
         )
         val migratedRepository = secondClient.getRepository(organizationName, repositoryName)
         assertEquals(repositoryName, migratedRepository.name)
         assertEquals("$organizationName/$repositoryName", migratedRepository.fullName)
         val sourceCommits = client
             .getCommits(organizationName, repositoryName, BaseTestClient.DEFAULT_BRANCH)
-            .map { it.sha }.toSet()
+            .map { it.sha }
+            .toSet()
         val targetCommits = secondClient
             .getCommits(organizationName, repositoryName, BaseTestClient.DEFAULT_BRANCH)
-            .map { it.sha }.toSet()
+            .map { it.sha }
+            .toSet()
         assertEquals(sourceCommits, targetCommits)
     }
 

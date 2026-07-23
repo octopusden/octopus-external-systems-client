@@ -1,0 +1,8 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ClassOrdering:BaseTestClientTest.kt$BaseTestClientTest$protected val vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)</ID>
+    <ID>TooGenericExceptionCaught:RetryOperation.kt$RetryOperation$e: Exception</ID>
+  </CurrentIssues>
+</SmellBaseline>

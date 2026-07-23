@@ -27,7 +27,7 @@ class GiteaTestClient : BaseTestClient {
         password: String,
         vcsFacadeUrl: String? = null,
         serviceId: String? = null,
-        webHookSecret: String? = null
+        webHookSecret: String? = null,
     ) : super(url, username, password) {
         this.vcsFacadeUrl = vcsFacadeUrl
         this.serviceId = serviceId
@@ -41,7 +41,7 @@ class GiteaTestClient : BaseTestClient {
         externalHost: String,
         vcsFacadeUrl: String? = null,
         serviceId: String? = null,
-        webHookSecret: String? = null
+        webHookSecret: String? = null,
     ) : super(url, username, password, externalHost) {
         this.vcsFacadeUrl = vcsFacadeUrl
         this.serviceId = serviceId
@@ -57,14 +57,14 @@ class GiteaTestClient : BaseTestClient {
         webHookSecret: String?,
         commitRetries: Int,
         commitPingInterval: Long,
-        commitRaiseException: Boolean
+        commitRaiseException: Boolean,
     ) : super(
         url,
         username,
         password,
         commitRetries = commitRetries,
         commitPingInterval = commitPingInterval,
-        commitRaiseException = commitRaiseException
+        commitRaiseException = commitRaiseException,
     ) {
         this.vcsFacadeUrl = vcsFacadeUrl
         this.serviceId = serviceId
@@ -81,7 +81,7 @@ class GiteaTestClient : BaseTestClient {
         webHookSecret: String?,
         commitRetries: Int,
         commitPingInterval: Long,
-        commitRaiseException: Boolean
+        commitRaiseException: Boolean,
     ) : super(
         url,
         username,
@@ -89,7 +89,7 @@ class GiteaTestClient : BaseTestClient {
         externalHost,
         commitRetries,
         commitPingInterval,
-        commitRaiseException
+        commitRaiseException,
     ) {
         this.vcsFacadeUrl = vcsFacadeUrl
         this.serviceId = serviceId
@@ -98,6 +98,7 @@ class GiteaTestClient : BaseTestClient {
 
     val client = GiteaClassicClient(object : ClientParametersProvider {
         override fun getApiUrl(): String = apiUrl
+
         override fun getAuth(): CredentialProvider = StandardBasicCredCredentialProvider(username, password)
     })
 
@@ -125,12 +126,18 @@ class GiteaTestClient : BaseTestClient {
                 webHookSecret?.let { webHookSecretValue ->
                     log.debug("[$vcsUrlHost] create webhook '$repository'")
                     client.createRepositoryHook(
-                        repository.group, repository.name, GiteaCreateHook(
-                            GiteaHookType.GITEA, true, "*", GiteaCreateHook.Config(
+                        repository.group,
+                        repository.name,
+                        GiteaCreateHook(
+                            GiteaHookType.GITEA,
+                            true,
+                            "*",
+                            GiteaCreateHook.Config(
                                 "$vcsFacadeUrlValue/rest/api/1/indexer/gitea/webhook?vcsServiceId=$serviceIdValue",
-                                webHookSecretValue
-                            ), listOf(GiteaHookEvent.PUSH)
-                        )
+                                webHookSecretValue,
+                            ),
+                            listOf(GiteaHookEvent.PUSH),
+                        ),
                     )
                 }
             }
@@ -142,7 +149,10 @@ class GiteaTestClient : BaseTestClient {
         client.deleteRepository(repository.group, repository.name)
     }
 
-    override fun checkCommit(repository: Repository, sha: String) {
+    override fun checkCommit(
+        repository: Repository,
+        sha: String,
+    ) {
         log.debug("[$vcsUrlHost] check commit '$sha' in repository '$repository'")
         client.getCommits(repository.group, repository.name, sha)
     }

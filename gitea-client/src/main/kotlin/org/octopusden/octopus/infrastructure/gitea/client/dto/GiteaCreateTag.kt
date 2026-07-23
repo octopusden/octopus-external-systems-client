@@ -7,5 +7,5 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming
 data class GiteaCreateTag(
     val tagName: String,
     val target: String,
-    val message: String
+    val message: String,
 )

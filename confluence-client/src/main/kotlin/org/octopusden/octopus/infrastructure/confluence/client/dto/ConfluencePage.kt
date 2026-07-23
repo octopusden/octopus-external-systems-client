@@ -10,10 +10,10 @@ data class ConfluencePage(
     val space: ConfluenceSpace? = null,
     val body: ConfluencePageBody? = null,
     val version: ConfluencePageVersion? = null,
-    val ancestors: List<ConfluencePageAncestor>? = null
+    val ancestors: List<ConfluencePageAncestor>? = null,
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class ConfluencePageAncestor(
-    val id: String
+    val id: String,
 )

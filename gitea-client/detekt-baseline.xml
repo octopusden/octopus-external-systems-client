@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>IteratorNotThrowingNoSuchElementException:GiteaClient.kt$GiteaCommitGraphSequence$GiteaCommitGraphIterator : Iterator</ID>
+    <ID>MaxLineLength:GiteaEditRepoOption.kt$GiteaEditRepoOption$val `private`: Boolean? = null</ID>
+    <ID>MaxLineLength:GiteaEditRepoOption.kt$GiteaEditRepoOption$val allowMergeCommits: Boolean? = null</ID>
+    <ID>MaxLineLength:GiteaEditRepoOption.kt$GiteaEditRepoOption$val allowRebaseExplicit: Boolean? = null</ID>
+    <ID>MaxLineLength:GiteaEditRepoOption.kt$GiteaEditRepoOption$val autodetectManualMerge: Boolean? = null</ID>
+    <ID>MaxLineLength:GiteaEditRepoOption.kt$GiteaEditRepoOption$val defaultMergeStyle: String? = null</ID>
+    <ID>MaxLineLength:GiteaEditRepoOption.kt$GiteaEditRepoOption$val ignoreWhitespaceConflicts: Boolean? = null</ID>
+    <ID>MaxLineLength:GiteaExternalTracker.kt$GiteaExternalTracker$val externalTrackerFormat: String? = null</ID>
+    <ID>TooManyFunctions:GiteaClassicClient.kt$GiteaClassicClient : GiteaClient</ID>
+    <ID>TooManyFunctions:GiteaClient.kt$GiteaClient</ID>
+    <ID>TooManyFunctions:GiteaClient.kt$org.octopusden.octopus.infrastructure.gitea.client.GiteaClient.kt</ID>
+    <ID>UseCheckOrError:GiteaClient.kt$GiteaCommitGraphSequence$throw IllegalStateException("This iterator can be consumed only once")</ID>
+    <ID>UseCheckOrError:GiteaHookContentType.kt$GiteaHookContentType.Companion$throw IllegalStateException( "content_type must be in: '${values().joinToString { it.jsonValue }}' but it is $contentType", )</ID>
+    <ID>UseCheckOrError:GiteaHookEvent.kt$GiteaHookEvent.Companion$throw IllegalStateException("event must be in: '${values().joinToString { it.jsonValue }}' but it is $event")</ID>
+    <ID>UseCheckOrError:GiteaHookType.kt$GiteaHookType.Companion$throw IllegalStateException("type must be in: '${values().joinToString { it.jsonValue }}' but it is $type")</ID>
+  </CurrentIssues>
+</SmellBaseline>

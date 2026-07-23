@@ -6,6 +6,13 @@ pluginManagement {
         id("org.octopusden.octopus.oc-template") version (ocTemplateVersion)
         id("org.jetbrains.kotlin.jvm") version (kotlinVersion)
         id("io.github.gradle-nexus.publish-plugin") version("1.1.0") apply(false)
+        id("io.gitlab.arturbosch.detekt") version (extra["detekt.version"] as String)
+        id("org.jlleitschuh.gradle.ktlint") version (extra["ktlint-gradle.version"] as String)
+        id("org.octopusden.octopus-quality") version (extra["octopus-quality.version"] as String)
+    }
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
     }
 }
 

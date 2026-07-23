@@ -4,5 +4,5 @@ import java.net.URI
 
 data class RemoteLinkResponse(
     val id: Long,
-    val self: URI
+    val self: URI,
 )

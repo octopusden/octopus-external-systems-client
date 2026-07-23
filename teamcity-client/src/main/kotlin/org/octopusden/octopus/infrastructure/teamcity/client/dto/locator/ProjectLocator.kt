@@ -8,5 +8,5 @@ class ProjectLocator(
     val name: String? = null,
     val parameter: List<PropertyLocator>? = null,
     val parentProject: ProjectLocator? = null,
-    val affectedProject: ProjectLocator? = null
+    val affectedProject: ProjectLocator? = null,
 ) : BaseLocator()

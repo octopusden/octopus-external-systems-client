@@ -4,5 +4,5 @@ class BitbucketBranch(
     id: String,
     displayId: String,
     latestCommit: String,
-    repository: BitbucketRepository? = null
+    repository: BitbucketRepository? = null,
 ) : BitbucketRef(id, displayId, latestCommit, BitbucketRefType.BRANCH, repository)

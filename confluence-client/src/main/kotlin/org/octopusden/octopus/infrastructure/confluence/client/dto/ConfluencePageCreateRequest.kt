@@ -5,5 +5,5 @@ data class ConfluencePageCreateRequest(
     val title: String,
     val space: ConfluenceSpace,
     val ancestors: List<ConfluencePageAncestor>,
-    val body: ConfluencePageBody
+    val body: ConfluencePageBody,
 )

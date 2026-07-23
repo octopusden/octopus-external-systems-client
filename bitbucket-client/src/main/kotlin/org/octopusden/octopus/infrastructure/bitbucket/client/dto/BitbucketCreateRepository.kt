@@ -8,10 +8,13 @@ class BitbucketCreateRepository(
     val name: String,
     val forkable: Boolean = false,
     val scmId: ScmType = ScmType.GIT,
-    val defaultBranch: String = "master"
+    val defaultBranch: String = "master",
 ) {
-    enum class ScmType(val scmId: String) {
-        GIT("git");
+    enum class ScmType(
+        val scmId: String,
+    ) {
+        GIT("git"),
+        ;
 
         @JsonValue
         fun value() = scmId
@@ -19,10 +22,11 @@ class BitbucketCreateRepository(
         companion object {
             @JvmStatic
             @JsonCreator
-            fun forValue(@JsonProperty scmId: String): ScmType =
+            fun forValue(
+                @JsonProperty scmId: String,
+            ): ScmType =
                 values().find { it.scmId == scmId }
                     ?: throw IllegalStateException("scmId must be in: '${values().joinToString()}}' but it is $scmId")
         }
     }
 }
-

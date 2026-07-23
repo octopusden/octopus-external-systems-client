@@ -5,15 +5,20 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BaseLoc
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
 import kotlin.reflect.full.memberProperties
 
-class TeamcityLocatorExpander: Param.Expander{
-    override fun expand(value: Any?) = when(value){
-        is BaseLocator -> value.javaClass.kotlin.memberProperties
-                .filter { property -> property.get(value) != null }
-                .joinToString(",") { property -> propertyToString(property.name, property.get(value)) }
-        else -> value.toString()
-    }
+class TeamcityLocatorExpander : Param.Expander {
+    override fun expand(value: Any?) =
+        when (value) {
+            is BaseLocator ->
+                value.javaClass.kotlin.memberProperties
+                    .filter { property -> property.get(value) != null }
+                    .joinToString(",") { property -> propertyToString(property.name, property.get(value)) }
+            else -> value.toString()
+        }
 
-    private fun propertyToString(name: String, value: Any?):String =
+    private fun propertyToString(
+        name: String,
+        value: Any?,
+    ): String =
         when (value) {
             is PropertyLocator.MatchType -> "$name:${escape(value.value)}"
             is TeamcityVCSType -> "$name:${escape(value.value)}"
@@ -49,5 +54,4 @@ class TeamcityLocatorExpander: Param.Expander{
         }
         return sb.toString()
     }
-
 }

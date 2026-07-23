@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class BitbucketExceptionsResponse @JsonCreator constructor(
-    val errors: List<BitbucketException>
-)
+data class BitbucketExceptionsResponse
+    @JsonCreator
+    constructor(
+        val errors: List<BitbucketException>,
+    )

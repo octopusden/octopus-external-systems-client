@@ -15,7 +15,7 @@ fun String.getExt() = project.ext[this] as String
 
 val commonOkdParameters = mapOf(
     "ACTIVE_DEADLINE_SECONDS" to "okdActiveDeadlineSeconds".getExt(),
-    "DOCKER_REGISTRY" to "dockerRegistry".getExt()
+    "DOCKER_REGISTRY" to "dockerRegistry".getExt(),
 )
 
 configure<ComposeExtension> {
@@ -27,8 +27,8 @@ configure<ComposeExtension> {
             "BITBUCKET_LICENSE" to project.properties["bitbucket.license"],
             "BITBUCKET_IMAGE_TAG" to project.properties["bitbucket.image-tag"],
             "POSTGRES_IMAGE_TAG" to project.properties["postgres.image-tag"],
-            "DOCKER_REGISTRY" to project.properties["docker.registry"]
-        )
+            "DOCKER_REGISTRY" to project.properties["docker.registry"],
+        ),
     )
 }
 
@@ -40,31 +40,35 @@ ocTemplate {
     prefix.set("ext-clients")
     attempts.set(25)
 
-    "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let{
+    "okdWebConsoleUrl".getExt().takeIf { it.isNotBlank() }?.let {
         webConsoleUrl.set(it)
     }
 
     group("bitbucketServices").apply {
         service("bitbucket-db") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/bitbucket-db.yaml"))
-            parameters.set(commonOkdParameters + mapOf(
-                "POSTGRES_IMAGE_TAG" to properties["postgres.image-tag"] as String,
-                "CPU_REQUEST" to "10m",
-                "CPU_LIMIT" to "50m",
-                "MEMORY_REQUEST" to "128Mi",
-                "MEMORY_LIMIT" to "200Mi"
-            ))
+            parameters.set(
+                commonOkdParameters + mapOf(
+                    "POSTGRES_IMAGE_TAG" to properties["postgres.image-tag"] as String,
+                    "CPU_REQUEST" to "10m",
+                    "CPU_LIMIT" to "50m",
+                    "MEMORY_REQUEST" to "128Mi",
+                    "MEMORY_LIMIT" to "200Mi",
+                ),
+            )
         }
         service("bitbucket") {
             templateFile.set(rootProject.layout.projectDirectory.file("okd/bitbucket.yaml"))
-            parameters.set(commonOkdParameters + mapOf(
-                "BITBUCKET_LICENSE" to Base64.getEncoder().encodeToString("bitbucketLicense".getExt().toByteArray()),
-                "BITBUCKET_IMAGE_TAG" to properties["bitbucket.image-tag"] as String,
-                "CPU_REQUEST" to "150m",
-                "CPU_LIMIT" to "2000m",
-                "MEMORY_REQUEST" to "3Gi",
-                "MEMORY_LIMIT" to "6Gi"
-            ))
+            parameters.set(
+                commonOkdParameters + mapOf(
+                    "BITBUCKET_LICENSE" to Base64.getEncoder().encodeToString("bitbucketLicense".getExt().toByteArray()),
+                    "BITBUCKET_IMAGE_TAG" to properties["bitbucket.image-tag"] as String,
+                    "CPU_REQUEST" to "150m",
+                    "CPU_LIMIT" to "2000m",
+                    "MEMORY_REQUEST" to "3Gi",
+                    "MEMORY_LIMIT" to "6Gi",
+                ),
+            )
             dependsOn.set(listOf("bitbucket-db"))
         }
     }

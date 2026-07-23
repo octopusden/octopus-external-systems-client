@@ -17,5 +17,5 @@ data class TeamcityProject(
     val parameters: TeamcityProperties? = null,
 //    val vcsRoots: TeamcityVcsRoots? = null,
 //    val projectFeatures: TeamcityProjectFeatures? = null,
-    val projects: TeamcityProjects? = null
+    val projects: TeamcityProjects? = null,
 )

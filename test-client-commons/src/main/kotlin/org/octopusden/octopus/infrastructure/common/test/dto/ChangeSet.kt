@@ -8,5 +8,5 @@ data class ChangeSet(
     val repository: String,
     val branch: String,
     val author: String,
-    val authorDate: Date
+    val authorDate: Date,
 )

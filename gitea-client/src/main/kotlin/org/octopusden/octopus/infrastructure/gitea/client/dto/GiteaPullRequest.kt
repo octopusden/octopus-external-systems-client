@@ -16,21 +16,25 @@ data class GiteaPullRequest(
     val user: GiteaUser,
     @JsonSetter(nulls = Nulls.AS_EMPTY)
     val assignees: List<GiteaUser>,
+    // for each team in reviewers `requested_reviewers` collection contains null
     @JsonSetter(nulls = Nulls.AS_EMPTY, contentNulls = Nulls.SKIP)
-    //for each team in reviewers `requested_reviewers` collection contains null
     val requestedReviewers: List<GiteaUser>,
     val base: GiteaPullRequestBranch,
     val head: GiteaPullRequestBranch,
     val state: GiteaPullRequestState,
     val merged: Boolean,
     val createdAt: Date,
-    val updatedAt: Date
+    val updatedAt: Date,
 ) : BaseGiteaEntity() {
-    data class GiteaPullRequestBranch(val label: String)
+    data class GiteaPullRequestBranch(
+        val label: String,
+    )
+
     enum class GiteaPullRequestState(
         @get:JsonValue
-        val jsonValue: String
+        val jsonValue: String,
     ) {
-        OPEN("open"), CLOSED("closed")
+        OPEN("open"),
+        CLOSED("closed"),
     }
 }

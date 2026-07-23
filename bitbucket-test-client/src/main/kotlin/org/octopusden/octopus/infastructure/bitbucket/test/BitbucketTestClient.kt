@@ -21,7 +21,7 @@ class BitbucketTestClient : BaseTestClient {
         url: String,
         username: String,
         password: String,
-        externalHost: String
+        externalHost: String,
     ) : super(url, username, password, externalHost)
 
     constructor(
@@ -30,14 +30,14 @@ class BitbucketTestClient : BaseTestClient {
         password: String,
         commitRetries: Int,
         commitPingInterval: Long,
-        commitRaiseException: Boolean
+        commitRaiseException: Boolean,
     ) : super(
         url,
         username,
         password,
         commitRetries = commitRetries,
         commitPingInterval = commitPingInterval,
-        commitRaiseException = commitRaiseException
+        commitRaiseException = commitRaiseException,
     )
 
     constructor(
@@ -47,11 +47,12 @@ class BitbucketTestClient : BaseTestClient {
         externalHost: String,
         commitRetries: Int,
         commitPingInterval: Long,
-        commitRaiseException: Boolean
+        commitRaiseException: Boolean,
     ) : super(url, username, password, externalHost, commitRetries, commitPingInterval, commitRaiseException)
 
     private val client: BitbucketClient = BitbucketClassicClient(object : BitbucketClientParametersProvider {
         override fun getApiUrl() = apiUrl
+
         override fun getAuth(): BitbucketCredentialProvider = BitbucketBasicCredentialProvider(username, password)
     })
 
@@ -80,7 +81,10 @@ class BitbucketTestClient : BaseTestClient {
         client.deleteRepository(repository.group, repository.name)
     }
 
-    override fun checkCommit(repository: Repository, sha: String) {
+    override fun checkCommit(
+        repository: Repository,
+        sha: String,
+    ) {
         log.debug("[$vcsUrlHost] check commit '$sha' in repository '$repository'")
         client.getCommits(repository.group, repository.name, sha)
     }

@@ -14,7 +14,6 @@ import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
-import java.nio.charset.StandardCharsets
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlSearchResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfoResponse
@@ -24,41 +23,48 @@ import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDocke
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.Tokens
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
-
+import java.nio.charset.StandardCharsets
 
 @Suppress("unused")
 class ArtifactoryClassicClient(
-    clientParametersProvider: ClientParametersProvider, mapper: ObjectMapper = getMapper(),
+    clientParametersProvider: ClientParametersProvider,
+    mapper: ObjectMapper = getMapper(),
 ) : ArtifactoryClient {
-
     private val client: ArtifactoryClient =
         createClient(
             clientParametersProvider.getApiUrl(),
             clientParametersProvider.getAuth().getInterceptor(),
-            mapper
+            mapper,
         )
 
     constructor(apiParametersProvider: ClientParametersProvider) : this(
         apiParametersProvider,
-        getMapper()
+        getMapper(),
     )
 
     override fun getVersion(): SystemVersion = client.getVersion()
 
     override fun getTokens(): Tokens = client.getTokens()
 
-    override fun getBuildInfo(buildName: String, buildNumber: String): BuildInfoResponse =
-        client.getBuildInfo(buildName, buildNumber)
+    override fun getBuildInfo(
+        buildName: String,
+        buildNumber: String,
+    ): BuildInfoResponse = client.getBuildInfo(buildName, buildNumber)
 
     override fun uploadBuildInfo(request: BuildInfo) = client.uploadBuildInfo(request)
 
     override fun deleteBuild(request: DeleteBuildRequest) = client.deleteBuild(request)
 
-    override fun promoteBuild(buildName: String, buildNumber: String, request: PromoteBuildRequest) =
-        client.promoteBuild(buildName, buildNumber, request)
+    override fun promoteBuild(
+        buildName: String,
+        buildNumber: String,
+        request: PromoteBuildRequest,
+    ) = client.promoteBuild(buildName, buildNumber, request)
 
-    override fun promoteDockerImage(repoKey: String, request: PromoteDockerImageRequest) =
-        client.promoteDockerImage(repoKey, request)
+    override fun promoteDockerImage(
+        repoKey: String,
+        request: PromoteDockerImageRequest,
+    ) = client.promoteDockerImage(repoKey, request)
 
     override fun searchByAQL(query: String): AqlSearchResponse = client.searchByAQL(query)
 
@@ -75,10 +81,11 @@ class ArtifactoryClassicClient(
         private fun createClient(
             apiUrl: String,
             interceptor: RequestInterceptor,
-            objectMapper: ObjectMapper
+            objectMapper: ObjectMapper,
         ): ArtifactoryClient {
             val jacksonEncoder: Encoder = JacksonEncoder(objectMapper)
-            return Feign.builder()
+            return Feign
+                .builder()
                 .client(ApacheHttpClient())
                 .encoder { body, bodyType, template ->
                     if (body is String) {
@@ -86,14 +93,12 @@ class ArtifactoryClassicClient(
                     } else {
                         jacksonEncoder.encode(body, bodyType, template)
                     }
-                }
-                .decoder(JacksonDecoder(objectMapper))
+                }.decoder(JacksonDecoder(objectMapper))
                 .errorDecoder(
                     ArtifactoryClientErrorDecoder(
-                        objectMapper
-                    )
-                )
-                .requestInterceptor(interceptor)
+                        objectMapper,
+                    ),
+                ).requestInterceptor(interceptor)
                 .logger(Slf4jLogger(ArtifactoryClient::class.java))
                 .logLevel(Logger.Level.FULL)
                 .target(ArtifactoryClient::class.java, apiUrl)

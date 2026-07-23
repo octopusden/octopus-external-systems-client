@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
-import feign.FeignException
 import feign.Logger
 import feign.RequestInterceptor
 import feign.httpclient.ApacheHttpClient
@@ -23,34 +22,44 @@ import org.octopusden.octopus.infrastructure.jira.dto.UpdateIssueFields
 
 class JiraClassicClient(
     apiParametersProvider: ClientParametersProvider,
-    mapper: ObjectMapper
+    mapper: ObjectMapper,
 ) : JiraClient {
-
     private val client: JiraClient = createClient(
         apiParametersProvider.getApiUrl(),
         apiParametersProvider.getAuth().getInterceptor(),
-        mapper
+        mapper,
     )
 
     constructor(apiParametersProvider: ClientParametersProvider) : this(
         apiParametersProvider,
-        getMapper()
+        getMapper(),
     )
 
     override fun createIssue(issue: Issue<CreateIssueFields>) = client.createIssue(issue)
 
-    override fun updateIssue(issueKey: String, issue: Issue<UpdateIssueFields>) = client.updateIssue(issueKey, issue)
+    override fun updateIssue(
+        issueKey: String,
+        issue: Issue<UpdateIssueFields>,
+    ) = client.updateIssue(issueKey, issue)
 
-    override fun getAssignable(issueKey: String, username: String?) = client.getAssignable(issueKey, username)
+    override fun getAssignable(
+        issueKey: String,
+        username: String?,
+    ) = client.getAssignable(issueKey, username)
 
     override fun getProject(projectKey: String): Project = client.getProject(projectKey)
 
     override fun getActiveSprint(boardId: Long): ActiveSprintResponse = client.getActiveSprint(boardId)
 
-    override fun moveIssuesToSprint(sprintId: Long, moveIssuesToSprintRequest: MoveIssuesToSprintRequest): Unit = client.moveIssuesToSprint(sprintId, moveIssuesToSprintRequest)
+    override fun moveIssuesToSprint(
+        sprintId: Long,
+        moveIssuesToSprintRequest: MoveIssuesToSprintRequest,
+    ): Unit = client.moveIssuesToSprint(sprintId, moveIssuesToSprintRequest)
 
-
-    override fun addRemoteLink(issueKey: String, remoteLinkRequest: RemoteLinkRequest): RemoteLinkResponse = client.addRemoteLink(issueKey, remoteLinkRequest)
+    override fun addRemoteLink(
+        issueKey: String,
+        remoteLinkRequest: RemoteLinkRequest,
+    ): RemoteLinkResponse = client.addRemoteLink(issueKey, remoteLinkRequest)
 
     companion object {
         private fun getMapper(): ObjectMapper {
@@ -59,8 +68,12 @@ class JiraClassicClient(
             return objectMapper
         }
 
-        private fun createClient(            apiUrl: String,            interceptor: RequestInterceptor, objectMapper: ObjectMapper
-        ) = Feign.builder()
+        private fun createClient(
+            apiUrl: String,
+            interceptor: RequestInterceptor,
+            objectMapper: ObjectMapper,
+        ) = Feign
+            .builder()
             .client(ApacheHttpClient())
             .encoder(JacksonEncoder(objectMapper))
             .decoder(JacksonDecoder(objectMapper))

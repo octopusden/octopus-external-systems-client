@@ -4,5 +4,5 @@ class VcsRootInstanceLocator(
     val id: String? = null,
     val count: Int? = null,
     val buildType: BuildTypeLocator? = null,
-    val property: List<PropertyLocator>? = null
+    val property: List<PropertyLocator>? = null,
 ) : BaseLocator()

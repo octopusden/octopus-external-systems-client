@@ -4,5 +4,5 @@ import com.fasterxml.jackson.annotation.JsonProperty
 
 data class TeamcityProjectFeatures(
     @JsonProperty("projectFeature")
-    val projectFeatures: List<TeamcityProjectFeature> = ArrayList<TeamcityProjectFeature>()
+    val projectFeatures: List<TeamcityProjectFeature> = ArrayList<TeamcityProjectFeature>(),
 )

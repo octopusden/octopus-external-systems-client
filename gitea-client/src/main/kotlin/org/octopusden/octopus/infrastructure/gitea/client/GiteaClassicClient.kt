@@ -22,18 +22,17 @@ import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaRepository
 
 class GiteaClassicClient(
     apiParametersProvider: ClientParametersProvider,
-    mapper: ObjectMapper
+    mapper: ObjectMapper,
 ) : GiteaClient {
-
     private val client: GiteaClient = createClient(
         apiParametersProvider.getApiUrl(),
         apiParametersProvider.getAuth().getInterceptor(),
-        mapper
+        mapper,
     )
 
     constructor(apiParametersProvider: ClientParametersProvider) : this(
         apiParametersProvider,
-        getMapper()
+        getMapper(),
     )
 
     override fun createDefaultHook(dto: GiteaCreateHook) = client.createDefaultHook(dto)
@@ -42,73 +41,123 @@ class GiteaClassicClient(
 
     override fun deleteDefaultHook(id: Long) = client.deleteDefaultHook(id)
 
-    override fun getOrganizations(requestParams: Map<String, Any>) =
-        client.getOrganizations(requestParams)
+    override fun getOrganizations(requestParams: Map<String, Any>) = client.getOrganizations(requestParams)
 
     override fun createOrganization(dto: GiteaCreateOrganization) = client.createOrganization(dto)
 
     override fun getOrganization(organization: String): GiteaOrganization = client.getOrganization(organization)
 
-    override fun getRepositories(organization: String, requestParams: Map<String, Any>) =
-        client.getRepositories(organization, requestParams)
+    override fun getRepositories(
+        organization: String,
+        requestParams: Map<String, Any>,
+    ) = client.getRepositories(organization, requestParams)
 
-    override fun getRepository(organization: String, repository: String) =
-        client.getRepository(organization, repository)
+    override fun getRepository(
+        organization: String,
+        repository: String,
+    ) = client.getRepository(organization, repository)
 
-    override fun createRepository(organization: String, dto: GiteaCreateRepository) =
-        client.createRepository(organization, dto)
+    override fun createRepository(
+        organization: String,
+        dto: GiteaCreateRepository,
+    ) = client.createRepository(organization, dto)
 
-    override fun deleteRepository(organization: String, repository: String) =
-        client.deleteRepository(organization, repository)
+    override fun deleteRepository(
+        organization: String,
+        repository: String,
+    ) = client.deleteRepository(organization, repository)
 
-    override fun getRepositoryHooks(organization: String, repository: String, requestParams: Map<String, Any>)
-    = client.getRepositoryHooks(organization, repository, requestParams)
+    override fun getRepositoryHooks(
+        organization: String,
+        repository: String,
+        requestParams: Map<String, Any>,
+    ) = client.getRepositoryHooks(organization, repository, requestParams)
 
-    override fun createRepositoryHook(organization: String, repository: String, dto: GiteaCreateHook) =
-        client.createRepositoryHook(organization, repository, dto)
+    override fun createRepositoryHook(
+        organization: String,
+        repository: String,
+        dto: GiteaCreateHook,
+    ) = client.createRepositoryHook(organization, repository, dto)
 
-    override fun getCommits(organization: String, repository: String, requestParams: Map<String, Any>) =
-        client.getCommits(organization, repository, requestParams)
+    override fun getCommits(
+        organization: String,
+        repository: String,
+        requestParams: Map<String, Any>,
+    ) = client.getCommits(organization, repository, requestParams)
 
-    override fun getCommit(organization: String, repository: String, sha: String, requestParams: Map<String, Any>) =
-        client.getCommit(organization, repository, sha, requestParams)
+    override fun getCommit(
+        organization: String,
+        repository: String,
+        sha: String,
+        requestParams: Map<String, Any>,
+    ) = client.getCommit(organization, repository, sha, requestParams)
 
-    override fun getTags(organization: String, repository: String, requestParams: Map<String, Any>) =
-        client.getTags(organization, repository, requestParams)
+    override fun getTags(
+        organization: String,
+        repository: String,
+        requestParams: Map<String, Any>,
+    ) = client.getTags(organization, repository, requestParams)
 
-    override fun createTag(organization: String, repository: String, dto: GiteaCreateTag) =
-        client.createTag(organization, repository, dto)
+    override fun createTag(
+        organization: String,
+        repository: String,
+        dto: GiteaCreateTag,
+    ) = client.createTag(organization, repository, dto)
 
-    override fun getTag(organization: String, repository: String, tag: String) =
-        client.getTag(organization, repository, tag)
+    override fun getTag(
+        organization: String,
+        repository: String,
+        tag: String,
+    ) = client.getTag(organization, repository, tag)
 
-    override fun deleteTag(organization: String, repository: String, tag: String) =
-        client.deleteTag(organization, repository, tag)
+    override fun deleteTag(
+        organization: String,
+        repository: String,
+        tag: String,
+    ) = client.deleteTag(organization, repository, tag)
 
-    override fun getBranches(organization: String, repository: String, requestParams: Map<String, Any>) =
-        client.getBranches(organization, repository, requestParams)
+    override fun getBranches(
+        organization: String,
+        repository: String,
+        requestParams: Map<String, Any>,
+    ) = client.getBranches(organization, repository, requestParams)
 
-    override fun getBranch(organization: String, repository: String, branch: String) =
-        client.getBranch(organization, repository, branch)
+    override fun getBranch(
+        organization: String,
+        repository: String,
+        branch: String,
+    ) = client.getBranch(organization, repository, branch)
 
-    override fun getPullRequests(organization: String, repository: String, requestParams: Map<String, Any>) =
-        client.getPullRequests(organization, repository, requestParams)
+    override fun getPullRequests(
+        organization: String,
+        repository: String,
+        requestParams: Map<String, Any>,
+    ) = client.getPullRequests(organization, repository, requestParams)
 
-    override fun createPullRequest(organization: String, repository: String, dto: GiteaCreatePullRequest) =
-        client.createPullRequest(organization, repository, dto)
+    override fun createPullRequest(
+        organization: String,
+        repository: String,
+        dto: GiteaCreatePullRequest,
+    ) = client.createPullRequest(organization, repository, dto)
 
-    override fun getPullRequest(organization: String, repository: String, number: Long) =
-        client.getPullRequest(organization, repository, number)
+    override fun getPullRequest(
+        organization: String,
+        repository: String,
+        number: Long,
+    ) = client.getPullRequest(organization, repository, number)
 
     override fun getPullRequestReviews(
         organization: String,
         repository: String,
         number: Long,
-        requestParams: Map<String, Any>
+        requestParams: Map<String, Any>,
     ) = client.getPullRequestReviews(organization, repository, number, requestParams)
 
-    override fun updateRepositoryConfiguration(organization: String, repository: String, dto: GiteaEditRepoOption) =
-        client.updateRepositoryConfiguration(organization, repository, dto)
+    override fun updateRepositoryConfiguration(
+        organization: String,
+        repository: String,
+        dto: GiteaEditRepoOption,
+    ) = client.updateRepositoryConfiguration(organization, repository, dto)
 
     override fun migrateRepository(dto: GiteaMigrateRepository): GiteaRepository = client.migrateRepository(dto)
 
@@ -122,9 +171,10 @@ class GiteaClassicClient(
         private fun createClient(
             apiUrl: String,
             interceptor: RequestInterceptor,
-            objectMapper: ObjectMapper
+            objectMapper: ObjectMapper,
         ): GiteaClient =
-            Feign.builder()
+            Feign
+                .builder()
                 .client(ApacheHttpClient())
                 .errorDecoder(GiteaClientErrorDecoder(objectMapper))
                 .encoder(JacksonEncoder(objectMapper))

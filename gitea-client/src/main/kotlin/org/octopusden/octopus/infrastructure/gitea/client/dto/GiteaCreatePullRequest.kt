@@ -5,5 +5,5 @@ data class GiteaCreatePullRequest(
     val body: String,
     val head: String,
     val base: String,
-    val assignee: String?
+    val assignee: String?,
 )

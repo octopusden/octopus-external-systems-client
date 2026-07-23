@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>ClassOrdering:BitbucketTestClient.kt$BitbucketTestClient$override val vcsUrlRegex = "(?:ssh://)?git@$vcsUrlHost/([^/]+)/([^/]+).git".toRegex()</ID>
+    <ID>ClassOrdering:BitbucketTestClient.kt$BitbucketTestClient$private val client: BitbucketClient = BitbucketClassicClient(object : BitbucketClientParametersProvider { override fun getApiUrl() = apiUrl override fun getAuth(): BitbucketCredentialProvider = BitbucketBasicCredentialProvider(username, password) })</ID>
+    <ID>SwallowedException:BitbucketTestClient.kt$BitbucketTestClient$e: NotFoundException</ID>
+    <ID>TooGenericExceptionThrown:BitbucketTestClientTest.kt$BitbucketTestClientTest.Companion$throw Exception("System property 'test.bitbucket-host' must be defined")</ID>
+    <ID>UseCheckOrError:BitbucketTestClientTest.kt$BitbucketTestClientTest$throw IllegalStateException("PR $branch not ready yet")</ID>
+    <ID>UseCheckOrError:BitbucketTestClientTest.kt$BitbucketTestClientTest$throw IllegalStateException("PR not ready yet")</ID>
+    <ID>UseRequire:BitbucketTestClientTest.kt$BitbucketTestClientTest$throw IllegalArgumentException("Resource file not found: $fileName")</ID>
+  </CurrentIssues>
+</SmellBaseline>

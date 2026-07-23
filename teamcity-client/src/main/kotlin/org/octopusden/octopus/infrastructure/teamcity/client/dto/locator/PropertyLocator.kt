@@ -8,7 +8,9 @@ class PropertyLocator(
     val matchType: MatchType? = null,
     val ignoreCase: Boolean? = null,
 ) : BaseLocator() {
-    enum class MatchType(@get:JsonValue val value: String) {
+    enum class MatchType(
+        @get:JsonValue val value: String,
+    ) {
         EXISTS("exists"),
         NOT_EXISTS("not-exists"),
         EQUALS("equals"),
@@ -27,6 +29,6 @@ class PropertyLocator(
         VER_MORE_THAN("ver-more-than"),
         VER_NO_MORE_THAN("ver-no-more-than"),
         VER_LESS_THAN("ver-less-than"),
-        VER_NO_LESS_THAN("ver-no-less-than")
+        VER_NO_LESS_THAN("ver-no-less-than"),
     }
 }

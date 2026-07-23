@@ -5,5 +5,5 @@ data class BitbucketBuildStatus(
     val key: String,
     val name: String,
     val url: String,
-    val dateAdded: Long
+    val dateAdded: Long,
 )

@@ -1,36 +1,61 @@
 package org.octopusden.octopus.infrastructure.common.test
 
-import java.io.File
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.assertThrows
 import org.octopusden.octopus.infrastructure.common.test.dto.NewChangeSet
-
+import java.io.File
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 abstract class BaseTestClientTest(
-    protected val testClient: TestClient, protected val vcsFormatter: String
+    protected val testClient: TestClient,
+    protected val vcsFormatter: String,
 ) {
-    abstract fun getTags(project: String, repository: String): Collection<TestTag>
-    abstract fun getTag(project: String, repository: String, tag: String): TestTag
-    abstract fun deleteTag(project: String, repository: String, tag: String)
-    abstract fun createTag(project: String, repository: String, commitId: String, tag: String)
-    abstract fun getCommits(project: String, repository: String, branch: String): Collection<TestCommit>
+    abstract fun getTags(
+        project: String,
+        repository: String,
+    ): Collection<TestTag>
+
+    abstract fun getTag(
+        project: String,
+        repository: String,
+        tag: String,
+    ): TestTag
+
+    abstract fun deleteTag(
+        project: String,
+        repository: String,
+        tag: String,
+    )
+
+    abstract fun createTag(
+        project: String,
+        repository: String,
+        commitId: String,
+        tag: String,
+    )
+
+    abstract fun getCommits(
+        project: String,
+        repository: String,
+        branch: String,
+    ): Collection<TestCommit>
+
     abstract fun createPullRequestWithDefaultReviewers(
         project: String,
         repository: String,
         sourceBranch: String,
         targetBranch: String,
         title: String,
-        description: String
+        description: String,
     ): TestPullRequest
 
     abstract fun getPullRequest(
         project: String,
         repository: String,
-        index: Long
+        index: Long,
     ): TestPullRequest
 
     protected val vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
@@ -46,37 +71,37 @@ abstract class BaseTestClientTest(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit 1",
                 vcsUrl,
-                BaseTestClient.DEFAULT_BRANCH
-            )
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
         )
         testClient.commit(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit 2",
                 vcsUrl,
-                BaseTestClient.DEFAULT_BRANCH
-            )
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
         )
         val firstDevelopCommitId = testClient.commit(
             NewChangeSet(
                 "$DEVELOP_BRANCH commit 1",
                 vcsUrl,
-                DEVELOP_BRANCH
-            )
+                DEVELOP_BRANCH,
+            ),
         )
         testClient.commit(
             NewChangeSet(
                 "$DEVELOP_BRANCH commit 2",
                 vcsUrl,
-                DEVELOP_BRANCH
-            )
+                DEVELOP_BRANCH,
+            ),
         )
         testClient.commit(
             NewChangeSet(
                 "$FEATURE_BRANCH commit 1",
                 vcsUrl,
-                FEATURE_BRANCH
+                FEATURE_BRANCH,
             ),
-            firstDevelopCommitId.id
+            firstDevelopCommitId.id,
         )
 
         checkCommits(
@@ -84,8 +109,8 @@ abstract class BaseTestClientTest(
             listOf(
                 "${BaseTestClient.DEFAULT_BRANCH} commit 2",
                 "${BaseTestClient.DEFAULT_BRANCH} commit 1",
-                BaseTestClient.INITIAL_COMMIT_MESSAGE
-            )
+                BaseTestClient.INITIAL_COMMIT_MESSAGE,
+            ),
         )
         checkCommits(
             DEVELOP_BRANCH,
@@ -94,8 +119,8 @@ abstract class BaseTestClientTest(
                 "$DEVELOP_BRANCH commit 1",
                 "${BaseTestClient.DEFAULT_BRANCH} commit 2",
                 "${BaseTestClient.DEFAULT_BRANCH} commit 1",
-                BaseTestClient.INITIAL_COMMIT_MESSAGE
-            )
+                BaseTestClient.INITIAL_COMMIT_MESSAGE,
+            ),
         )
         checkCommits(
             FEATURE_BRANCH,
@@ -104,8 +129,8 @@ abstract class BaseTestClientTest(
                 "$DEVELOP_BRANCH commit 1",
                 "${BaseTestClient.DEFAULT_BRANCH} commit 2",
                 "${BaseTestClient.DEFAULT_BRANCH} commit 1",
-                BaseTestClient.INITIAL_COMMIT_MESSAGE
-            )
+                BaseTestClient.INITIAL_COMMIT_MESSAGE,
+            ),
         )
     }
 
@@ -149,8 +174,8 @@ abstract class BaseTestClientTest(
             NewChangeSet(
                 "${BaseTestClient.DEFAULT_BRANCH} commit",
                 vcsUrl,
-                BaseTestClient.DEFAULT_BRANCH
-            )
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
         )
         testClient.commit(NewChangeSet("$FEATURE_BRANCH commit", vcsUrl, FEATURE_BRANCH))
         Thread.sleep(5000)
@@ -162,7 +187,7 @@ abstract class BaseTestClientTest(
             FEATURE_BRANCH,
             BaseTestClient.DEFAULT_BRANCH,
             title,
-            description
+            description,
         )
         Thread.sleep(60000)
         Assertions.assertEquals(pullRequest.title, title)
@@ -196,16 +221,16 @@ abstract class BaseTestClientTest(
             listOf(
                 "tag commit",
                 "${BaseTestClient.DEFAULT_BRANCH} commit",
-                BaseTestClient.INITIAL_COMMIT_MESSAGE
-            )
+                BaseTestClient.INITIAL_COMMIT_MESSAGE,
+            ),
         )
         checkCommits(
             FEATURE_BRANCH,
             listOf(
                 "$FEATURE_BRANCH commit",
                 "${BaseTestClient.DEFAULT_BRANCH} commit",
-                BaseTestClient.INITIAL_COMMIT_MESSAGE
-            )
+                BaseTestClient.INITIAL_COMMIT_MESSAGE,
+            ),
         )
         Assertions.assertEquals("tag", getTags(PROJECT, REPOSITORY).first().displayId)
         Assertions.assertEquals(tagCommitId, getTags(PROJECT, REPOSITORY).first().commitId)
@@ -221,15 +246,15 @@ abstract class BaseTestClientTest(
         val developBranchCommits = getCommits(PROJECT, REPOSITORY, DEVELOP_BRANCH).sortedBy { it.commitId }
         Assertions.assertIterableEquals(
             defaultBranchCommits,
-            testClient.getCommits(vcsUrl, BaseTestClient.DEFAULT_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
+            testClient.getCommits(vcsUrl, BaseTestClient.DEFAULT_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId },
         )
         Assertions.assertIterableEquals(
             featureBranchCommits,
-            testClient.getCommits(vcsUrl, FEATURE_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
+            testClient.getCommits(vcsUrl, FEATURE_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId },
         )
         Assertions.assertIterableEquals(
             developBranchCommits,
-            testClient.getCommits(vcsUrl, DEVELOP_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId }
+            testClient.getCommits(vcsUrl, DEVELOP_BRANCH).map { TestCommit(it.id, it.message) }.sortedBy { it.commitId },
         )
         assertNotFoundException {
             getCommits(PROJECT, "absent-repository", BaseTestClient.DEFAULT_BRANCH)
@@ -239,21 +264,44 @@ abstract class BaseTestClientTest(
         }
     }
 
-    private fun assertNotFoundException(block: () -> Any) = Assertions.assertEquals(
-        "NotFoundException",
-        try { block.invoke(); "" } catch (e: Exception) { e.javaClass.simpleName }
-    )
+    private fun assertNotFoundException(block: () -> Any) =
+        Assertions.assertEquals(
+            "NotFoundException",
+            try {
+                block.invoke()
+                ""
+            } catch (e: Exception) {
+                e.javaClass.simpleName
+            },
+        )
 
-    private fun checkCommits(branch: String, expected: List<String>) {
+    private fun checkCommits(
+        branch: String,
+        expected: List<String>,
+    ) {
         Assertions.assertIterableEquals(
             expected,
-            getCommits(PROJECT, REPOSITORY, branch).map { it.message }
+            getCommits(PROJECT, REPOSITORY, branch).map { it.message },
         )
     }
 
-    data class TestTag(val displayId: String, val commitId: String)
-    data class TestCommit(val commitId: String, val message: String)
-    data class TestPullRequest(val index: Long, val title: String, val description: String, val sourceBranch: String, val targetBranch: String)
+    data class TestTag(
+        val displayId: String,
+        val commitId: String,
+    )
+
+    data class TestCommit(
+        val commitId: String,
+        val message: String,
+    )
+
+    data class TestPullRequest(
+        val index: Long,
+        val title: String,
+        val description: String,
+        val sourceBranch: String,
+        val targetBranch: String,
+    )
 
     companion object {
         const val PROJECT = "test_project"

@@ -6,46 +6,49 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFound
 
 enum class BitbucketExceptionName(
     val exceptionName: String,
-    val exceptionSupplier: (String) -> Exception
+    val exceptionSupplier: (String) -> Exception,
 ) {
     NO_SUCH_REPOSITORY(
         "com.atlassian.bitbucket.repository.NoSuchRepositoryException",
-        { message -> NotFoundException(message) }
+        { message -> NotFoundException(message) },
     ),
     NO_SUCH_TAG(
         "com.atlassian.bitbucket.repository.NoSuchTagException",
-        { message -> NotFoundException(message) }
+        { message -> NotFoundException(message) },
     ),
     NO_SUCH_COMMIT(
         "com.atlassian.bitbucket.repository.NoSuchCommitException",
-        { message -> NotFoundException(message) }
+        { message -> NotFoundException(message) },
     ),
     NO_SUCH_COMMIT_2(
         "com.atlassian.bitbucket.commit.NoSuchCommitException",
-        { message -> NotFoundException(message) }
+        { message -> NotFoundException(message) },
     ),
     NO_SUCH_PROJECT(
         "com.atlassian.bitbucket.project.NoSuchProjectException",
-        { message -> NotFoundException(message) }
+        { message -> NotFoundException(message) },
     ),
     NO_SUCH_OBJECT(
         "com.atlassian.bitbucket.NoSuchObjectException",
-        { message -> NotFoundException(message) }
+        { message -> NotFoundException(message) },
     ),
     NO_SUCH_PATH(
         "com.atlassian.bitbucket.content.NoSuchPathException",
-        { message -> NotFoundException(message) }
+        { message -> NotFoundException(message) },
     ),
     NO_SUCH_PULL_REQUEST(
         "com.atlassian.bitbucket.pull.NoSuchPullRequestException",
-        { message -> NotFoundException(message) }
+        { message -> NotFoundException(message) },
     ),
-    OTHER("", { message -> IllegalStateException(message) });
+    OTHER("", { message -> IllegalStateException(message) }),
+    ;
 
     companion object {
         @JvmStatic
         @JsonCreator
-        fun forValue(@JsonProperty name: String): BitbucketExceptionName =
+        fun forValue(
+            @JsonProperty name: String,
+        ): BitbucketExceptionName =
             values().find { it.exceptionName == name }
                 ?: OTHER
     }
