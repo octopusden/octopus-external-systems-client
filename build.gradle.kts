@@ -54,6 +54,27 @@ allprojects {
     }
 }
 
+// Which projects publish to Maven Central. An ALLOWLIST, not a denylist: the block below
+// applies `maven-publish` to every subproject, so without this a newly added module would start
+// publishing 50 files to Central the moment it is created, silently. Adding a coordinate is now
+// an explicit edit here.
+//
+// Paths, not names: a Set of names collapses two modules that share a simple name, and the root
+// project's name is a repository-level string rather than a module name.
+val centralPublishedProjects = setOf(
+    ":artifactory-client",
+    ":bitbucket-client",
+    ":bitbucket-test-client",
+    ":client-commons",
+    ":confluence-client",
+    ":gitea-client",
+    ":gitea-test-client",
+    ":jira-client",
+    ":sonarqube-client",
+    ":teamcity-client",
+    ":test-client-commons",
+)
+
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "idea")
@@ -70,6 +91,10 @@ subprojects {
 
     val gitUrl = "https://github.com/octopusden/octopus-external-systems-client.git"
 
+    // `maven-publish` stays applied above even for a project that is not allowlisted, so the
+    // `publish` lifecycle task still exists as a no-op and the policy check below can read
+    // `publishing` on every project. Only the publication itself is conditional.
+    if (project.path in centralPublishedProjects) {
     publishing {
         publications {
             create<MavenPublication>("maven") {
@@ -108,6 +133,7 @@ subprojects {
                 sign(publishing.publications["maven"])
             }
         }
+    }
     }
 
     idea.module {
@@ -157,5 +183,64 @@ subprojects {
 
     dependencies {
         implementation("org.jetbrains.kotlin:kotlin-stdlib")
+    }
+}
+
+// Regression guard: fails if the set of projects publishing to Maven Central drifts from the
+// allowlist above. Needed here specifically because `maven-publish` is applied to every
+// subproject unconditionally, so a new module would otherwise start publishing ~50 files to
+// Central without anyone deciding to.
+//
+// allprojects, not subprojects: the root is a publishable project like any other, and a
+// publication added there would otherwise be invisible.
+fun centralPublicationPolicyProblems(): List<String> {
+    val publishingProjects = allprojects.filter { candidate ->
+        candidate.plugins.hasPlugin("maven-publish") &&
+            candidate.extensions
+                .getByType(PublishingExtension::class.java)
+                .publications
+                .isNotEmpty()
+    }
+    val actual = publishingProjects.map { it.path }.toSet()
+    return if (actual != centralPublishedProjects) {
+        listOf(
+            "Maven Central publication set drifted.\n" +
+                "  allowlisted: ${centralPublishedProjects.sorted()}\n" +
+                "  publishing:  ${actual.sorted()}\n" +
+                "Update centralPublishedProjects in the root build script only if the change is intentional.",
+        )
+    } else {
+        emptyList()
+    }
+}
+
+// A policy violation must fail its own gate, not every Gradle invocation: throwing at
+// configuration time would break build, test, dependencies and IDE sync as well.
+val verifyCentralPublicationPolicy =
+    tasks.register("verifyCentralPublicationPolicy") {
+        group = "verification"
+        description = "Fails if the set of projects publishing to Maven Central drifts from the allowlist."
+        doLast {
+            val problems = centralPublicationPolicyProblems()
+            if (problems.isNotEmpty()) {
+                throw GradleException(problems.joinToString("\n\n"))
+            }
+            logger.lifecycle(
+                "Maven Central publication set matches the allowlist (${centralPublishedProjects.size} projects).",
+            )
+        }
+    }
+
+// Hook the task TYPE, so a concrete task such as publishMavenPublicationToMavenLocal cannot
+// bypass the guard; the aggregates are matched by name as well because `publish` is per-project
+// and `publishToSonatype` only exists with -Pnexus, so neither can be forced into existence.
+gradle.projectsEvaluated {
+    allprojects {
+        tasks.withType(AbstractPublishToMaven::class.java).configureEach {
+            dependsOn(verifyCentralPublicationPolicy)
+        }
+        tasks
+            .matching { it.name in setOf("publishToSonatype", "publish", "publishToMavenLocal") }
+            .configureEach { dependsOn(verifyCentralPublicationPolicy) }
     }
 }
