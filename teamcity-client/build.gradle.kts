@@ -105,7 +105,12 @@ ocTemplate {
                 commonOkdParameters + mapOf(
                     "TEAMCITY_IMAGE_TAG" to properties["teamcity-2022.image-tag"] as String,
                     "TEAMCITY_ID" to "22",
-                    "CPU_REQUEST" to "500m",
+                    // Requests kept low, limits unchanged: on the shared test-env namespace's
+                    // 6-core nodes a half-core request per pod is too much to schedule, and both
+                    // TeamCity pods then sit in Pending until the readiness check gives up. Same
+                    // fix as octopus-teamcity-automation #67; the limit still allows the burst
+                    // these servers need while starting.
+                    "CPU_REQUEST" to "50m",
                     "CPU_LIMIT" to "2000m",
                     "MEMORY_REQUEST" to "1.5Gi",
                     "MEMORY_LIMIT" to "2Gi",
@@ -118,7 +123,7 @@ ocTemplate {
                 commonOkdParameters + mapOf(
                     "TEAMCITY_IMAGE_TAG" to project.properties["teamcity-2026.image-tag"] as String,
                     "TEAMCITY_ID" to "26",
-                    "CPU_REQUEST" to "500m",
+                    "CPU_REQUEST" to "50m",
                     "CPU_LIMIT" to "2000m",
                     "MEMORY_REQUEST" to "1.2Gi",
                     "MEMORY_LIMIT" to "2Gi",
