@@ -9,4 +9,5 @@ class BitbucketUpdateRepository
     constructor(
         val name: String,
         val project: BitbucketProject,
+        val archived: Boolean = false,
     )

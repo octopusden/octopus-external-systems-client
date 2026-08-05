@@ -15,6 +15,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDelet
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketPullRequest
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketTag
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
 import org.octopusden.octopus.infrastructure.bitbucket.client.getBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommit
@@ -88,6 +89,38 @@ class BitbucketTestClientTest :
             title,
             description,
         ).toTestPullRequest()
+
+    @Test
+    fun testGetRepository() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
+        )
+        val repository = client.getRepository(PROJECT, REPOSITORY)
+        Assertions.assertEquals(REPOSITORY, repository.slug)
+        Assertions.assertFalse(repository.archived)
+    }
+
+    @Test
+    fun testArchiveRepository() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
+        )
+        val repository = client.getRepository(PROJECT, REPOSITORY)
+        client.updateRepository(
+            PROJECT,
+            REPOSITORY,
+            BitbucketUpdateRepository(repository.name, repository.project, archived = true),
+        )
+        Assertions.assertTrue(client.getRepository(PROJECT, REPOSITORY).archived)
+    }
 
     @Test
     fun testGetRepositoryFiles() {
