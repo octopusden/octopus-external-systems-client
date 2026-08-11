@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 class BitbucketRepository
+
     @JsonCreator
     constructor(
         val id: Long,
