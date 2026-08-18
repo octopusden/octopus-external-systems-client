@@ -101,7 +101,7 @@ class BitbucketTestClientTest :
         )
         val repository = client.getRepository(PROJECT, REPOSITORY)
         Assertions.assertEquals(REPOSITORY, repository.slug)
-        Assertions.assertFalse(repository.archived)
+        Assertions.assertEquals(false, repository.archived)
     }
 
     @Test
@@ -119,7 +119,7 @@ class BitbucketTestClientTest :
             REPOSITORY,
             BitbucketUpdateRepository(repository.name, repository.project, archived = true),
         )
-        Assertions.assertTrue(client.getRepository(PROJECT, REPOSITORY).archived)
+        Assertions.assertEquals(true, client.getRepository(PROJECT, REPOSITORY).archived)
     }
 
     @Test

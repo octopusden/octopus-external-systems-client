@@ -12,5 +12,5 @@ class BitbucketRepository
         val slug: String,
         val links: BitbucketLinks,
         val project: BitbucketProject,
-        val archived: Boolean = false,
+        val archived: Boolean? = null,
     )
