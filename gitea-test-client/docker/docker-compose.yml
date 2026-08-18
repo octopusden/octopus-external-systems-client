@@ -9,6 +9,7 @@ services:
       - "GITEA__security__INSTALL_LOCK=true"
       - "GITEA__webhook__ALLOWED_HOST_LIST=*"
       - "GITEA__migrations__ALLOWED_DOMAINS=*"
+      - "GITEA__migrations__ALLOW_LOCALNETWORKS=true"
     restart: always
     volumes:
       - ./add_admin.sh:/script/add_admin.sh
@@ -22,6 +23,7 @@ services:
       - "GITEA__security__INSTALL_LOCK=true"
       - "GITEA__webhook__ALLOWED_HOST_LIST=*"
       - "GITEA__migrations__ALLOWED_DOMAINS=*"
+      - "GITEA__migrations__ALLOW_LOCALNETWORKS=true"
     restart: always
     volumes:
       - ./add_admin.sh:/script/add_admin.sh

@@ -51,6 +51,8 @@ objects:
               value: "*"
             - name: GITEA__migrations__ALLOWED_DOMAINS
               value: "*"
+            - name: GITEA__migrations__ALLOW_LOCALNETWORKS
+              value: "true"
           lifecycle:
             postStart:
               exec:
