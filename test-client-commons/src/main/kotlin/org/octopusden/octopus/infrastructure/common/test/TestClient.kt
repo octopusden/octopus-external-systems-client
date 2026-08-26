@@ -28,6 +28,11 @@ interface TestClient {
         zip: File,
     )
 
+    fun setArchived(
+        vcsUrl: String,
+        archived: Boolean,
+    )
+
     fun getCommits(
         vcsUrl: String,
         branch: String,
