@@ -8,6 +8,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.GiteaClassicClient
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateHook
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateOrganization
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaCreateRepository
+import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaEditRepoOption
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaHookEvent
 import org.octopusden.octopus.infrastructure.gitea.client.dto.GiteaHookType
 import org.octopusden.octopus.infrastructure.gitea.client.exception.NotFoundException
@@ -147,6 +148,18 @@ class GiteaTestClient : BaseTestClient {
     override fun deleteRepository(repository: Repository) {
         log.debug("[$vcsUrlHost] delete repository '$repository'")
         client.deleteRepository(repository.group, repository.name)
+    }
+
+    override fun setRepositoryArchived(
+        repository: Repository,
+        archived: Boolean,
+    ) {
+        log.debug("[$vcsUrlHost] set archived=$archived for repository '$repository'")
+        client.updateRepositoryConfiguration(
+            repository.group,
+            repository.name,
+            GiteaEditRepoOption(archived = archived),
+        )
     }
 
     override fun checkCommit(

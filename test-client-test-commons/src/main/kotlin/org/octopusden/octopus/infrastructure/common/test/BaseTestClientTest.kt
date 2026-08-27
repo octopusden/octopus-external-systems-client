@@ -58,6 +58,11 @@ abstract class BaseTestClientTest(
         index: Long,
     ): TestPullRequest
 
+    abstract fun isArchived(
+        project: String,
+        repository: String,
+    ): Boolean
+
     protected val vcsUrl: String = vcsFormatter.format(PROJECT, REPOSITORY)
 
     @AfterEach
@@ -262,6 +267,23 @@ abstract class BaseTestClientTest(
         assertNotFoundException {
             getCommits(PROJECT, REPOSITORY, "absent-ref")
         }
+    }
+
+    @Test
+    fun testSetArchived() {
+        testClient.commit(NewChangeSet("${BaseTestClient.DEFAULT_BRANCH} commit", vcsUrl, BaseTestClient.DEFAULT_BRANCH))
+        Assertions.assertFalse(isArchived(PROJECT, REPOSITORY))
+        testClient.setArchived(vcsUrl, true)
+        Assertions.assertTrue(isArchived(PROJECT, REPOSITORY))
+        testClient.setArchived(vcsUrl, false)
+        Assertions.assertFalse(isArchived(PROJECT, REPOSITORY))
+    }
+
+    @Test
+    fun testClearDataForArchivedRepository() {
+        testClient.commit(NewChangeSet("${BaseTestClient.DEFAULT_BRANCH} commit", vcsUrl, BaseTestClient.DEFAULT_BRANCH))
+        testClient.setArchived(vcsUrl, true)
+        // afterEachTestClientTest -> clearData() has to remove the repository while it is still archived
     }
 
     private fun assertNotFoundException(block: () -> Any) =

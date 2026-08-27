@@ -7,6 +7,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketClientPar
 import org.octopusden.octopus.infrastructure.bitbucket.client.BitbucketCredentialProvider
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateProject
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketUpdateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.exception.NotFoundException
 import org.octopusden.octopus.infrastructure.bitbucket.client.getCommits
 import org.octopusden.octopus.infrastructure.bitbucket.client.getProjects
@@ -79,6 +80,19 @@ class BitbucketTestClient : BaseTestClient {
     override fun deleteRepository(repository: Repository) {
         log.debug("[$vcsUrlHost] delete repository '$repository'")
         client.deleteRepository(repository.group, repository.name)
+    }
+
+    override fun setRepositoryArchived(
+        repository: Repository,
+        archived: Boolean,
+    ) {
+        log.debug("[$vcsUrlHost] set archived=$archived for repository '$repository'")
+        val bitbucketRepository = client.getRepository(repository.group, repository.name)
+        client.updateRepository(
+            repository.group,
+            repository.name,
+            BitbucketUpdateRepository(bitbucketRepository.name, bitbucketRepository.project, archived = archived),
+        )
     }
 
     override fun checkCommit(

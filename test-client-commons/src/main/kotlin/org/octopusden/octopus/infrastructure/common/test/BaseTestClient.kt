@@ -29,6 +29,7 @@ abstract class BaseTestClient(
     private val commitRaiseException: Boolean = true,
 ) : TestClient {
     private val repositories = mutableMapOf<Repository, Git>()
+    private val archivedRepositories = mutableSetOf<Repository>()
     private val jgitCredentialsProvider = UsernamePasswordCredentialsProvider(username, password)
 
     protected val apiUrl = url.trimEnd('/')
@@ -51,6 +52,11 @@ abstract class BaseTestClient(
     protected abstract fun createRepository(repository: Repository)
 
     protected abstract fun deleteRepository(repository: Repository)
+
+    protected abstract fun setRepositoryArchived(
+        repository: Repository,
+        archived: Boolean,
+    )
 
     protected abstract fun checkCommit(
         repository: Repository,
@@ -218,6 +224,20 @@ abstract class BaseTestClient(
         repositories[repository] = git
     }
 
+    override fun setArchived(
+        vcsUrl: String,
+        archived: Boolean,
+    ) {
+        val repository = parseUrl(vcsUrl)
+        getLog().info("[$vcsUrlHost] set archived=$archived for repository '$repository'")
+        setRepositoryArchived(repository, archived)
+        if (archived) {
+            archivedRepositories.add(repository)
+        } else {
+            archivedRepositories.remove(repository)
+        }
+    }
+
     override fun getCommits(
         vcsUrl: String,
         branch: String,
@@ -238,10 +258,15 @@ abstract class BaseTestClient(
         repositories.entries.forEach { (repository, git) ->
             getLog().debug("[{}] delete directory '{}'", vcsUrlHost, git.repository.directory)
             git.repository.directory.deleteRecursively()
+            if (archivedRepositories.contains(repository)) {
+                getLog().debug("[{}] un-archive repository '{}' before deletion", vcsUrlHost, repository)
+                setRepositoryArchived(repository, false)
+            }
             deleteRepository(repository)
         }
         val repositoryUrls = repositories.keys.map { repository -> repository.sshUrl }
         repositories.clear()
+        archivedRepositories.clear()
         return repositoryUrls
     }
 

@@ -471,6 +471,11 @@ class BitbucketTestClientTest :
         Assertions.assertEquals(buildDetails.state, retrievedStatus.state)
     }
 
+    override fun isArchived(
+        project: String,
+        repository: String,
+    ) = client.getRepository(project, repository).archived == true
+
     private fun BitbucketTag.toTestTag() = TestTag(displayId, latestCommit)
 
     private fun BitbucketCommit.toTestCommit() = TestCommit(id, message)

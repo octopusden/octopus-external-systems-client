@@ -111,6 +111,11 @@ class GiteaTestClientTest :
         index: Long,
     ) = client.getPullRequest(project, repository, index).toTestPullRequest()
 
+    override fun isArchived(
+        project: String,
+        repository: String,
+    ) = client.getRepository(project, repository).archived == true
+
     private fun GiteaTag.toTestTag() = TestTag(name, commit.sha)
 
     private fun GiteaCommit.toTestCommit() = TestCommit(sha, commit.message)
