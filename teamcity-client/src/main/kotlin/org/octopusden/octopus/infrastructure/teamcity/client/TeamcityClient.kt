@@ -647,6 +647,35 @@ fun TeamcityClient.getBuildWithFields(
     fields: String,
 ) = getBuildWithFields(BuildLocator(id = buildId), fields)
 
+fun TeamcityClient.getAllBuildsWithLocatorAndFields(
+    locator: BuildLocator,
+    fields: String,
+    pageSize: Int = 1000,
+): List<TeamcityBuild> {
+    val result = mutableListOf<TeamcityBuild>()
+    var start = 0
+    while (true) {
+        val page = getBuildsWithLocatorAndFields(locator.withPage(count = pageSize, start = start), fields).builds
+        result += page
+        if (page.size < pageSize) return result
+        start += pageSize
+    }
+}
+
+private fun BuildLocator.withPage(
+    count: Int,
+    start: Int,
+) = BuildLocator(
+    id = id,
+    buildType = buildType,
+    status = status,
+    state = state,
+    branch = branch,
+    running = running,
+    count = count,
+    start = start,
+)
+
 fun TeamcityClient.getVcsRootInstance(vcsRootInstanceId: String) = getVcsRootInstance(VcsRootInstanceLocator(id = vcsRootInstanceId))
 
 fun TeamcityClient.getBuildTypeTemplate(buildTypeId: String) = getBuildTypeTemplate(BuildTypeLocator(id = buildTypeId))

@@ -130,6 +130,18 @@ class LocatorTest {
     }
 
     @Test
+    fun testBuildLocatorWithPagination() {
+        val expected = "count:50,start:100"
+        val actual = locatorExpander.expand(
+            BuildLocator(
+                count = 50,
+                start = 100,
+            ),
+        )
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun testBuildTypeLocatorWithTemplate() {
         val expected = "template:(id:WlValidator)"
         val actual = locatorExpander.expand(

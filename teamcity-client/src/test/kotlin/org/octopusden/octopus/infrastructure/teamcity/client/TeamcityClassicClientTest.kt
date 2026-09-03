@@ -37,6 +37,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapsho
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityTarget
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
@@ -628,6 +629,36 @@ class TeamcityClassicClientTest {
             assertNull(minimal.href)
             assertNull(minimal.webUrl)
             assertNull(minimal.finishDate)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetAllBuildsWithLocatorAndFieldsWalksPastTheFirstPage(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetAllBuildsWithLocatorAndFieldsPaging")
+        try {
+            val buildType = createBuildType(client, "TestGetAllBuildsWithLocatorAndFieldsPagingType", project.id)
+            val queuedIds = (1..5)
+                .map {
+                    client
+                        .queueBuild(
+                            TeamcityCreateQueuedBuild(
+                                buildType = BuildTypeLocator(id = buildType.id),
+                                branchName = "master",
+                            ),
+                        ).id
+                }.toSet()
+
+            val builds = client.getAllBuildsWithLocatorAndFields(
+                BuildLocator(buildType = BuildTypeLocator(id = buildType.id), state = "queued"),
+                "build(id)",
+                pageSize = 2,
+            )
+
+            assertEquals(queuedIds, builds.map { it.id }.toSet())
         } finally {
             client.deleteProject(project.id)
         }
