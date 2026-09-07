@@ -465,10 +465,10 @@ interface TeamcityClient {
         @Param("fields", encoded = true) fields: String,
     ): TeamcityBuilds
 
-    @RequestLine("GET {href}")
+    @RequestLine("GET $REST/builds?{query}")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun getBuildsByHref(
-        @Param("href", encoded = true) href: String,
+    fun getBuildsByQuery(
+        @Param("query", encoded = true) query: String,
     ): TeamcityBuilds
 
     @RequestLine("GET $REST/builds/{locator}")
@@ -663,7 +663,7 @@ fun TeamcityClient.getAllBuildsWithLocatorAndFields(
     result += page.builds
     while (true) {
         val nextHref = page.nextHref ?: return result
-        page = getBuildsByHref(nextHref)
+        page = getBuildsByQuery(nextHref.substringAfter('?'))
         result += page.builds
     }
 }
@@ -678,6 +678,7 @@ private fun BuildLocator.withCount(count: Int) =
         running = running,
         count = count,
         start = start,
+        lookupLimit = lookupLimit,
     )
 
 fun TeamcityClient.getVcsRootInstance(vcsRootInstanceId: String) = getVcsRootInstance(VcsRootInstanceLocator(id = vcsRootInstanceId))

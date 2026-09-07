@@ -142,6 +142,18 @@ class LocatorTest {
     }
 
     @Test
+    fun testBuildLocatorWithLookupLimit() {
+        val expected = "count:2,lookupLimit:1"
+        val actual = locatorExpander.expand(
+            BuildLocator(
+                count = 2,
+                lookupLimit = 1,
+            ),
+        )
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun testBuildTypeLocatorWithTemplate() {
         val expected = "template:(id:WlValidator)"
         val actual = locatorExpander.expand(

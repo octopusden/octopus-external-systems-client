@@ -9,4 +9,5 @@ class BuildLocator(
     val running: Boolean? = null,
     val count: Int? = null,
     val start: Int? = null,
+    val lookupLimit: Int? = null,
 ) : BaseLocator()
