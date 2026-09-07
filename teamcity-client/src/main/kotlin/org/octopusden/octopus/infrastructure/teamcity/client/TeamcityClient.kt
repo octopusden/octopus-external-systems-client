@@ -465,6 +465,12 @@ interface TeamcityClient {
         @Param("fields", encoded = true) fields: String,
     ): TeamcityBuilds
 
+    @RequestLine("GET {href}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuildsByHref(
+        @Param("href", encoded = true) href: String,
+    ): TeamcityBuilds
+
     @RequestLine("GET $REST/builds/{locator}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getBuild(
@@ -653,28 +659,26 @@ fun TeamcityClient.getAllBuildsWithLocatorAndFields(
     pageSize: Int = 1000,
 ): List<TeamcityBuild> {
     val result = mutableListOf<TeamcityBuild>()
-    var start = 0
+    var page = getBuildsWithLocatorAndFields(locator.withCount(pageSize), "nextHref,$fields")
+    result += page.builds
     while (true) {
-        val page = getBuildsWithLocatorAndFields(locator.withPage(count = pageSize, start = start), fields).builds
-        result += page
-        if (page.size < pageSize) return result
-        start += pageSize
+        val nextHref = page.nextHref ?: return result
+        page = getBuildsByHref(nextHref)
+        result += page.builds
     }
 }
 
-private fun BuildLocator.withPage(
-    count: Int,
-    start: Int,
-) = BuildLocator(
-    id = id,
-    buildType = buildType,
-    status = status,
-    state = state,
-    branch = branch,
-    running = running,
-    count = count,
-    start = start,
-)
+private fun BuildLocator.withCount(count: Int) =
+    BuildLocator(
+        id = id,
+        buildType = buildType,
+        status = status,
+        state = state,
+        branch = branch,
+        running = running,
+        count = count,
+        start = start,
+    )
 
 fun TeamcityClient.getVcsRootInstance(vcsRootInstanceId: String) = getVcsRootInstance(VcsRootInstanceLocator(id = vcsRootInstanceId))
 

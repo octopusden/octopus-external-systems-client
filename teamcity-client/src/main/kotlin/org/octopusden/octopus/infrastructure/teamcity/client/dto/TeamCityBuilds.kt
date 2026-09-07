@@ -5,4 +5,6 @@ import com.fasterxml.jackson.annotation.JsonProperty
 data class TeamcityBuilds(
     @JsonProperty("build")
     var builds: List<TeamcityBuild> = ArrayList<TeamcityBuild>(),
+    @JsonProperty("nextHref")
+    var nextHref: String? = null,
 )
