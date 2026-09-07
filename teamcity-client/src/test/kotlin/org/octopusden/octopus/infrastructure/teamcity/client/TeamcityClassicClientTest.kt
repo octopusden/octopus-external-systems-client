@@ -37,6 +37,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcitySnapsho
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityStep
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.TeamcityTarget
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.AgentRequirementLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
@@ -628,6 +629,69 @@ class TeamcityClassicClientTest {
             assertNull(minimal.href)
             assertNull(minimal.webUrl)
             assertNull(minimal.finishDate)
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetAllBuildsWithLocatorAndFieldsWalksPastTheFirstPage(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestGetAllBuildsWithLocatorAndFieldsPaging")
+        try {
+            val buildType = createBuildType(client, "TestGetAllBuildsWithLocatorAndFieldsPagingType", project.id)
+            val queuedIds = (1..5)
+                .map {
+                    client
+                        .queueBuild(
+                            TeamcityCreateQueuedBuild(
+                                buildType = BuildTypeLocator(id = buildType.id),
+                                branchName = "master",
+                            ),
+                        ).id
+                }.toSet()
+
+            val builds = client.getAllBuildsWithLocatorAndFields(
+                BuildLocator(buildType = BuildTypeLocator(id = buildType.id), state = "queued"),
+                "build(id)",
+                pageSize = 2,
+            )
+
+            assertEquals(queuedIds, builds.map { it.id }.toSet())
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetAllBuildsWithLocatorAndFieldsSurvivesALowLookupLimit(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestLowLookupLimit")
+        try {
+            val buildType = createBuildType(client, "TestLowLookupLimitType", project.id)
+            val queuedIds = (1..3)
+                .map {
+                    client
+                        .queueBuild(
+                            TeamcityCreateQueuedBuild(
+                                buildType = BuildTypeLocator(id = buildType.id),
+                                branchName = "master",
+                            ),
+                        ).id
+                }.toSet()
+
+            // lookupLimit = 1 forces TeamCity to stop scanning after a single entity per request,
+            // so the fix must be proven by nextHref alone - count is high enough that count-based
+            // pagination would never kick in on its own.
+            val builds = client.getAllBuildsWithLocatorAndFields(
+                BuildLocator(buildType = BuildTypeLocator(id = buildType.id), state = "queued", lookupLimit = 1),
+                "build(id)",
+                pageSize = 100,
+            )
+
+            assertEquals(queuedIds, builds.map { it.id }.toSet())
         } finally {
             client.deleteProject(project.id)
         }

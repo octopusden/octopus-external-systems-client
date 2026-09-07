@@ -285,6 +285,8 @@ class TeamcityClassicClient(
         fields: String,
     ) = client.getBuildsWithLocatorAndFields(locator, fields)
 
+    override fun getBuildsByQuery(query: String) = client.getBuildsByQuery(query)
+
     override fun getBuild(locator: BuildLocator) = client.getBuild(locator)
 
     override fun getBuildWithFields(
