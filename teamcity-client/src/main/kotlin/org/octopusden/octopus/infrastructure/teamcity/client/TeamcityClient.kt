@@ -47,6 +47,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.Investi
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
+import java.net.URLDecoder
 import org.octopusden.octopus.infrastructure.teamcity.client.TeamcityLocatorExpander as Locator
 
 // Use `/app/rest/latest` — `/app/rest/2018.1` is no longer reliable on TC 2026.
@@ -120,6 +121,16 @@ interface TeamcityClient {
     @Headers("Accept: application/json")
     fun getBuildTypesWithLocatorAndFields(
         @Param("locator", expander = Locator::class, encoded = true) locator: BuildTypeLocator,
+        @Param("fields", encoded = true) fields: String,
+    ): TeamcityBuildTypes
+
+    // Raw-string overload for re-issuing a locator/fields pair parsed back out of a `nextHref`.
+    // Unlike `getBuildTypesByQuery`'s bare `?{query}` placeholder, named params here are encoded
+    // exactly once by Feign - see getAllBuildTypesWithLocatorAndFields.
+    @RequestLine("GET $REST/buildTypes?locator={locator}&fields={fields}")
+    @Headers("Accept: application/json")
+    fun getBuildTypesWithLocatorAndFields(
+        @Param("locator", encoded = true) locator: String,
         @Param("fields", encoded = true) fields: String,
     ): TeamcityBuildTypes
 
@@ -478,6 +489,16 @@ interface TeamcityClient {
         @Param("fields", encoded = true) fields: String,
     ): TeamcityBuilds
 
+    // Raw-string overload for re-issuing a locator/fields pair parsed back out of a `nextHref`.
+    // Unlike `getBuildsByQuery`'s bare `?{query}` placeholder, named params here are encoded
+    // exactly once by Feign - see getAllBuildsWithLocatorAndFields.
+    @RequestLine("GET $REST/builds?locator={locator}&fields={fields}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuildsWithLocatorAndFields(
+        @Param("locator", encoded = true) locator: String,
+        @Param("fields", encoded = true) fields: String,
+    ): TeamcityBuilds
+
     @RequestLine("GET $REST/builds?{query}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getBuildsByQuery(
@@ -676,7 +697,8 @@ fun TeamcityClient.getAllBuildsWithLocatorAndFields(
     result += page.builds
     while (true) {
         val nextHref = page.nextHref ?: return result
-        page = getBuildsByQuery(nextHref.substringAfter('?'))
+        val (nextLocator, nextFields) = parseLocatorAndFields(nextHref)
+        page = getBuildsWithLocatorAndFields(nextLocator, nextFields)
         result += page.builds
     }
 }
@@ -704,7 +726,8 @@ fun TeamcityClient.getAllBuildTypesWithLocatorAndFields(
     result += page.buildTypes
     while (true) {
         val nextHref = page.nextHref ?: return result
-        page = getBuildTypesByQuery(nextHref.substringAfter('?'))
+        val (nextLocator, nextFields) = parseLocatorAndFields(nextHref)
+        page = getBuildTypesWithLocatorAndFields(nextLocator, nextFields)
         result += page.buildTypes
     }
 }
@@ -716,6 +739,22 @@ private fun BuildTypeLocator.withCount(count: Int) =
         count = count,
         start = start,
     )
+
+/**
+ * Splits a `nextHref`'s query string back into its `locator` and `fields` values. Re-issuing
+ * `nextHref` verbatim through Feign's bare `?{query}` placeholder (`getBuildsByQuery` /
+ * `getBuildTypesByQuery`) double-encodes it - the `=`/`&` delimiters themselves get
+ * percent-escaped, silently dropping every filter. The raw-string `getBuildsWithLocatorAndFields`
+ * / `getBuildTypesWithLocatorAndFields` overloads use named params instead, which Feign encodes
+ * exactly once, correctly.
+ */
+private fun parseLocatorAndFields(href: String): Pair<String, String> {
+    val params = href.substringAfter('?').split('&').associate {
+        val (key, value) = it.split('=', limit = 2)
+        key to value
+    }
+    return params.getValue("locator") to URLDecoder.decode(params.getValue("fields"), "UTF-8")
+}
 
 fun TeamcityClient.getVcsRootInstance(vcsRootInstanceId: String) = getVcsRootInstance(VcsRootInstanceLocator(id = vcsRootInstanceId))
 
