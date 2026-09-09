@@ -709,12 +709,13 @@ fun TeamcityClient.getAllBuildTypesWithLocatorAndFields(
     }
 }
 
-private fun BuildTypeLocator.withCount(count: Int) = BuildTypeLocator(
-    id = id,
-    template = template,
-    count = count,
-    start = start,
-)
+private fun BuildTypeLocator.withCount(count: Int) =
+    BuildTypeLocator(
+        id = id,
+        template = template,
+        count = count,
+        start = start,
+    )
 
 fun TeamcityClient.getVcsRootInstance(vcsRootInstanceId: String) = getVcsRootInstance(VcsRootInstanceLocator(id = vcsRootInstanceId))
 
