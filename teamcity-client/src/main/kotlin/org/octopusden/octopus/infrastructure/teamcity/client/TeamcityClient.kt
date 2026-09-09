@@ -116,6 +116,19 @@ interface TeamcityClient {
         @Param("fields", encoded = true) fields: String,
     ): TeamcityBuildTypes
 
+    @RequestLine("GET $REST/buildTypes?locator={locator}&fields={fields}")
+    @Headers("Accept: application/json")
+    fun getBuildTypesWithLocatorAndFields(
+        @Param("locator", expander = Locator::class, encoded = true) locator: BuildTypeLocator,
+        @Param("fields", encoded = true) fields: String,
+    ): TeamcityBuildTypes
+
+    @RequestLine("GET $REST/buildTypes?{query}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuildTypesByQuery(
+        @Param("query", encoded = true) query: String,
+    ): TeamcityBuildTypes
+
     @RequestLine("GET $REST/projects/{locator}/buildTypes")
     @Headers("Accept: application/json")
     fun getBuildTypes(
@@ -680,6 +693,28 @@ private fun BuildLocator.withCount(count: Int) =
         start = start,
         lookupLimit = lookupLimit,
     )
+
+fun TeamcityClient.getAllBuildTypesWithLocatorAndFields(
+    locator: BuildTypeLocator,
+    fields: String,
+    pageSize: Int = 1000,
+): List<TeamcityBuildType> {
+    val result = mutableListOf<TeamcityBuildType>()
+    var page = getBuildTypesWithLocatorAndFields(locator.withCount(pageSize), "nextHref,$fields")
+    result += page.buildTypes
+    while (true) {
+        val nextHref = page.nextHref ?: return result
+        page = getBuildTypesByQuery(nextHref.substringAfter('?'))
+        result += page.buildTypes
+    }
+}
+
+private fun BuildTypeLocator.withCount(count: Int) = BuildTypeLocator(
+    id = id,
+    template = template,
+    count = count,
+    start = start,
+)
 
 fun TeamcityClient.getVcsRootInstance(vcsRootInstanceId: String) = getVcsRootInstance(VcsRootInstanceLocator(id = vcsRootInstanceId))
 
