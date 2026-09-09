@@ -666,7 +666,10 @@ class TeamcityClassicClientTest {
         }
     }
 
-    private fun awaitVcsBranch(client: TeamcityClient, buildTypeId: String): String {
+    private fun awaitVcsBranch(
+        client: TeamcityClient,
+        buildTypeId: String,
+    ): String {
         val fields = "buildType(id,branches(\$locator(policy:ALL_BRANCHES),branch(name)))"
         repeat(20) {
             val buildType = client
@@ -739,7 +742,13 @@ class TeamcityClassicClientTest {
 
             val withVcsResult = buildTypes.single { it.id == withVcs.id }
             val branch = withVcsResult.branches!!.branches.single { it.name == branchName }
-            assertEquals(queued.id, branch.builds!!.builds.single().id)
+            assertEquals(
+                queued.id,
+                branch.builds!!
+                    .builds
+                    .single()
+                    .id,
+            )
         } finally {
             client.deleteProject(project.id)
         }
