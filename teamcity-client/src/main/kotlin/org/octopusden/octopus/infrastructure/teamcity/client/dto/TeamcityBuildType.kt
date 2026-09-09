@@ -24,4 +24,5 @@ data class TeamcityBuildType(
     val snapshotDependencies: TeamcitySnapshotDependencies? = null,
     val paused: Boolean? = null,
     val builds: TeamcityBuilds? = null,
+    val branches: TeamcityBranches? = null,
 )
