@@ -692,12 +692,13 @@ fun TeamcityClient.getAllBuildsWithLocatorAndFields(
     fields: String,
     pageSize: Int = 1000,
 ): List<TeamcityBuild> {
+    val fieldsWithNextHref = "nextHref,$fields"
     val result = mutableListOf<TeamcityBuild>()
-    var page = getBuildsWithLocatorAndFields(locator.withCount(pageSize), "nextHref,$fields")
+    var page = getBuildsWithLocatorAndFields(locator.withCount(pageSize), fieldsWithNextHref)
     result += page.builds
     while (true) {
         val nextHref = page.nextHref ?: return result
-        val (nextLocator, nextFields) = parseLocatorAndFields(nextHref)
+        val (nextLocator, nextFields) = parseLocatorAndFields(nextHref, fieldsWithNextHref)
         page = getBuildsWithLocatorAndFields(nextLocator, nextFields)
         result += page.builds
     }
@@ -721,12 +722,13 @@ fun TeamcityClient.getAllBuildTypesWithLocatorAndFields(
     fields: String,
     pageSize: Int = 1000,
 ): List<TeamcityBuildType> {
+    val fieldsWithNextHref = "nextHref,$fields"
     val result = mutableListOf<TeamcityBuildType>()
-    var page = getBuildTypesWithLocatorAndFields(locator.withCount(pageSize), "nextHref,$fields")
+    var page = getBuildTypesWithLocatorAndFields(locator.withCount(pageSize), fieldsWithNextHref)
     result += page.buildTypes
     while (true) {
         val nextHref = page.nextHref ?: return result
-        val (nextLocator, nextFields) = parseLocatorAndFields(nextHref)
+        val (nextLocator, nextFields) = parseLocatorAndFields(nextHref, fieldsWithNextHref)
         page = getBuildTypesWithLocatorAndFields(nextLocator, nextFields)
         result += page.buildTypes
     }
@@ -747,14 +749,41 @@ private fun BuildTypeLocator.withCount(count: Int) =
  * percent-escaped, silently dropping every filter. The raw-string `getBuildsWithLocatorAndFields`
  * / `getBuildTypesWithLocatorAndFields` overloads use named params instead, which Feign encodes
  * exactly once, correctly.
+ *
+ * TeamCity's own `nextHref` encoding is inconsistent across versions: `locator` is always emitted
+ * raw/unescaped (observed on both TC 2022 and TC 2026), while `fields` is percent-encoded on TC
+ * 2022 but left raw on TC 2026. Decoding `fields` unconditionally handles both - decoding an
+ * already-raw string is a no-op as long as it has no literal `%`/`+`. `locator` is never decoded
+ * since TeamCity never encodes it.
+ *
+ * A malformed or missing piece falls back rather than throws, since a partial `nextHref` should
+ * not blow up pagination and discard everything already collected: a query segment with no `=` is
+ * skipped, and a missing `fields` falls back to [fallbackFields] - the fields the caller originally
+ * asked for (including `nextHref`, so pagination can still continue).
  */
-private fun parseLocatorAndFields(href: String): Pair<String, String> {
-    val params = href.substringAfter('?').split('&').associate {
-        val (key, value) = it.split('=', limit = 2)
-        key to value
-    }
-    return params.getValue("locator") to URLDecoder.decode(params.getValue("fields"), "UTF-8")
+internal fun parseLocatorAndFields(
+    href: String,
+    fallbackFields: String,
+): Pair<String, String> {
+    val params = href
+        .substringAfter('?')
+        .split('&')
+        .mapNotNull { segment ->
+            val parts = segment.split('=', limit = 2)
+            if (parts.size == 2) parts[0] to parts[1] else null
+        }.toMap()
+    val locator = params.getValue("locator")
+    val fields = params["fields"]?.let(::decodeFieldsValue) ?: fallbackFields
+    return locator to fields
 }
+
+/**
+ * `URLDecoder.decode` implements form-encoding, where a literal `+` means space - wrong for a
+ * standard percent-encoded query value, where a `+` is meant to stay `+`. Escaping it first keeps
+ * a genuine `%2B` (an intentionally-encoded `+`) decoding correctly while protecting any literal
+ * `+` TeamCity happened to leave unescaped.
+ */
+private fun decodeFieldsValue(value: String): String = URLDecoder.decode(value.replace("+", "%2B"), "UTF-8")
 
 fun TeamcityClient.getVcsRootInstance(vcsRootInstanceId: String) = getVcsRootInstance(VcsRootInstanceLocator(id = vcsRootInstanceId))
 

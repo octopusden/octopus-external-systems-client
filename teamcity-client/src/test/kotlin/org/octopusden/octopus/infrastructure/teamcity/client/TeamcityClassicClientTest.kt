@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Assertions.assertIterableEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
@@ -738,7 +737,6 @@ class TeamcityClassicClientTest {
             )
 
             assertEquals(setOf(withVcs.id, withoutVcs.id), buildTypes.map { it.id }.toSet())
-            assertTrue(buildTypes.none { it.id == unrelated.id })
 
             val withVcsResult = buildTypes.single { it.id == withVcs.id }
             val branch = withVcsResult.branches!!.branches.single { it.name == branchName }
