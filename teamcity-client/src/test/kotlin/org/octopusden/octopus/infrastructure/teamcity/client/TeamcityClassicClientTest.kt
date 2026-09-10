@@ -41,6 +41,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildLo
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.PropertyLocator
+import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.TemplateLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
 import java.net.URI
@@ -659,6 +660,93 @@ class TeamcityClassicClientTest {
             )
 
             assertEquals(queuedIds, builds.map { it.id }.toSet())
+        } finally {
+            client.deleteProject(project.id)
+        }
+    }
+
+    private fun awaitVcsBranch(
+        client: TeamcityClient,
+        buildTypeId: String,
+    ): String {
+        val fields = "buildType(id,branches(\$locator(policy:ALL_BRANCHES),branch(name)))"
+        repeat(20) {
+            val buildType = client
+                .getBuildTypesWithLocatorAndFields(BuildTypeLocator(id = buildTypeId), fields)
+                .buildTypes
+                .first()
+            val branch = buildType.branches?.branches?.firstOrNull { it.name != "<default>" }
+            if (branch != null) return branch.name!!
+            Thread.sleep(3000)
+        }
+        error("VCS branch was not detected for build type $buildTypeId in time")
+    }
+
+    @ParameterizedTest
+    @MethodSource("teamcityContexts")
+    fun testGetAllBuildTypesWithLocatorAndFieldsReturnsLatestBuildPerBranch(config: TeamcityTestConfiguration) {
+        val client = createClient(config)
+        val project = createProject(client, "TestBuildTypesLatestPerBranch")
+        try {
+            val template = client.createBuildType(
+                TeamcityCreateBuildType(
+                    name = "Template",
+                    project = TeamcityLinkProject(id = project.id),
+                    templateFlag = true,
+                ),
+            )
+            val withVcs = createBuildType(client, "WithVcs", project.id)
+            client.attachTemplateToBuildType(withVcs.id, template.id)
+            val withoutVcs = createBuildType(client, "WithoutVcs", project.id)
+            client.attachTemplateToBuildType(withoutVcs.id, template.id)
+            createBuildType(client, "Unrelated", project.id)
+
+            val vcsRoot = client.createVcsRoot(
+                TeamcityCreateVcsRoot(
+                    name = "${project.name}_VCS_ROOT",
+                    vcsName = TeamcityVCSType.GIT.value,
+                    projectLocator = project.id,
+                    properties = TeamcityProperties(
+                        listOf(
+                            TeamcityProperty("url", "https://github.com/octocat/Hello-World.git"),
+                            TeamcityProperty("branch", "refs/heads/master"),
+                            TeamcityProperty("authMethod", "ANONYMOUS"),
+                        ),
+                    ),
+                ),
+            )
+            client.createBuildTypeVcsRootEntry(
+                withVcs.id,
+                TeamcityCreateVcsRootEntry(id = vcsRoot.id, vcsRoot = TeamcityLinkVcsRoot(vcsRoot.id)),
+            )
+
+            val branchName = awaitVcsBranch(client, withVcs.id)
+            val queued = client.queueBuild(
+                TeamcityCreateQueuedBuild(buildType = BuildTypeLocator(id = withVcs.id), branchName = branchName),
+            )
+
+            val fields = "buildType(id,name,branches(\$locator(policy:ALL_BRANCHES)," +
+                "branch(name,builds(\$locator(count:1,state:queued),build(id,status,branchName)))))"
+
+            // pageSize:1 with 2 matching build-types forces getAllBuildTypesWithLocatorAndFields to
+            // follow nextHref, proving it doesn't stop at the first page.
+            val buildTypes = client.getAllBuildTypesWithLocatorAndFields(
+                BuildTypeLocator(template = TemplateLocator(id = template.id)),
+                fields,
+                pageSize = 1,
+            )
+
+            assertEquals(setOf(withVcs.id, withoutVcs.id), buildTypes.map { it.id }.toSet())
+
+            val withVcsResult = buildTypes.single { it.id == withVcs.id }
+            val branch = withVcsResult.branches!!.branches.single { it.name == branchName }
+            assertEquals(
+                queued.id,
+                branch.builds!!
+                    .builds
+                    .single()
+                    .id,
+            )
         } finally {
             client.deleteProject(project.id)
         }
