@@ -699,7 +699,7 @@ class TeamcityClassicClientTest {
             client.attachTemplateToBuildType(withVcs.id, template.id)
             val withoutVcs = createBuildType(client, "WithoutVcs", project.id)
             client.attachTemplateToBuildType(withoutVcs.id, template.id)
-            val unrelated = createBuildType(client, "Unrelated", project.id)
+            createBuildType(client, "Unrelated", project.id)
 
             val vcsRoot = client.createVcsRoot(
                 TeamcityCreateVcsRoot(
