@@ -129,7 +129,7 @@ interface TeamcityClient {
     // exactly once by Feign - see getAllBuildTypesWithLocatorAndFields.
     @RequestLine("GET $REST/buildTypes?locator={locator}&fields={fields}")
     @Headers("Accept: application/json")
-    fun getBuildTypesWithLocatorAndFields(
+    fun getBuildTypesWithRawLocatorAndFields(
         @Param("locator", encoded = true) locator: String,
         @Param("fields", encoded = true) fields: String,
     ): TeamcityBuildTypes
@@ -494,7 +494,7 @@ interface TeamcityClient {
     // exactly once by Feign - see getAllBuildsWithLocatorAndFields.
     @RequestLine("GET $REST/builds?locator={locator}&fields={fields}")
     @Headers("Content-Type: application/json", "Accept: application/json")
-    fun getBuildsWithLocatorAndFields(
+    fun getBuildsWithRawLocatorAndFields(
         @Param("locator", encoded = true) locator: String,
         @Param("fields", encoded = true) fields: String,
     ): TeamcityBuilds
@@ -699,7 +699,7 @@ fun TeamcityClient.getAllBuildsWithLocatorAndFields(
     while (true) {
         val nextHref = page.nextHref ?: return result
         val (nextLocator, nextFields) = parseLocatorAndFields(nextHref, fieldsWithNextHref)
-        page = getBuildsWithLocatorAndFields(nextLocator, nextFields)
+        page = getBuildsWithRawLocatorAndFields(nextLocator, nextFields)
         result += page.builds
     }
 }
@@ -729,7 +729,7 @@ fun TeamcityClient.getAllBuildTypesWithLocatorAndFields(
     while (true) {
         val nextHref = page.nextHref ?: return result
         val (nextLocator, nextFields) = parseLocatorAndFields(nextHref, fieldsWithNextHref)
-        page = getBuildTypesWithLocatorAndFields(nextLocator, nextFields)
+        page = getBuildTypesWithRawLocatorAndFields(nextLocator, nextFields)
         result += page.buildTypes
     }
 }
