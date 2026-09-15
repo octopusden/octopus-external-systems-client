@@ -1,6 +1,7 @@
 package org.octopusden.octopus.infrastructure.teamcity.client
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.BuildTypeLocator
@@ -232,5 +233,64 @@ class LocatorTest {
         )
         val expected = "parameter:(name:url,value:https://host/repo.git%3Fx=1%26y=2%23frag%20with%2Bplus%20100%25)"
         assertEquals(expected, actual)
+    }
+
+    @Test
+    fun testParseLocatorAndFieldsDecodesPercentEncodedFieldsLikeTeamcity2022() {
+        val href = "/app/rest/latest/buildTypes?fields=nextHref%2CbuildType%28id%2Cname%29&locator=count:1,start:1,template:(id:T)"
+        val (locator, fields) = parseLocatorAndFields(href, fallbackFields = "unused")
+        assertEquals("count:1,start:1,template:(id:T)", locator)
+        assertEquals("nextHref,buildType(id,name)", fields)
+    }
+
+    @Test
+    fun testParseLocatorAndFieldsLeavesAlreadyRawFieldsUnchangedLikeTeamcity2026() {
+        val href = "/app/rest/latest/buildTypes?fields=nextHref,buildType(id,name)&locator=count:1,start:1,template:(id:T)"
+        val (locator, fields) = parseLocatorAndFields(href, fallbackFields = "unused")
+        assertEquals("count:1,start:1,template:(id:T)", locator)
+        assertEquals("nextHref,buildType(id,name)", fields)
+    }
+
+    @Test
+    fun testParseLocatorAndFieldsKeepsLocatorRawEvenIfItLooksPercentEncoded() {
+        // `locator` is never percent-encoded by TeamCity, so it must never be decoded either -
+        // a `%` that happens to appear in it (e.g. inside an id) is not an encoding artifact.
+        val href = "/app/rest/latest/buildTypes?fields=id&locator=count:1,name:100%25done"
+        val (locator, fields) = parseLocatorAndFields(href, fallbackFields = "unused")
+        assertEquals("count:1,name:100%25done", locator)
+        assertEquals("id", fields)
+    }
+
+    @Test
+    fun testParseLocatorAndFieldsPreservesLiteralPlusInFields() {
+        // URLDecoder.decode alone would turn a literal '+' into a space (form-encoding
+        // semantics) - wrong for a percent-encoded query value, where '+' must stay '+'.
+        val href = "/app/rest/latest/buildTypes?fields=name%3Aa%2Bb&locator=count:1"
+        val (_, fields) = parseLocatorAndFields(href, fallbackFields = "unused")
+        assertEquals("name:a+b", fields)
+    }
+
+    @Test
+    fun testParseLocatorAndFieldsFallsBackToCallerFieldsWhenMissingFromHref() {
+        val href = "/app/rest/latest/buildTypes?locator=count:1,start:1"
+        val (locator, fields) = parseLocatorAndFields(href, fallbackFields = "nextHref,buildType(id)")
+        assertEquals("count:1,start:1", locator)
+        assertEquals("nextHref,buildType(id)", fields)
+    }
+
+    @Test
+    fun testParseLocatorAndFieldsSkipsAMalformedQuerySegmentInsteadOfThrowing() {
+        val href = "/app/rest/latest/buildTypes?someFlag&fields=id&locator=count:1"
+        val (locator, fields) = parseLocatorAndFields(href, fallbackFields = "unused")
+        assertEquals("count:1", locator)
+        assertEquals("id", fields)
+    }
+
+    @Test
+    fun testParseLocatorAndFieldsThrowsWhenLocatorIsMissing() {
+        val href = "/app/rest/latest/buildTypes?fields=id"
+        assertThrows(NoSuchElementException::class.java) {
+            parseLocatorAndFields(href, fallbackFields = "unused")
+        }
     }
 }

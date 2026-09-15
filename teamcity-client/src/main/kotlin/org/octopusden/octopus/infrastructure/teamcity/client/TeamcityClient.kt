@@ -47,6 +47,7 @@ import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.Investi
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.ProjectLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootInstanceLocator
 import org.octopusden.octopus.infrastructure.teamcity.client.dto.locator.VcsRootLocator
+import java.net.URLDecoder
 import org.octopusden.octopus.infrastructure.teamcity.client.TeamcityLocatorExpander as Locator
 
 // Use `/app/rest/latest` — `/app/rest/2018.1` is no longer reliable on TC 2026.
@@ -114,6 +115,29 @@ interface TeamcityClient {
     @Headers("Accept: application/json")
     fun getBuildTypesWithFields(
         @Param("fields", encoded = true) fields: String,
+    ): TeamcityBuildTypes
+
+    @RequestLine("GET $REST/buildTypes?locator={locator}&fields={fields}")
+    @Headers("Accept: application/json")
+    fun getBuildTypesWithLocatorAndFields(
+        @Param("locator", expander = Locator::class, encoded = true) locator: BuildTypeLocator,
+        @Param("fields", encoded = true) fields: String,
+    ): TeamcityBuildTypes
+
+    // Raw-string overload for re-issuing a locator/fields pair parsed back out of a `nextHref`.
+    // Unlike `getBuildTypesByQuery`'s bare `?{query}` placeholder, named params here are encoded
+    // exactly once by Feign - see getAllBuildTypesWithLocatorAndFields.
+    @RequestLine("GET $REST/buildTypes?locator={locator}&fields={fields}")
+    @Headers("Accept: application/json")
+    fun getBuildTypesWithRawLocatorAndFields(
+        @Param("locator", encoded = true) locator: String,
+        @Param("fields", encoded = true) fields: String,
+    ): TeamcityBuildTypes
+
+    @RequestLine("GET $REST/buildTypes?{query}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuildTypesByQuery(
+        @Param("query", encoded = true) query: String,
     ): TeamcityBuildTypes
 
     @RequestLine("GET $REST/projects/{locator}/buildTypes")
@@ -465,6 +489,16 @@ interface TeamcityClient {
         @Param("fields", encoded = true) fields: String,
     ): TeamcityBuilds
 
+    // Raw-string overload for re-issuing a locator/fields pair parsed back out of a `nextHref`.
+    // Unlike `getBuildsByQuery`'s bare `?{query}` placeholder, named params here are encoded
+    // exactly once by Feign - see getAllBuildsWithLocatorAndFields.
+    @RequestLine("GET $REST/builds?locator={locator}&fields={fields}")
+    @Headers("Content-Type: application/json", "Accept: application/json")
+    fun getBuildsWithRawLocatorAndFields(
+        @Param("locator", encoded = true) locator: String,
+        @Param("fields", encoded = true) fields: String,
+    ): TeamcityBuilds
+
     @RequestLine("GET $REST/builds?{query}")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun getBuildsByQuery(
@@ -658,12 +692,14 @@ fun TeamcityClient.getAllBuildsWithLocatorAndFields(
     fields: String,
     pageSize: Int = 1000,
 ): List<TeamcityBuild> {
+    val fieldsWithNextHref = "nextHref,$fields"
     val result = mutableListOf<TeamcityBuild>()
-    var page = getBuildsWithLocatorAndFields(locator.withCount(pageSize), "nextHref,$fields")
+    var page = getBuildsWithLocatorAndFields(locator.withCount(pageSize), fieldsWithNextHref)
     result += page.builds
     while (true) {
         val nextHref = page.nextHref ?: return result
-        page = getBuildsByQuery(nextHref.substringAfter('?'))
+        val (nextLocator, nextFields) = parseLocatorAndFields(nextHref, fieldsWithNextHref)
+        page = getBuildsWithRawLocatorAndFields(nextLocator, nextFields)
         result += page.builds
     }
 }
@@ -680,6 +716,74 @@ private fun BuildLocator.withCount(count: Int) =
         start = start,
         lookupLimit = lookupLimit,
     )
+
+fun TeamcityClient.getAllBuildTypesWithLocatorAndFields(
+    locator: BuildTypeLocator,
+    fields: String,
+    pageSize: Int = 1000,
+): List<TeamcityBuildType> {
+    val fieldsWithNextHref = "nextHref,$fields"
+    val result = mutableListOf<TeamcityBuildType>()
+    var page = getBuildTypesWithLocatorAndFields(locator.withCount(pageSize), fieldsWithNextHref)
+    result += page.buildTypes
+    while (true) {
+        val nextHref = page.nextHref ?: return result
+        val (nextLocator, nextFields) = parseLocatorAndFields(nextHref, fieldsWithNextHref)
+        page = getBuildTypesWithRawLocatorAndFields(nextLocator, nextFields)
+        result += page.buildTypes
+    }
+}
+
+private fun BuildTypeLocator.withCount(count: Int) =
+    BuildTypeLocator(
+        id = id,
+        template = template,
+        count = count,
+        start = start,
+    )
+
+/**
+ * Splits a `nextHref`'s query string back into its `locator` and `fields` values. Re-issuing
+ * `nextHref` verbatim through Feign's bare `?{query}` placeholder (`getBuildsByQuery` /
+ * `getBuildTypesByQuery`) double-encodes it - the `=`/`&` delimiters themselves get
+ * percent-escaped, silently dropping every filter. The raw-string `getBuildsWithLocatorAndFields`
+ * / `getBuildTypesWithLocatorAndFields` overloads use named params instead, which Feign encodes
+ * exactly once, correctly.
+ *
+ * TeamCity's own `nextHref` encoding is inconsistent across versions: `locator` is always emitted
+ * raw/unescaped (observed on both TC 2022 and TC 2026), while `fields` is percent-encoded on TC
+ * 2022 but left raw on TC 2026. Decoding `fields` unconditionally handles both - decoding an
+ * already-raw string is a no-op as long as it has no literal `%`/`+`. `locator` is never decoded
+ * since TeamCity never encodes it.
+ *
+ * A malformed or missing piece falls back rather than throws, since a partial `nextHref` should
+ * not blow up pagination and discard everything already collected: a query segment with no `=` is
+ * skipped, and a missing `fields` falls back to [fallbackFields] - the fields the caller originally
+ * asked for (including `nextHref`, so pagination can still continue).
+ */
+internal fun parseLocatorAndFields(
+    href: String,
+    fallbackFields: String,
+): Pair<String, String> {
+    val params = href
+        .substringAfter('?')
+        .split('&')
+        .mapNotNull { segment ->
+            val parts = segment.split('=', limit = 2)
+            if (parts.size == 2) parts[0] to parts[1] else null
+        }.toMap()
+    val locator = params.getValue("locator")
+    val fields = params["fields"]?.let(::decodeFieldsValue) ?: fallbackFields
+    return locator to fields
+}
+
+/**
+ * `URLDecoder.decode` implements form-encoding, where a literal `+` means space - wrong for a
+ * standard percent-encoded query value, where a `+` is meant to stay `+`. Escaping it first keeps
+ * a genuine `%2B` (an intentionally-encoded `+`) decoding correctly while protecting any literal
+ * `+` TeamCity happened to leave unescaped.
+ */
+private fun decodeFieldsValue(value: String): String = URLDecoder.decode(value.replace("+", "%2B"), "UTF-8")
 
 fun TeamcityClient.getVcsRootInstance(vcsRootInstanceId: String) = getVcsRootInstance(VcsRootInstanceLocator(id = vcsRootInstanceId))
 

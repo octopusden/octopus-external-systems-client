@@ -76,6 +76,18 @@ class TeamcityClassicClient(
 
     override fun getBuildTypesWithFields(fields: String) = client.getBuildTypesWithFields(fields)
 
+    override fun getBuildTypesWithLocatorAndFields(
+        locator: BuildTypeLocator,
+        fields: String,
+    ) = client.getBuildTypesWithLocatorAndFields(locator, fields)
+
+    override fun getBuildTypesWithRawLocatorAndFields(
+        locator: String,
+        fields: String,
+    ) = client.getBuildTypesWithRawLocatorAndFields(locator, fields)
+
+    override fun getBuildTypesByQuery(query: String) = client.getBuildTypesByQuery(query)
+
     override fun getBuildTypes(project: ProjectLocator) = client.getBuildTypes(project)
 
     override fun getBuildTypesProjectWithFields(
@@ -284,6 +296,11 @@ class TeamcityClassicClient(
         locator: BuildLocator,
         fields: String,
     ) = client.getBuildsWithLocatorAndFields(locator, fields)
+
+    override fun getBuildsWithRawLocatorAndFields(
+        locator: String,
+        fields: String,
+    ) = client.getBuildsWithRawLocatorAndFields(locator, fields)
 
     override fun getBuildsByQuery(query: String) = client.getBuildsByQuery(query)
 
