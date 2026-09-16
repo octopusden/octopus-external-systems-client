@@ -18,6 +18,7 @@ import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlSearchRes
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfoResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.DeleteBuildRequest
+import feign.Response
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteBuildRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDockerImageRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
@@ -67,6 +68,8 @@ class ArtifactoryClassicClient(
     ) = client.promoteDockerImage(repoKey, request)
 
     override fun searchByAQL(query: String): AqlSearchResponse = client.searchByAQL(query)
+
+    override fun downloadArtifact(artifactPath: String): Response = client.downloadArtifact(artifactPath)
 
     companion object {
         private fun getMapper(): ObjectMapper {

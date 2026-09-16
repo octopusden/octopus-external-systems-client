@@ -3,6 +3,7 @@ package org.octopusden.octopus.infrastructure.artifactory.client
 import feign.Headers
 import feign.Param
 import feign.RequestLine
+import feign.Response
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlSearchResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.ArtifactoryResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
@@ -13,7 +14,8 @@ import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDocke
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.Tokens
 
-const val ARTIFACTORY_PATH = "artifactory/api"
+const val ARTIFACTORY = "artifactory"
+const val ARTIFACTORY_PATH = "$ARTIFACTORY/api"
 const val ACCESS_PATH = "access/api/v1"
 const val TOKENS_PATH = "$ACCESS_PATH/tokens"
 const val SYSTEM_PATH = "$ARTIFACTORY_PATH/system"
@@ -62,4 +64,7 @@ interface ArtifactoryClient {
     @RequestLine("POST $ARTIFACTORY_PATH/search/aql")
     @Headers("Content-Type: text/plain", "Accept: application/json")
     fun searchByAQL(query: String): AqlSearchResponse
+
+    @RequestLine("GET $ARTIFACTORY/{+artifactPath}")
+    fun downloadArtifact(@Param("artifactPath") artifactPath: String): Response
 }
