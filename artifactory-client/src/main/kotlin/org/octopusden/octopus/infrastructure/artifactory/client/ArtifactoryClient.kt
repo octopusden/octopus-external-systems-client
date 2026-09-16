@@ -66,5 +66,7 @@ interface ArtifactoryClient {
     fun searchByAQL(query: String): AqlSearchResponse
 
     @RequestLine("GET $ARTIFACTORY/{+artifactPath}")
-    fun downloadArtifact(@Param("artifactPath") artifactPath: String): Response
+    fun downloadArtifact(
+        @Param("artifactPath") artifactPath: String,
+    ): Response
 }

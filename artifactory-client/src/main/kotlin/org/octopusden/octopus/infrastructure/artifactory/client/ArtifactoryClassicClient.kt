@@ -9,6 +9,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
 import feign.Logger
 import feign.RequestInterceptor
+import feign.Response
 import feign.codec.Encoder
 import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonDecoder
@@ -18,7 +19,6 @@ import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlSearchRes
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfoResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.DeleteBuildRequest
-import feign.Response
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteBuildRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDockerImageRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
