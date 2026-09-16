@@ -342,7 +342,10 @@ class TeamcityClassicClient(
         private class RetryOn503ErrorDecoder : ErrorDecoder {
             private val delegate = ErrorDecoder.Default()
 
-            override fun decode(methodKey: String, response: Response): Exception =
+            override fun decode(
+                methodKey: String,
+                response: Response,
+            ): Exception =
                 if (response.status() == 503) {
                     RetryableException(
                         response.status(),
