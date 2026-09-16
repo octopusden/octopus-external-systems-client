@@ -8,6 +8,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import feign.Feign
 import feign.Logger
 import feign.RequestInterceptor
+import feign.Response
+import feign.RetryableException
+import feign.Retryer
+import feign.codec.ErrorDecoder
 import feign.form.FormData
 import feign.form.FormEncoder
 import feign.httpclient.ApacheHttpClient
@@ -335,6 +339,23 @@ class TeamcityClassicClient(
     ) = client.assignGlobalRoleToUser(username, roleId)
 
     companion object {
+        private class RetryOn503ErrorDecoder : ErrorDecoder {
+            private val delegate = ErrorDecoder.Default()
+
+            override fun decode(methodKey: String, response: Response): Exception =
+                if (response.status() == 503) {
+                    RetryableException(
+                        response.status(),
+                        "Service Unavailable",
+                        response.request().httpMethod(),
+                        null,
+                        response.request(),
+                    )
+                } else {
+                    delegate.decode(methodKey, response)
+                }
+        }
+
         private fun getMapper() =
             jacksonObjectMapper().apply {
                 this.registerModule(JavaTimeModule())
@@ -352,6 +373,8 @@ class TeamcityClassicClient(
             .client(ApacheHttpClient(HttpClients.custom().disableCookieManagement().build()))
             .encoder(FormEncoder(JacksonEncoder(objectMapper)))
             .decoder(TeamcityClientDecoder(objectMapper))
+            .errorDecoder(RetryOn503ErrorDecoder())
+            .retryer(Retryer.Default(1000, 10000, 5))
             .requestInterceptor(interceptor)
             .logger(Slf4jLogger(TeamcityClient::class.java))
             .logLevel(Logger.Level.FULL)
