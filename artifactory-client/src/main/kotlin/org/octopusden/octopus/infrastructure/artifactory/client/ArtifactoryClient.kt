@@ -65,7 +65,7 @@ interface ArtifactoryClient {
     @Headers("Content-Type: text/plain", "Accept: application/json")
     fun searchByAQL(query: String): AqlSearchResponse
 
-    @RequestLine("GET $ARTIFACTORY/{+artifactPath}")
+    @RequestLine("GET $ARTIFACTORY/{artifactPath}", decodeSlash = false)
     fun downloadArtifact(
         @Param("artifactPath") artifactPath: String,
     ): Response
