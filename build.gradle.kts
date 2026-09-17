@@ -1,4 +1,8 @@
+import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
+import org.gradle.testing.jacoco.tasks.JacocoReport
+import org.gradle.testing.jacoco.tasks.JacocoReportBase
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.math.BigDecimal
 import java.net.InetAddress
 import java.time.Duration
 import java.util.zip.CRC32
@@ -6,6 +10,7 @@ import java.util.zip.CRC32
 plugins {
     java
     idea
+    jacoco
     id("org.octopusden.octopus.oc-template")
     id("org.jetbrains.kotlin.jvm")
     id("io.github.gradle-nexus.publish-plugin")
@@ -63,6 +68,14 @@ octopusQuality {
         failOnViolation.set(true)
     }
     coverage {
+        // The plugin's own coverage path stays off: `coverage.overallMinimum` exists but is
+        // unreachable in octopus-quality 3.0.0. `TaskRegistrar.registerJacocoOverallTasks` registers
+        // the aggregated JaCoCo tasks from INSIDE the lazy `qualityCoverage` configuration action,
+        // and Gradle refuses that ("DefaultTaskContainer#register(String, Class, Action) on task set
+        // cannot be executed in the current context") the moment `qualityCoverage` is realized, so
+        // any multi-module repo setting `tool = JACOCO` fails to configure. Kover is no alternative:
+        // the plugin has no aggregated Kover task at all. The aggregate report and the ratchet are
+        // therefore wired directly below; switch back to the DSL once the plugin is fixed.
         enabled.set(false)
     }
 }
@@ -122,6 +135,7 @@ subprojects {
     apply(plugin = "idea")
     apply(plugin = "java")
     apply(plugin = "signing")
+    apply(plugin = "jacoco")
     apply(plugin = "maven-publish")
     // Kotlin static analysis — configured by the octopus-quality convention plugin
     apply(plugin = "io.gitlab.arturbosch.detekt")
@@ -226,4 +240,56 @@ subprojects {
     dependencies {
         implementation("org.jetbrains.kotlin:kotlin-stdlib")
     }
+}
+
+// Aggregated line coverage across the whole build. Aggregate, not per-module: most modules have no
+// tests of their own, so a per-module floor would fail them all — that cleanup is separate.
+fun JacocoReportBase.aggregateAllModules() {
+    // `test` is docker-bound in the *-test-client / teamcity-client modules and is excluded by the
+    // quality workflow; whatever did run contributes its exec file, the rest simply have none.
+    dependsOn(subprojects.map { "${it.path}:test" })
+    dependsOn(":teamcity-client:unitTest")
+    executionData.setFrom(
+        files(
+            subprojects.map { module ->
+                module.fileTree(module.layout.buildDirectory) { include("jacoco/*.exec") }
+            },
+        ),
+    )
+    sourceDirectories.setFrom(files(subprojects.map { it.the<SourceSetContainer>()["main"].allSource.srcDirs }))
+    classDirectories.setFrom(files(subprojects.map { it.the<SourceSetContainer>()["main"].output }))
+}
+
+tasks.register<JacocoReport>("jacocoAggregatedReport") {
+    group = "verification"
+    description = "Aggregated JaCoCo coverage report across all modules"
+    aggregateAllModules()
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+}
+
+tasks.register<JacocoCoverageVerification>("jacocoAggregatedCoverageVerification") {
+    group = "verification"
+    description = "Fails the build when aggregated line coverage drops below the ratchet"
+    aggregateAllModules()
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                value = "COVEREDRATIO"
+                // Ratchet: raise when coverage grows, never lower.
+                // Measured baseline 3.73% (2026-09, `qualityCoverage` with the workflow's -x set),
+                // rounded down to a whole percent.
+                minimum = BigDecimal("0.03")
+            }
+        }
+    }
+}
+
+// `qualityCoverage` is registered by the convention plugin in `projectsEvaluated`; matching by name
+// avoids depending on listener ordering.
+tasks.matching { it.name == "qualityCoverage" }.configureEach {
+    dependsOn("jacocoAggregatedReport", "jacocoAggregatedCoverageVerification")
 }

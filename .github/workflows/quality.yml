@@ -15,12 +15,12 @@ jobs:
     uses: octopusden/octopus-base/.github/workflows/common-java-gradle-quality-gates.yml@v3.0.0
     with:
       java-version: '21'
-      # Coverage is disabled for this repo (octopusQuality { coverage { enabled = false } }).
-      # qualityCoverage still aggregates every :test task; the *-test-client / teamcity-client
-      # tests require docker-compose (composeBuild/composeUp), which is unavailable on the
-      # GitHub-hosted runner and fails the check. Exclude those infra-bound test tasks so the
-      # gate only runs the JVM-only unit tests. Full functional tests still run in CI/TeamCity
-      # where docker is available.
+      # qualityCoverage aggregates every :test task and, via the root build, the aggregated
+      # JaCoCo report + the non-decreasing coverage gate (see build.gradle.kts).
+      # The *-test-client / teamcity-client :test tasks drive real servers through
+      # docker-compose (composeBuild/composeUp) and take minutes each, so they stay excluded
+      # here and keep running in CI/TeamCity. The gate is still measured, not vacuous:
+      # :teamcity-client:unitTest (docker-free) is pulled in by the aggregate tasks.
       coverage-command: >-
         ./gradlew qualityCoverage --no-daemon --stacktrace
         -x :gitea-test-client:test
