@@ -211,7 +211,6 @@ val prepareTeamcity2026Data = tasks.register<Sync>("prepareTeamcity2026Data") {
 // running here.
 tasks.register<Test>("unitTest") {
     group = "verification"
-    description = "Runs the TeamCity client tests that need no running TeamCity server"
     val testSourceSet = sourceSets["test"]
     testClassesDirs = testSourceSet.output.classesDirs
     classpath = testSourceSet.runtimeClasspath
