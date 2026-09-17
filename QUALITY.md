@@ -34,8 +34,9 @@ Use the exact `coverage-command` from `.github/workflows/quality.yml` for the
 current coverage policy. Keep existing detekt/ktlint baselines: increasing a
 baseline requires reviewing the newly suppressed findings.
 
-GitHub publishes `static-analysis-reports` and `coverage-reports` artifacts from the shared
-quality workflow. Static reports include `**/build/reports/detekt/**` and
+The shared quality workflow uploads `static-analysis-reports` and
+`coverage-reports` when matching files exist. Coverage reports and enforcement
+require the separate changes in PR #160. Static reports include `**/build/reports/detekt/**` and
 `**/build/reports/ktlint/**`; coverage includes test results and JaCoCo/Kover
 reports. CodeQL and Trivy results appear in GitHub code scanning. Artifact paths
 do not by themselves enable additional analyzers.
