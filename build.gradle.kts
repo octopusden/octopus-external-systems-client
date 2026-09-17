@@ -250,18 +250,19 @@ subprojects {
 
 // Aggregated line coverage across the whole build. Aggregate, not per-module: most modules have no
 // tests of their own, so a per-module floor would fail them all — that cleanup is separate.
+fun jacocoExecutionData(): FileCollection =
+    files(
+        subprojects.map { module ->
+            module.fileTree(module.layout.buildDirectory) { include("jacoco/*.exec") }
+        },
+    )
+
 fun JacocoReportBase.aggregateAllModules() {
     // `test` is docker-bound in the *-test-client / teamcity-client modules and is excluded by the
     // quality workflow; whatever did run contributes its exec file, the rest simply have none.
     dependsOn(subprojects.map { "${it.path}:test" })
     dependsOn(":teamcity-client:unitTest")
-    executionData.setFrom(
-        files(
-            subprojects.map { module ->
-                module.fileTree(module.layout.buildDirectory) { include("jacoco/*.exec") }
-            },
-        ),
-    )
+    executionData.setFrom(jacocoExecutionData())
     sourceDirectories.setFrom(files(subprojects.map { it.the<SourceSetContainer>()["main"].allSource.srcDirs }))
     classDirectories.setFrom(files(subprojects.map { it.the<SourceSetContainer>()["main"].output }))
 }
@@ -294,8 +295,25 @@ tasks.register<JacocoCoverageVerification>("jacocoAggregatedCoverageVerification
     }
 }
 
+// A gate that can skip itself is not a gate. Both JaCoCo tasks above are SKIPPED when no execution
+// data exists, so losing the last test that runs in the quality job (renaming LocatorTest out of
+// `unitTest`'s filter is enough) would silently turn this check green again with no report at all.
+// That is the exact failure this PR exists to remove, so assert the data is there.
+tasks.register("coverageDataCheck") {
+    group = "verification"
+    description = "Fails when no test produced coverage data, which would make the gate vacuous"
+    dependsOn(subprojects.map { "${it.path}:test" } + ":teamcity-client:unitTest")
+    val executionData = jacocoExecutionData()
+    doLast {
+        check(!executionData.isEmpty) {
+            "No JaCoCo execution data: no test ran in this build, so the coverage gate would pass " +
+                "vacuously. Check that :teamcity-client:unitTest still matches at least one test."
+        }
+    }
+}
+
 // `qualityCoverage` is registered by the convention plugin in `projectsEvaluated`; matching by name
 // avoids depending on listener ordering.
 tasks.matching { it.name == "qualityCoverage" }.configureEach {
-    dependsOn("jacocoAggregatedReport", "jacocoAggregatedCoverageVerification")
+    dependsOn("coverageDataCheck", "jacocoAggregatedReport", "jacocoAggregatedCoverageVerification")
 }
