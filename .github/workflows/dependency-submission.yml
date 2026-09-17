@@ -1,0 +1,15 @@
+name: Dependency Submission
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  dependencies:
+    uses: octopusden/octopus-base/.github/workflows/common-gradle-dependency-submission.yml@a7bb9587f201bea70df46738d98eff09462cad98
+    with:
+      java-version: '21'

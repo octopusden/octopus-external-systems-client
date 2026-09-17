@@ -1,0 +1,14 @@
+name: Workflow Lint
+
+on:
+  push:
+    branches: [main]
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  workflow-lint:
+    uses: octopusden/octopus-base/.github/workflows/common-workflow-lint.yml@a7bb9587f201bea70df46738d98eff09462cad98
