@@ -31,23 +31,23 @@ import java.nio.charset.StandardCharsets
 class ArtifactoryClassicClient(
     clientParametersProvider: ClientParametersProvider,
     mapper: ObjectMapper = getMapper(),
+    feignClient: Client = ApacheHttpClient(),
 ) : ArtifactoryClient {
     private val errorDecoder = ArtifactoryClientErrorDecoder(mapper)
-    private val httpClient: Client = ApacheHttpClient()
     private val client: ArtifactoryClient =
         createClient(
             clientParametersProvider.getApiUrl(),
             clientParametersProvider.getAuth().getInterceptor(),
             mapper,
             errorDecoder,
-            httpClient,
+            feignClient,
         )
     private val downloadClient: ArtifactoryClient =
         createDownloadClient(
             clientParametersProvider.getApiUrl(),
             clientParametersProvider.getAuth().getInterceptor(),
             mapper,
-            httpClient,
+            feignClient,
         )
 
     constructor(apiParametersProvider: ClientParametersProvider) : this(
