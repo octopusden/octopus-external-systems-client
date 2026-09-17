@@ -31,8 +31,16 @@ class ArtifactoryClassicClient(
     clientParametersProvider: ClientParametersProvider,
     mapper: ObjectMapper = getMapper(),
 ) : ArtifactoryClient {
+    private val errorDecoder = ArtifactoryClientErrorDecoder(mapper)
     private val client: ArtifactoryClient =
         createClient(
+            clientParametersProvider.getApiUrl(),
+            clientParametersProvider.getAuth().getInterceptor(),
+            mapper,
+            errorDecoder,
+        )
+    private val downloadClient: ArtifactoryClient =
+        createDownloadClient(
             clientParametersProvider.getApiUrl(),
             clientParametersProvider.getAuth().getInterceptor(),
             mapper,
@@ -69,7 +77,11 @@ class ArtifactoryClassicClient(
 
     override fun searchByAQL(query: String): AqlSearchResponse = client.searchByAQL(query)
 
-    override fun downloadArtifact(artifactPath: String): Response = client.downloadArtifact(artifactPath)
+    override fun downloadArtifact(artifactPath: String): Response {
+        val response = downloadClient.downloadArtifact(artifactPath)
+        if (response.status() in 200..299) return response
+        throw errorDecoder.decode("ArtifactoryClient#downloadArtifact(String)", response)
+    }
 
     companion object {
         private fun getMapper(): ObjectMapper {
@@ -81,11 +93,11 @@ class ArtifactoryClassicClient(
             return objectMapper
         }
 
-        private fun createClient(
-            apiUrl: String,
+        private fun buildFeignBuilder(
             interceptor: RequestInterceptor,
             objectMapper: ObjectMapper,
-        ): ArtifactoryClient {
+            logLevel: Logger.Level,
+        ): Feign.Builder {
             val jacksonEncoder: Encoder = JacksonEncoder(objectMapper)
             return Feign
                 .builder()
@@ -97,14 +109,27 @@ class ArtifactoryClassicClient(
                         jacksonEncoder.encode(body, bodyType, template)
                     }
                 }.decoder(JacksonDecoder(objectMapper))
-                .errorDecoder(
-                    ArtifactoryClientErrorDecoder(
-                        objectMapper,
-                    ),
-                ).requestInterceptor(interceptor)
+                .requestInterceptor(interceptor)
                 .logger(Slf4jLogger(ArtifactoryClient::class.java))
-                .logLevel(Logger.Level.FULL)
-                .target(ArtifactoryClient::class.java, apiUrl)
+                .logLevel(logLevel)
         }
+
+        private fun createClient(
+            apiUrl: String,
+            interceptor: RequestInterceptor,
+            objectMapper: ObjectMapper,
+            errorDecoder: ArtifactoryClientErrorDecoder,
+        ): ArtifactoryClient =
+            buildFeignBuilder(interceptor, objectMapper, Logger.Level.FULL)
+                .errorDecoder(errorDecoder)
+                .target(ArtifactoryClient::class.java, apiUrl)
+
+        private fun createDownloadClient(
+            apiUrl: String,
+            interceptor: RequestInterceptor,
+            objectMapper: ObjectMapper,
+        ): ArtifactoryClient =
+            buildFeignBuilder(interceptor, objectMapper, Logger.Level.NONE)
+                .target(ArtifactoryClient::class.java, apiUrl)
     }
 }

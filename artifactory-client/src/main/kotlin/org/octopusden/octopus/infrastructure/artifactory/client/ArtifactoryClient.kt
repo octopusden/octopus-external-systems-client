@@ -13,6 +13,7 @@ import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteBuild
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDockerImageRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.Tokens
+import java.io.OutputStream
 
 const val ARTIFACTORY = "artifactory"
 const val ARTIFACTORY_PATH = "$ARTIFACTORY/api"
@@ -65,8 +66,29 @@ interface ArtifactoryClient {
     @Headers("Content-Type: text/plain", "Accept: application/json")
     fun searchByAQL(query: String): AqlSearchResponse
 
+    /**
+     * Downloads the artifact at the given path as a raw streaming response.
+     *
+     * The caller **must** close the returned [Response] (including on partial reads and exceptions),
+     * otherwise HTTP connection pool resources will be leaked.
+     * Prefer [downloadArtifactTo] for safe, automatic cleanup:
+     * ```kotlin
+     * client.downloadArtifact("my-repo/path/to/file.jar").use { response ->
+     *     response.body().asInputStream().copyTo(destination)
+     * }
+     * ```
+     */
     @RequestLine("GET $ARTIFACTORY/{artifactPath}")
     fun downloadArtifact(
         @Param("artifactPath") artifactPath: String,
     ): Response
+}
+
+fun ArtifactoryClient.downloadArtifactTo(
+    artifactPath: String,
+    destination: OutputStream,
+) {
+    downloadArtifact(artifactPath).use { response ->
+        response.body().asInputStream().copyTo(destination)
+    }
 }
