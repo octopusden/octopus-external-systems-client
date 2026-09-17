@@ -308,7 +308,7 @@ fun measuredCoverage(): Map<String, Pair<Int, Int>> {
         module.the<SourceSetContainer>()["main"].output.classesDirs.files.flatMap { dir ->
             dir.walkTopDown()
                 .filter { it.extension == "class" }
-                .map { it.relativeTo(dir).path.removeSuffix(".class") to module.name }
+                .map { it.relativeTo(dir).invariantSeparatorsPath.removeSuffix(".class") to module.name }
                 .toList()
         }
     }.toMap()

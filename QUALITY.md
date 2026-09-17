@@ -16,27 +16,30 @@ pinned separately until they are included in an upstream release.
 The wrapper also verifies the Gradle 8.6 distribution ZIP against its
 [published SHA-256](https://gradle.org/release-checksums/#8.6).
 
-Coverage policy and test selection are maintained separately in
-[PR #160](https://github.com/octopusden/octopus-external-systems-client/pull/160).
-This infrastructure update changes neither tests nor coverage thresholds.
-The Docker-backed functional tests remain excluded from the GitHub coverage
-command. `build` also excludes tests; it must not be treated as evidence that
+Coverage policy and test selection come from
+[PR #160](https://github.com/octopusden/octopus-external-systems-client/pull/160),
+which must merge before this infrastructure update. This PR also normalizes
+class-file paths to JaCoCo's slash-separated names so per-module attribution
+works on Windows. Tests and coverage thresholds are unchanged from #160.
+The Docker-backed functional tests are excluded from the `qualityCoverage`
+task graph. `build` also excludes tests; it must not be treated as evidence that
 functional tests ran. Full functional tests use the existing TeamCity setup.
 
 ## Local validation and reports
 
 ```sh
 ./gradlew build qualityStatic --no-daemon -x test
+git fetch --no-tags origin +main:refs/remotes/origin/main
+./gradlew qualityCoverage --no-daemon
 actionlint
 ```
 
-Use the exact `coverage-command` from `.github/workflows/quality.yml` for the
-current coverage policy. Keep existing detekt/ktlint baselines: increasing a
+Coverage requires no `-x` flags: test selection is configured in the build.
+Keep existing detekt/ktlint baselines: increasing a
 baseline requires reviewing the newly suppressed findings.
 
 The shared quality workflow uploads `static-analysis-reports` and
-`coverage-reports` when matching files exist. Coverage reports and enforcement
-require the separate changes in PR #160. Static reports include `**/build/reports/detekt/**` and
+`coverage-reports` when matching files exist. Static reports include `**/build/reports/detekt/**` and
 `**/build/reports/ktlint/**`; coverage includes test results and JaCoCo/Kover
 reports. CodeQL and Trivy results appear in GitHub code scanning. Artifact paths
 do not by themselves enable additional analyzers.
