@@ -11,4 +11,4 @@ permissions:
 
 jobs:
   workflow-lint:
-    uses: octopusden/octopus-base/.github/workflows/common-workflow-lint.yml@a7bb9587f201bea70df46738d98eff09462cad98
+    uses: octopusden/octopus-base/.github/workflows/common-workflow-lint.yml@9ba0350ce6e0f0897ec3aff105e20c70234b0440
