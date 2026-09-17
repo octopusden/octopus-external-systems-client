@@ -80,6 +80,12 @@ octopusQuality {
     }
 }
 
+// `repositories` is otherwise declared only inside `subprojects { }`; the aggregate JaCoCo tasks
+// below run on the ROOT project and need to resolve org.jacoco:org.jacoco.ant from here.
+repositories {
+    mavenCentral()
+}
+
 nexusPublishing {
     repositories {
         sonatype {
