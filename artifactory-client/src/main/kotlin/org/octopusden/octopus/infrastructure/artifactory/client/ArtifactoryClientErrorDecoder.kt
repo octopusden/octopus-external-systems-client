@@ -17,22 +17,18 @@ class ArtifactoryClientErrorDecoder(
         response: Response,
     ): Exception =
         response.use { closableResponse ->
-            val message = closableResponse
-                .body()
-                .asInputStream()
-                .use { inputStream ->
-                    inputStream.readBytes().let { bytes ->
-                        var deserializedErrors: String? = null
-                        for (type in arrayOf(ArtifactoryErrorsResponse::class, ArtifactoryResponse::class)) {
-                            try {
-                                deserializedErrors = objectMapper.readValue(bytes, type.java).toString()
-                                break
-                            } catch (_: Exception) {
-                            }
-                        }
-                        deserializedErrors ?: String(bytes)
+            val bytes = closableResponse.body()?.asInputStream()?.use { it.readBytes() } ?: ByteArray(0)
+            val message = run {
+                var deserializedErrors: String? = null
+                for (type in arrayOf(ArtifactoryErrorsResponse::class, ArtifactoryResponse::class)) {
+                    try {
+                        deserializedErrors = objectMapper.readValue(bytes, type.java).toString()
+                        break
+                    } catch (_: Exception) {
                     }
                 }
+                deserializedErrors ?: String(bytes)
+            }
             when (closableResponse.status()) {
                 HttpStatus.SC_NOT_FOUND -> throw NotFoundException(message)
                 else -> InternalServerError(message)

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import feign.Client
 import feign.Feign
 import feign.Logger
 import feign.RequestInterceptor
@@ -32,18 +33,21 @@ class ArtifactoryClassicClient(
     mapper: ObjectMapper = getMapper(),
 ) : ArtifactoryClient {
     private val errorDecoder = ArtifactoryClientErrorDecoder(mapper)
+    private val httpClient: Client = ApacheHttpClient()
     private val client: ArtifactoryClient =
         createClient(
             clientParametersProvider.getApiUrl(),
             clientParametersProvider.getAuth().getInterceptor(),
             mapper,
             errorDecoder,
+            httpClient,
         )
     private val downloadClient: ArtifactoryClient =
         createDownloadClient(
             clientParametersProvider.getApiUrl(),
             clientParametersProvider.getAuth().getInterceptor(),
             mapper,
+            httpClient,
         )
 
     constructor(apiParametersProvider: ClientParametersProvider) : this(
@@ -94,6 +98,7 @@ class ArtifactoryClassicClient(
         }
 
         private fun buildFeignBuilder(
+            feignClient: Client,
             interceptor: RequestInterceptor,
             objectMapper: ObjectMapper,
             logLevel: Logger.Level,
@@ -101,7 +106,7 @@ class ArtifactoryClassicClient(
             val jacksonEncoder: Encoder = JacksonEncoder(objectMapper)
             return Feign
                 .builder()
-                .client(ApacheHttpClient())
+                .client(feignClient)
                 .encoder { body, bodyType, template ->
                     if (body is String) {
                         template.body(body.toByteArray(StandardCharsets.UTF_8), StandardCharsets.UTF_8)
@@ -119,8 +124,9 @@ class ArtifactoryClassicClient(
             interceptor: RequestInterceptor,
             objectMapper: ObjectMapper,
             errorDecoder: ArtifactoryClientErrorDecoder,
+            feignClient: Client,
         ): ArtifactoryClient =
-            buildFeignBuilder(interceptor, objectMapper, Logger.Level.FULL)
+            buildFeignBuilder(feignClient, interceptor, objectMapper, Logger.Level.FULL)
                 .errorDecoder(errorDecoder)
                 .target(ArtifactoryClient::class.java, apiUrl)
 
@@ -128,8 +134,9 @@ class ArtifactoryClassicClient(
             apiUrl: String,
             interceptor: RequestInterceptor,
             objectMapper: ObjectMapper,
+            feignClient: Client,
         ): ArtifactoryClient =
-            buildFeignBuilder(interceptor, objectMapper, Logger.Level.NONE)
+            buildFeignBuilder(feignClient, interceptor, objectMapper, Logger.Level.NONE)
                 .target(ArtifactoryClient::class.java, apiUrl)
     }
 }

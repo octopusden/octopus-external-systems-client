@@ -69,14 +69,14 @@ interface ArtifactoryClient {
     /**
      * Downloads the artifact at the given path as a raw streaming response.
      *
-     * The caller **must** close the returned [Response] (including on partial reads and exceptions),
-     * otherwise HTTP connection pool resources will be leaked.
-     * Prefer [downloadArtifactTo] for safe, automatic cleanup:
-     * ```kotlin
-     * client.downloadArtifact("my-repo/path/to/file.jar").use { response ->
-     *     response.body().asInputStream().copyTo(destination)
-     * }
-     * ```
+     * [artifactPath] must be a raw (not percent-encoded) path without a leading slash,
+     * e.g. `"my-repo/com/example/lib/1.0/lib-1.0.jar"`. A leading slash produces a
+     * double-slash URL that resolves to 404. A pre-encoded path is encoded again by
+     * Feign, also producing a 404.
+     *
+     * The caller **must** close the returned [Response] (including on partial reads and
+     * exceptions), otherwise HTTP connection-pool resources will be leaked.
+     * Prefer [downloadArtifactTo] to avoid managing the lifecycle manually.
      */
     @RequestLine("GET $ARTIFACTORY/{artifactPath}")
     fun downloadArtifact(
@@ -84,11 +84,17 @@ interface ArtifactoryClient {
     ): Response
 }
 
+/**
+ * Downloads the artifact at [artifactPath], copying its content into [destination].
+ * The underlying [Response] is always closed, even if [destination] throws.
+ * Throws [IllegalStateException] for non-2xx responses without reading the body into [destination].
+ */
 fun ArtifactoryClient.downloadArtifactTo(
     artifactPath: String,
     destination: OutputStream,
 ) {
     downloadArtifact(artifactPath).use { response ->
-        response.body().asInputStream().copyTo(destination)
+        check(response.status() in 200..299) { "Unexpected HTTP status: ${response.status()}" }
+        response.body()?.asInputStream()?.copyTo(destination)
     }
 }
