@@ -15,12 +15,10 @@ jobs:
     uses: octopusden/octopus-base/.github/workflows/common-java-gradle-quality-gates.yml@v3.0.0
     with:
       java-version: '21'
-      # qualityCoverage aggregates every :test task and, via the root build, the aggregated
-      # JaCoCo report + the non-decreasing coverage gate (see build.gradle.kts).
-      # The *-test-client / teamcity-client :test tasks drive real servers through
-      # docker-compose (composeBuild/composeUp) and take minutes each, so they stay excluded
-      # here and keep running in CI/TeamCity. The gate is still measured, not vacuous:
-      # :teamcity-client:unitTest (docker-free) is pulled in by the aggregate tasks.
+      # No -x flags: the server-backed :test tasks are excluded in build.gradle.kts
+      # (`octopusQuality { excludedTasks }`), so they are absent from the task graph here and for
+      # anyone running `./gradlew qualityCoverage` locally. Listing them again here would be a
+      # second mechanism for one fact, and the one that silently stops matching.
       #
       # `deltaCoverage` diffs against origin/main, and the reusable workflow checks out shallow
       # (actions/checkout@v4 with no fetch-depth), so the base ref has to be fetched first. It is
@@ -28,6 +26,3 @@ jobs:
       coverage-command: >-
         git fetch --no-tags --depth=1 origin +main:refs/remotes/origin/main &&
         ./gradlew qualityCoverage --no-daemon --stacktrace
-        -x :gitea-test-client:test
-        -x :bitbucket-test-client:test
-        -x :teamcity-client:test

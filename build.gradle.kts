@@ -21,6 +21,16 @@ plugins {
     `maven-publish`
 }
 
+// The three `test` tasks that drive real Gitea, Bitbucket and TeamCity servers through
+// docker-compose. One definition with three jobs: it prunes them from `qualityCoverage` (just
+// below), from the coverage tasks' own dependencies, and from the exec files the gates read - so a
+// local run with docker cannot record numbers CI is unable to reproduce.
+val dockerBoundTestTasks = listOf(
+    ":gitea-test-client:test",
+    ":bitbucket-test-client:test",
+    ":teamcity-client:test",
+)
+
 octopusQuality {
     // Regression guard on what reaches Maven Central, from octopus-base v2.7.0. This repository
     // previously hand-rolled a task of the SAME name, deleted in this commit — two tasks with one
@@ -67,6 +77,10 @@ octopusQuality {
     kotlin {
         failOnViolation.set(true)
     }
+    // The plugin adds every `:test` task to `qualityCoverage` itself, so without this a plain
+    // `./gradlew qualityCoverage` still starts docker. The gate must not depend on anyone
+    // remembering three -x flags.
+    excludedTasks.addAll(dockerBoundTestTasks)
     coverage {
         // octopus-quality 3.0.0 cannot do this: TaskRegistrar registers the aggregate JaCoCo tasks
         // inside the lazy `qualityCoverage` config action and Gradle rejects that, and it has no
@@ -241,16 +255,6 @@ subprojects {
     }
 
 }
-
-// The three `test` tasks the quality workflow excludes with -x: they drive real Gitea, Bitbucket and
-// TeamCity servers through docker-compose. One definition, used for the task graph, for the exec
-// files the gates read, and to keep a local run with docker from recording numbers CI can never
-// reproduce (which would redden the baseline check permanently).
-val dockerBoundTestTasks = listOf(
-    ":gitea-test-client:test",
-    ":bitbucket-test-client:test",
-    ":teamcity-client:test",
-)
 
 // Every test task whose coverage the quality job actually measures.
 val measuredTestTasks = subprojects.map { "${it.path}:test" } - dockerBoundTestTasks.toSet() +
