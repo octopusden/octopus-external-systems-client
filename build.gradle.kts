@@ -1,3 +1,4 @@
+import io.github.surpsg.deltacoverage.gradle.DeltaCoverageConfiguration
 import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.gradle.testing.jacoco.tasks.JacocoReportBase
@@ -17,6 +18,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt") apply false
     id("org.jlleitschuh.gradle.ktlint") apply false
     id("org.octopusden.octopus-quality")
+    id("io.github.surpsg.delta-coverage")
     signing
     `maven-publish`
 }
@@ -136,6 +138,29 @@ val centralPublishedProjects = setOf(
     ":test-client-commons",
 )
 
+// Per-module line-coverage floors — the one place any coverage number lives.
+// Ratchet: raise when coverage grows, never lower.
+val moduleCoverageFloors = mapOf(
+    "teamcity-client" to BigDecimal("0.14"),
+)
+
+// Modules with no test of their own yet. They get a floor of 0 rather than skipping verification,
+// so the task still runs and their first test immediately makes a real floor possible.
+// Remove a module from this list when it gets its first test.
+val legacyZeroCoverageModules = setOf(
+    "artifactory-client",
+    "bitbucket-client",
+    "bitbucket-test-client",
+    "client-commons",
+    "confluence-client",
+    "gitea-client",
+    "gitea-test-client",
+    "jira-client",
+    "sonarqube-client",
+    "test-client-commons",
+    "test-client-test-commons",
+)
+
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "idea")
@@ -246,6 +271,27 @@ subprojects {
     dependencies {
         implementation("org.jetbrains.kotlin:kotlin-stdlib")
     }
+
+    tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
+        // Every Test task in the module, not just `test`: teamcity-client's measured coverage comes
+        // from `unitTest`. Tasks the quality job excludes with -x simply do not run, and the
+        // verification then skips itself for want of execution data instead of failing.
+        dependsOn(tasks.withType<Test>())
+        executionData.setFrom(fileTree(layout.buildDirectory) { include("jacoco/*.exec") })
+        violationRules {
+            rule {
+                limit {
+                    counter = "LINE"
+                    value = "COVEREDRATIO"
+                    minimum = moduleCoverageFloors[project.name] ?: BigDecimal.ZERO
+                }
+            }
+        }
+        require(project.name in moduleCoverageFloors || project.name in legacyZeroCoverageModules) {
+            "No coverage floor for module '${project.name}'. Add one to moduleCoverageFloors, or " +
+                "to legacyZeroCoverageModules if it genuinely has no tests yet."
+        }
+    }
 }
 
 // Aggregated line coverage across the whole build. Aggregate, not per-module: most modules have no
@@ -287,8 +333,11 @@ tasks.register<JacocoCoverageVerification>("jacocoAggregatedCoverageVerification
                 counter = "LINE"
                 value = "COVEREDRATIO"
                 // Ratchet: raise when coverage grows, never lower.
-                // Measured baseline 3.73% (2026-09, `qualityCoverage` with the workflow's -x set),
-                // rounded down to a whole percent.
+                // Measured baseline 3.73% (104/2785), rounded down to a whole percent. This is a
+                // coarse safety net, NOT the non-decrease check: any fixed aggregate floor has
+                // slack, and closing it exactly (0.03734) makes one added line of production code
+                // fail the build. `deltaCoverage` below is what enforces non-decrease, on the lines
+                // a change actually touches.
                 minimum = BigDecimal("0.03")
             }
         }
@@ -312,8 +361,31 @@ tasks.register("coverageDataCheck") {
     }
 }
 
+// Coverage of the lines this change actually touches, against the base branch. The aggregate floor
+// above cannot catch new code shipped without tests — it barely moves the ratio — so this is the
+// rule that makes "coverage must not decrease" true for the diff rather than for the average.
+// The base ref must exist locally: the quality workflow fetches it before running (see quality.yml),
+// and -PdeltaCoverage.baseRef=<ref> overrides it locally.
+configure<DeltaCoverageConfiguration> {
+    diffSource.byGit {
+        compareWith(providers.gradleProperty("deltaCoverage.baseRef").getOrElse("origin/main"))
+        useNativeGit.set(true)
+    }
+    coverageBinaryFiles = jacocoExecutionData()
+    classesDirs = files(subprojects.map { it.the<SourceSetContainer>()["main"].output })
+    srcDirs = files(subprojects.map { it.the<SourceSetContainer>()["main"].allSource.srcDirs })
+    // Ratchet: raise when coverage grows, never lower.
+    violationRules.failIfCoverageLessThan(0.5)
+}
+
+tasks.named("deltaCoverage") {
+    dependsOn(subprojects.map { "${it.path}:test" } + ":teamcity-client:unitTest")
+}
+
 // `qualityCoverage` is registered by the convention plugin in `projectsEvaluated`; matching by name
 // avoids depending on listener ordering.
 tasks.matching { it.name == "qualityCoverage" }.configureEach {
     dependsOn("coverageDataCheck", "jacocoAggregatedReport", "jacocoAggregatedCoverageVerification")
+    dependsOn("deltaCoverage")
+    dependsOn(subprojects.map { "${it.path}:jacocoTestCoverageVerification" })
 }

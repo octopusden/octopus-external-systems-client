@@ -21,7 +21,12 @@ jobs:
       # docker-compose (composeBuild/composeUp) and take minutes each, so they stay excluded
       # here and keep running in CI/TeamCity. The gate is still measured, not vacuous:
       # :teamcity-client:unitTest (docker-free) is pulled in by the aggregate tasks.
+      #
+      # `deltaCoverage` diffs against origin/main, and the reusable workflow checks out shallow
+      # (actions/checkout@v4 with no fetch-depth), so the base ref has to be fetched first. It is
+      # part of the command rather than its own step because this repo controls only the command.
       coverage-command: >-
+        git fetch --no-tags --depth=1 origin main:refs/remotes/origin/main &&
         ./gradlew qualityCoverage --no-daemon --stacktrace
         -x :gitea-test-client:test
         -x :bitbucket-test-client:test
