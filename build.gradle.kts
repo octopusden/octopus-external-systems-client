@@ -1,9 +1,6 @@
 import io.github.surpsg.deltacoverage.gradle.DeltaCoverageConfiguration
-import org.gradle.testing.jacoco.tasks.JacocoCoverageVerification
 import org.gradle.testing.jacoco.tasks.JacocoReport
-import org.gradle.testing.jacoco.tasks.JacocoReportBase
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import java.math.BigDecimal
 import java.net.InetAddress
 import java.time.Duration
 import java.util.zip.CRC32
@@ -138,29 +135,6 @@ val centralPublishedProjects = setOf(
     ":test-client-commons",
 )
 
-// Per-module line-coverage floors — the one place any coverage number lives.
-// Ratchet: raise when coverage grows, never lower.
-val moduleCoverageFloors = mapOf(
-    "teamcity-client" to BigDecimal("0.14"),
-)
-
-// Modules with no test of their own yet. They get a floor of 0 rather than skipping verification,
-// so the task still runs and their first test immediately makes a real floor possible.
-// Remove a module from this list when it gets its first test.
-val legacyZeroCoverageModules = setOf(
-    "artifactory-client",
-    "bitbucket-client",
-    "bitbucket-test-client",
-    "client-commons",
-    "confluence-client",
-    "gitea-client",
-    "gitea-test-client",
-    "jira-client",
-    "sonarqube-client",
-    "test-client-commons",
-    "test-client-test-commons",
-)
-
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "idea")
@@ -272,30 +246,8 @@ subprojects {
         implementation("org.jetbrains.kotlin:kotlin-stdlib")
     }
 
-    tasks.named<JacocoCoverageVerification>("jacocoTestCoverageVerification") {
-        // Every Test task in the module, not just `test`: teamcity-client's measured coverage comes
-        // from `unitTest`. Tasks the quality job excludes with -x simply do not run, and the
-        // verification then skips itself for want of execution data instead of failing.
-        dependsOn(tasks.withType<Test>())
-        executionData.setFrom(fileTree(layout.buildDirectory) { include("jacoco/*.exec") })
-        violationRules {
-            rule {
-                limit {
-                    counter = "LINE"
-                    value = "COVEREDRATIO"
-                    minimum = moduleCoverageFloors[project.name] ?: BigDecimal.ZERO
-                }
-            }
-        }
-        require(project.name in moduleCoverageFloors || project.name in legacyZeroCoverageModules) {
-            "No coverage floor for module '${project.name}'. Add one to moduleCoverageFloors, or " +
-                "to legacyZeroCoverageModules if it genuinely has no tests yet."
-        }
-    }
 }
 
-// Aggregated line coverage across the whole build. Aggregate, not per-module: most modules have no
-// tests of their own, so a per-module floor would fail them all — that cleanup is separate.
 fun jacocoExecutionData(): FileCollection =
     files(
         subprojects.map { module ->
@@ -303,46 +255,136 @@ fun jacocoExecutionData(): FileCollection =
         },
     )
 
-fun JacocoReportBase.aggregateAllModules() {
-    // `test` is docker-bound in the *-test-client / teamcity-client modules and is excluded by the
-    // quality workflow; whatever did run contributes its exec file, the rest simply have none.
-    dependsOn(subprojects.map { "${it.path}:test" })
-    dependsOn(":teamcity-client:unitTest")
-    executionData.setFrom(jacocoExecutionData())
-    sourceDirectories.setFrom(files(subprojects.map { it.the<SourceSetContainer>()["main"].allSource.srcDirs }))
-    classDirectories.setFrom(files(subprojects.map { it.the<SourceSetContainer>()["main"].output }))
-}
-
 tasks.register<JacocoReport>("jacocoAggregatedReport") {
     group = "verification"
     description = "Aggregated JaCoCo coverage report across all modules"
-    aggregateAllModules()
+    // `test` is docker-bound in the *-test-client / teamcity-client modules and is excluded by the
+    // quality workflow; whatever did run contributes its exec file, the rest simply have none.
+    dependsOn(subprojects.map { "${it.path}:test" } + ":teamcity-client:unitTest")
+    executionData.setFrom(jacocoExecutionData())
+    sourceDirectories.setFrom(files(subprojects.map { it.the<SourceSetContainer>()["main"].allSource.srcDirs }))
+    classDirectories.setFrom(files(subprojects.map { it.the<SourceSetContainer>()["main"].output }))
     reports {
         xml.required.set(true)
         html.required.set(true)
     }
 }
 
-tasks.register<JacocoCoverageVerification>("jacocoAggregatedCoverageVerification") {
-    group = "verification"
-    description = "Fails the build when aggregated line coverage drops below the ratchet"
-    aggregateAllModules()
-    violationRules {
-        rule {
-            limit {
-                counter = "LINE"
-                value = "COVEREDRATIO"
-                // Ratchet: raise when coverage grows, never lower.
-                // Measured baseline 3.73% (104/2785), rounded down to a whole percent. This is a
-                // coarse safety net, NOT the non-decrease check: any fixed aggregate floor has
-                // slack, and closing it exactly (0.03734) makes one added line of production code
-                // fail the build. `deltaCoverage` below is what enforces non-decrease, on the lines
-                // a change actually touches.
-                minimum = BigDecimal("0.03")
+// ---- Non-regression gate -------------------------------------------------------------------
+// Fixed floors cannot express "coverage must not decrease": deleting a test drops the ratio while
+// staying above any floor, and `deltaCoverage` sees no changed production lines and reports NaN.
+// So the exact counters are committed and compared on every run, per module and in aggregate. This
+// replaces the per-module and aggregate floors that stood here - two sources of truth for one number.
+//
+// The committed file is a BOOTSTRAP. `origin/main` carries no coverage wiring yet, so there is no
+// base result to compare against. Once main produces coverage, compare against the PR's actual base
+// SHA instead of this file: a moving "latest main" number would quietly accept a regression from one
+// PR as the baseline for the next.
+val coverageBaselineFile = layout.projectDirectory.file("coverage-baseline.properties").asFile
+
+// LINE counters as covered/total, keyed by module name plus "aggregate". Classes are attributed to
+// modules by which module's output directory holds the .class file: the report knows only packages,
+// and test-client-commons and test-client-test-commons share one.
+fun measuredCoverage(): Map<String, Pair<Int, Int>> {
+    val classToModule = subprojects.flatMap { module ->
+        module.the<SourceSetContainer>()["main"].output.classesDirs.files.flatMap { dir ->
+            dir.walkTopDown()
+                .filter { it.extension == "class" }
+                .map { it.relativeTo(dir).path.removeSuffix(".class") to module.name }
+                .toList()
+        }
+    }.toMap()
+
+    val factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+    factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+    val reportTask = tasks.named<JacocoReport>("jacocoAggregatedReport").get()
+    val document = factory.newDocumentBuilder().parse(reportTask.reports.xml.outputLocation.get().asFile)
+
+    val counters = subprojects.associate { it.name to intArrayOf(0, 0) } + ("aggregate" to intArrayOf(0, 0))
+    val classNodes = document.getElementsByTagName("class")
+    for (i in 0 until classNodes.length) {
+        val classNode = classNodes.item(i)
+        val module = classToModule[classNode.attributes.getNamedItem("name").nodeValue] ?: continue
+        val children = classNode.childNodes
+        for (j in 0 until children.length) {
+            val counter = children.item(j)
+            if (counter.nodeName != "counter") continue
+            if (counter.attributes.getNamedItem("type").nodeValue != "LINE") continue
+            val covered = counter.attributes.getNamedItem("covered").nodeValue.toInt()
+            val missed = counter.attributes.getNamedItem("missed").nodeValue.toInt()
+            for (key in listOf(module, "aggregate")) {
+                counters.getValue(key)[0] += covered
+                counters.getValue(key)[1] += covered + missed
             }
         }
     }
+    // The aggregate is taken from the report's own total so it matches the published XML and HTML.
+    // The per-module numbers are sums of class counters, which can differ a little: JaCoCo totals by
+    // source file, and one source file can produce several classes.
+    val totals = document.documentElement.childNodes
+    for (i in 0 until totals.length) {
+        val counter = totals.item(i)
+        if (counter.nodeName != "counter") continue
+        if (counter.attributes.getNamedItem("type").nodeValue != "LINE") continue
+        val covered = counter.attributes.getNamedItem("covered").nodeValue.toInt()
+        val missed = counter.attributes.getNamedItem("missed").nodeValue.toInt()
+        counters.getValue("aggregate")[0] = covered
+        counters.getValue("aggregate")[1] = covered + missed
+    }
+    return counters.mapValues { (_, value) -> value[0] to value[1] }
 }
+
+fun formatBaseline(counters: Map<String, Pair<Int, Int>>): String =
+    counters.toSortedMap().entries.joinToString(
+        prefix = "# Generated by ./gradlew updateCoverageBaseline - do not edit by hand.\n" +
+            "# LINE counters as covered/total, measured with the quality job's test exclusions.\n",
+        separator = "",
+    ) { (key, value) -> "$key=${value.first}/${value.second}\n" }
+
+fun parseBaseline(): Map<String, Pair<Int, Int>> = coverageBaselineFile
+    .readLines()
+    .filterNot { it.isBlank() || it.startsWith("#") }
+    .associate { line ->
+        val (key, value) = line.split("=", limit = 2)
+        val (covered, total) = value.split("/", limit = 2)
+        key to (covered.toInt() to total.toInt())
+    }
+
+tasks.register("updateCoverageBaseline") {
+    group = "verification"
+    description = "Regenerates coverage-baseline.properties from the aggregated JaCoCo report"
+    dependsOn("jacocoAggregatedReport")
+    doLast {
+        coverageBaselineFile.writeText(formatBaseline(measuredCoverage()))
+        logger.lifecycle("Wrote ${coverageBaselineFile.name}. Commit it so the change is reviewed.")
+    }
+}
+
+tasks.register("coverageBaselineCheck") {
+    group = "verification"
+    description = "Fails when any module's or the aggregate line coverage falls below the baseline"
+    dependsOn("jacocoAggregatedReport")
+    doLast {
+        val baseline = parseBaseline()
+        // Ratios compared by cross-multiplication: exact, and still correct when the line count
+        // moves. Zero tolerance - a drop is a drop, and the escape hatch is a reviewed commit.
+        val regressions = measuredCoverage().mapNotNull { (key, now) ->
+            val before = baseline[key]
+            when {
+                before == null -> "$key is missing from the baseline"
+                now.first.toLong() * before.second < before.first.toLong() * now.second ->
+                    "$key: ${now.first}/${now.second} is below the baseline ${before.first}/${before.second}"
+                else -> null
+            }
+        }
+        check(regressions.isEmpty()) {
+            "Test coverage decreased:\n" + regressions.joinToString("\n") { "  - $it" } +
+                "\n\nAdd tests, or - if the drop is intended - run ./gradlew updateCoverageBaseline " +
+                "and commit ${coverageBaselineFile.name} so the decision is reviewed."
+        }
+    }
+}
+
 
 // A gate that can skip itself is not a gate. Both JaCoCo tasks above are SKIPPED when no execution
 // data exists, so losing the last test that runs in the quality job (renaming LocatorTest out of
@@ -382,10 +424,14 @@ tasks.named("deltaCoverage") {
     dependsOn(subprojects.map { "${it.path}:test" } + ":teamcity-client:unitTest")
 }
 
+// delta-coverage 2.5.0 leaves `gitDiff` UP-TO-DATE when HEAD moves, so an incremental local run
+// checks the previous diff and passes on code that fails after `clean`. Regenerating it is cheap.
+tasks.named("gitDiff") {
+    outputs.upToDateWhen { false }
+}
+
 // `qualityCoverage` is registered by the convention plugin in `projectsEvaluated`; matching by name
 // avoids depending on listener ordering.
 tasks.matching { it.name == "qualityCoverage" }.configureEach {
-    dependsOn("coverageDataCheck", "jacocoAggregatedReport", "jacocoAggregatedCoverageVerification")
-    dependsOn("deltaCoverage")
-    dependsOn(subprojects.map { "${it.path}:jacocoTestCoverageVerification" })
+    dependsOn("coverageDataCheck", "jacocoAggregatedReport", "coverageBaselineCheck", "deltaCoverage")
 }
