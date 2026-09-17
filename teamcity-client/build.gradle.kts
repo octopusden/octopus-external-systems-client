@@ -173,6 +173,9 @@ tasks.named("ocCreateTeamcityServers").configure {
 }
 
 tasks.withType<Test> {
+    // Only the server-backed `test` task needs the TeamCity instances; `unitTest` below stays out of
+    // this wiring so it can run where docker-compose is unavailable (GitHub-hosted runners).
+    if (name != "test") return@withType
     when ("testPlatform".getExt()) {
         "okd" -> {
             systemProperties["test.teamcity-2022-host"] = ocTemplate.getOkdHost("teamcity22")
@@ -201,4 +204,15 @@ val prepareTeamcity2022Data = tasks.register<Sync>("prepareTeamcity2022Data") {
 val prepareTeamcity2026Data = tasks.register<Sync>("prepareTeamcity2026Data") {
     from(zipTree(layout.projectDirectory.file("docker/dataV26.zip")))
     into(layout.buildDirectory.dir("teamcity-server-2026"))
+}
+
+// Docker-free subset of the suite, so the quality job can measure coverage without docker-compose.
+// Explicit include list rather than an exclude: a new server-backed test must not silently start
+// running here.
+tasks.register<Test>("unitTest") {
+    group = "verification"
+    val testSourceSet = sourceSets["test"]
+    testClassesDirs = testSourceSet.output.classesDirs
+    classpath = testSourceSet.runtimeClasspath
+    filter { includeTestsMatching("*LocatorTest") }
 }

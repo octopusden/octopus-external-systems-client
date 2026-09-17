@@ -15,14 +15,14 @@ jobs:
     uses: octopusden/octopus-base/.github/workflows/common-java-gradle-quality-gates.yml@v3.0.2
     with:
       java-version: '21'
-      # Coverage is disabled for this repo (octopusQuality { coverage { enabled = false } }).
-      # qualityCoverage still aggregates every :test task; the *-test-client / teamcity-client
-      # tests require docker-compose (composeBuild/composeUp), which is unavailable on the
-      # GitHub-hosted runner and fails the check. Exclude those infra-bound test tasks so the
-      # gate only runs the JVM-only unit tests. Full functional tests still run in CI/TeamCity
-      # where docker is available.
+      # No -x flags: the server-backed :test tasks are excluded in build.gradle.kts
+      # (`octopusQuality { excludedTasks }`), so they are absent from the task graph here and for
+      # anyone running `./gradlew qualityCoverage` locally. Listing them again here would be a
+      # second mechanism for one fact, and the one that silently stops matching.
+      #
+      # `deltaCoverage` diffs against origin/main, and the reusable workflow checks out shallow
+      # (actions/checkout@v4 with no fetch-depth), so the base ref has to be fetched first. It is
+      # part of the command rather than its own step because this repo controls only the command.
       coverage-command: >-
+        git fetch --no-tags --depth=1 origin +main:refs/remotes/origin/main &&
         ./gradlew qualityCoverage --no-daemon --stacktrace
-        -x :gitea-test-client:test
-        -x :bitbucket-test-client:test
-        -x :teamcity-client:test
