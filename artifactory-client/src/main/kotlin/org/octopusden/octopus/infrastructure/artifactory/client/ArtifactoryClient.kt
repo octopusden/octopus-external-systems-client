@@ -69,10 +69,9 @@ interface ArtifactoryClient {
     /**
      * Downloads the artifact at the given path as a raw streaming response.
      *
-     * [artifactPath] must be a raw (not percent-encoded) path without a leading slash,
-     * e.g. `"my-repo/com/example/lib/1.0/lib-1.0.jar"`. A leading slash produces a
-     * double-slash URL that resolves to 404. A pre-encoded path is encoded again by
-     * Feign, also producing a 404.
+     * [artifactPath] must be the raw, unencoded path,
+     * e.g. `"my-repo/com/example/lib/1.0/lib-1.0.jar"`. A pre-encoded path is encoded
+     * again by Feign, producing a 404.
      *
      * The caller **must** close the returned [Response] (including on partial reads and
      * exceptions), otherwise HTTP connection-pool resources will be leaked.
@@ -95,6 +94,7 @@ fun ArtifactoryClient.downloadArtifactTo(
 ) {
     downloadArtifact(artifactPath).use { response ->
         check(response.status() in 200..299) { "Unexpected HTTP status: ${response.status()}" }
-        response.body()?.asInputStream()?.copyTo(destination)
+        val body = checkNotNull(response.body()) { "Response body is null for status ${response.status()}" }
+        body.asInputStream().copyTo(destination)
     }
 }
