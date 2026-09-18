@@ -11,6 +11,7 @@ import org.octopusden.octopus.infrastructure.artifactory.client.exception.NotFou
 import org.octopusden.octopus.infrastructure.client.commons.ClientParametersProvider
 import org.octopusden.octopus.infrastructure.client.commons.StandardBasicCredCredentialProvider
 import java.io.ByteArrayOutputStream
+import java.io.IOException
 import java.io.OutputStream
 
 class ArtifactoryClassicClientTest {
@@ -94,9 +95,9 @@ class ArtifactoryClassicClientTest {
     fun `downloadArtifactTo propagates destination exception`() {
         val failingDestination =
             object : OutputStream() {
-                override fun write(b: Int) = throw RuntimeException("disk full")
+                override fun write(b: Int) = throw IOException("disk full")
             }
-        assertThrows<RuntimeException> {
+        assertThrows<IOException> {
             makeClient(200, "data".toByteArray()).downloadArtifactTo("repo/file.jar", failingDestination)
         }
     }
