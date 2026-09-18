@@ -19,12 +19,15 @@ jobs:
   security:
     uses: ./.github/workflows/security.yml
 
+  workflow-lint:
+    uses: ./.github/workflows/workflow-lint.yml
+
   gate-merge:
     name: gate/merge
     if: ${{ always() }}
-    needs: [build, quality, security]
+    needs: [build, quality, security, workflow-lint]
     runs-on: ubuntu-latest
     steps:
-      - uses: octopusden/octopus-base/.github/actions/merge-gate@v3.0.0
+      - uses: octopusden/octopus-base/.github/actions/merge-gate@v3.0.2
         with:
           needs: ${{ toJson(needs) }}
