@@ -3,6 +3,7 @@ package org.octopusden.octopus.infrastructure.artifactory.client
 import feign.Headers
 import feign.Param
 import feign.RequestLine
+import feign.Response
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlSearchResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.ArtifactoryResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
@@ -12,8 +13,10 @@ import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteBuild
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.PromoteDockerImageRequest
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.SystemVersion
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.Tokens
+import java.io.OutputStream
 
-const val ARTIFACTORY_PATH = "artifactory/api"
+const val ARTIFACTORY = "artifactory"
+const val ARTIFACTORY_PATH = "$ARTIFACTORY/api"
 const val ACCESS_PATH = "access/api/v1"
 const val TOKENS_PATH = "$ACCESS_PATH/tokens"
 const val SYSTEM_PATH = "$ARTIFACTORY_PATH/system"
@@ -62,4 +65,36 @@ interface ArtifactoryClient {
     @RequestLine("POST $ARTIFACTORY_PATH/search/aql")
     @Headers("Content-Type: text/plain", "Accept: application/json")
     fun searchByAQL(query: String): AqlSearchResponse
+
+    /**
+     * Downloads the artifact at the given path as a raw streaming response.
+     *
+     * [artifactPath] must be the raw, unencoded path,
+     * e.g. `"my-repo/com/example/lib/1.0/lib-1.0.jar"`. A pre-encoded path is encoded
+     * again by Feign, producing a 404.
+     *
+     * The caller **must** close the returned [Response] (including on partial reads and
+     * exceptions), otherwise HTTP connection-pool resources will be leaked.
+     * Prefer [downloadArtifactTo] to avoid managing the lifecycle manually.
+     */
+    @RequestLine("GET $ARTIFACTORY/{artifactPath}")
+    fun downloadArtifact(
+        @Param("artifactPath") artifactPath: String,
+    ): Response
+}
+
+/**
+ * Downloads the artifact at [artifactPath], copying its content into [destination].
+ * The underlying [Response] is always closed, even if [destination] throws.
+ * Throws [IllegalStateException] for non-2xx responses without reading the body into [destination].
+ */
+fun ArtifactoryClient.downloadArtifactTo(
+    artifactPath: String,
+    destination: OutputStream,
+) {
+    downloadArtifact(artifactPath).use { response ->
+        check(response.status() in 200..299) { "Unexpected HTTP status: ${response.status()}" }
+        val body = checkNotNull(response.body()) { "Response body is null for status ${response.status()}" }
+        body.asInputStream().copyTo(destination)
+    }
 }

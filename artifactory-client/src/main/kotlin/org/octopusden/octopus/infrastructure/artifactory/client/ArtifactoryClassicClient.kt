@@ -6,9 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.databind.util.StdDateFormat
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import feign.Client
 import feign.Feign
 import feign.Logger
 import feign.RequestInterceptor
+import feign.Response
 import feign.codec.Encoder
 import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonDecoder
@@ -29,12 +31,23 @@ import java.nio.charset.StandardCharsets
 class ArtifactoryClassicClient(
     clientParametersProvider: ClientParametersProvider,
     mapper: ObjectMapper = getMapper(),
+    feignClient: Client = ApacheHttpClient(),
 ) : ArtifactoryClient {
+    private val errorDecoder = ArtifactoryClientErrorDecoder(mapper)
     private val client: ArtifactoryClient =
         createClient(
             clientParametersProvider.getApiUrl(),
             clientParametersProvider.getAuth().getInterceptor(),
             mapper,
+            errorDecoder,
+            feignClient,
+        )
+    private val downloadClient: ArtifactoryClient =
+        createDownloadClient(
+            clientParametersProvider.getApiUrl(),
+            clientParametersProvider.getAuth().getInterceptor(),
+            mapper,
+            feignClient,
         )
 
     constructor(apiParametersProvider: ClientParametersProvider) : this(
@@ -68,6 +81,12 @@ class ArtifactoryClassicClient(
 
     override fun searchByAQL(query: String): AqlSearchResponse = client.searchByAQL(query)
 
+    override fun downloadArtifact(artifactPath: String): Response {
+        val response = downloadClient.downloadArtifact(artifactPath)
+        if (response.status() in 200..299) return response
+        throw errorDecoder.decode("ArtifactoryClient#downloadArtifact(String)", response)
+    }
+
     companion object {
         private fun getMapper(): ObjectMapper {
             val objectMapper = jacksonObjectMapper()
@@ -78,15 +97,16 @@ class ArtifactoryClassicClient(
             return objectMapper
         }
 
-        private fun createClient(
-            apiUrl: String,
+        private fun buildFeignBuilder(
+            feignClient: Client,
             interceptor: RequestInterceptor,
             objectMapper: ObjectMapper,
-        ): ArtifactoryClient {
+            logLevel: Logger.Level,
+        ): Feign.Builder {
             val jacksonEncoder: Encoder = JacksonEncoder(objectMapper)
             return Feign
                 .builder()
-                .client(ApacheHttpClient())
+                .client(feignClient)
                 .encoder { body, bodyType, template ->
                     if (body is String) {
                         template.body(body.toByteArray(StandardCharsets.UTF_8), StandardCharsets.UTF_8)
@@ -94,14 +114,29 @@ class ArtifactoryClassicClient(
                         jacksonEncoder.encode(body, bodyType, template)
                     }
                 }.decoder(JacksonDecoder(objectMapper))
-                .errorDecoder(
-                    ArtifactoryClientErrorDecoder(
-                        objectMapper,
-                    ),
-                ).requestInterceptor(interceptor)
+                .requestInterceptor(interceptor)
                 .logger(Slf4jLogger(ArtifactoryClient::class.java))
-                .logLevel(Logger.Level.FULL)
-                .target(ArtifactoryClient::class.java, apiUrl)
+                .logLevel(logLevel)
         }
+
+        private fun createClient(
+            apiUrl: String,
+            interceptor: RequestInterceptor,
+            objectMapper: ObjectMapper,
+            errorDecoder: ArtifactoryClientErrorDecoder,
+            feignClient: Client,
+        ): ArtifactoryClient =
+            buildFeignBuilder(feignClient, interceptor, objectMapper, Logger.Level.FULL)
+                .errorDecoder(errorDecoder)
+                .target(ArtifactoryClient::class.java, apiUrl)
+
+        private fun createDownloadClient(
+            apiUrl: String,
+            interceptor: RequestInterceptor,
+            objectMapper: ObjectMapper,
+            feignClient: Client,
+        ): ArtifactoryClient =
+            buildFeignBuilder(feignClient, interceptor, objectMapper, Logger.Level.NONE)
+                .target(ArtifactoryClient::class.java, apiUrl)
     }
 }
