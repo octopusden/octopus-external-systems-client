@@ -12,6 +12,7 @@ plugins {
     id("io.gitlab.arturbosch.detekt") apply false
     id("org.jlleitschuh.gradle.ktlint") apply false
     id("org.octopusden.octopus-quality")
+    id("org.sonarqube")
     signing
     `maven-publish`
 }
