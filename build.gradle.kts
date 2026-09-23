@@ -18,6 +18,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") apply false
     id("org.octopusden.octopus-quality")
     id("io.github.surpsg.delta-coverage")
+    id("org.sonarqube")
     signing
     `maven-publish`
 }
