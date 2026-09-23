@@ -10,6 +10,6 @@ permissions:
 
 jobs:
   dependencies:
-    uses: octopusden/octopus-base/.github/workflows/common-gradle-dependency-submission.yml@2cb0a0c697e38ca6614fb93b3a03233b3413d475
+    uses: octopusden/octopus-base/.github/workflows/common-gradle-dependency-submission.yml@v3.1.0
     with:
       java-version: '21'

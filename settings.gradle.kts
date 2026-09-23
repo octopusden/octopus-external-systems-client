@@ -10,6 +10,7 @@ pluginManagement {
         id("org.jlleitschuh.gradle.ktlint") version (extra["ktlint-gradle.version"] as String)
         id("org.octopusden.octopus-quality") version (extra["octopus-quality.version"] as String)
         id("io.github.surpsg.delta-coverage") version (extra["delta-coverage.version"] as String)
+        id("org.sonarqube") version (extra["sonarqube.version"] as String)
     }
     repositories {
         gradlePluginPortal()

@@ -11,16 +11,14 @@ dependencies to succeed:
 | `security` | CodeQL (`java-kotlin`, `actions`) and Trivy filesystem scan | Findings are report-only; scanner job failures fail the gate |
 
 The shared workflows come from `octopus-base`. Published workflows and the
-`octopus-quality` Gradle plugin use 3.0.2. The two new reusable workflows are
-pinned separately until they are included in an upstream release.
+`octopus-quality` Gradle plugin use 3.1.0, and every shared workflow and action
+is pinned to the same `v3.1.0` tag.
 The wrapper also verifies the Gradle 8.6 distribution ZIP against its
 [published SHA-256](https://gradle.org/release-checksums/#8.6).
 
 Coverage policy and test selection come from
 [PR #160](https://github.com/octopusden/octopus-external-systems-client/pull/160),
-which must merge before this infrastructure update. This PR also normalizes
-class-file paths to JaCoCo's slash-separated names so per-module attribution
-works on Windows. Tests and coverage thresholds are unchanged from #160.
+which is merged. This change touches neither tests nor coverage thresholds.
 The Docker-backed functional tests are excluded from the `qualityCoverage`
 task graph. `build` also excludes tests; it must not be treated as evidence that
 functional tests ran. Full functional tests use the existing TeamCity setup.

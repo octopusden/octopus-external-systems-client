@@ -28,6 +28,6 @@ jobs:
     needs: [build, quality, security, workflow-lint]
     runs-on: ubuntu-latest
     steps:
-      - uses: octopusden/octopus-base/.github/actions/merge-gate@v3.0.2
+      - uses: octopusden/octopus-base/.github/actions/merge-gate@v3.1.0
         with:
           needs: ${{ toJson(needs) }}
