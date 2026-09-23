@@ -1,4 +1,8 @@
+import io.github.surpsg.deltacoverage.gradle.CoverageEntity
+import io.github.surpsg.deltacoverage.gradle.DeltaCoverageConfiguration
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.octopusden.octopus.quality.CoverageExtension
+import java.math.BigDecimal
 import java.net.InetAddress
 import java.time.Duration
 import java.util.zip.CRC32
@@ -6,15 +10,28 @@ import java.util.zip.CRC32
 plugins {
     java
     idea
+    jacoco
     id("org.octopusden.octopus.oc-template")
     id("org.jetbrains.kotlin.jvm")
     id("io.github.gradle-nexus.publish-plugin")
     id("io.gitlab.arturbosch.detekt") apply false
     id("org.jlleitschuh.gradle.ktlint") apply false
     id("org.octopusden.octopus-quality")
+    id("io.github.surpsg.delta-coverage")
     id("org.sonarqube")
     signing
     `maven-publish`
+}
+
+// The `test` tasks that drive real Gitea, Bitbucket and TeamCity servers through docker-compose,
+// with the JaCoCo tasks that depend on them - excluding only `test` would let those two pull it
+// back into the graph. Their modules' classes stay in the denominator either way.
+val dockerBoundTestTasks = listOf(
+    ":gitea-test-client",
+    ":bitbucket-test-client",
+    ":teamcity-client",
+).flatMap { module ->
+    listOf("$module:test", "$module:jacocoTestReport", "$module:jacocoTestCoverageVerification")
 }
 
 octopusQuality {
@@ -63,8 +80,24 @@ octopusQuality {
     kotlin {
         failOnViolation.set(true)
     }
+    // Without this a plain `./gradlew qualityCoverage` starts docker: the plugin adds every
+    // `:test` task to the aggregate itself. The gate must not depend on anyone remembering flags.
+    excludedTasks.addAll(dockerBoundTestTasks)
     coverage {
-        enabled.set(false)
+        enabled.set(true)
+        // AUTO resolves to Kover for a Kotlin-only repo, and the plugin has no aggregated Kover
+        // task; JaCoCo is the one with `jacocoOverallCoverage*`.
+        tool.set(CoverageExtension.Tool.JACOCO)
+        // teamcity-client's `test` is docker-bound and excluded above, so its docker-free
+        // `unitTest` is what contributes that module's coverage.
+        additionalTestTasks.add("unitTest")
+        // Per-module floor off. Ten of twelve modules have no tests at all, so the 0.10 default
+        // fails them on the first run; a per-module floor is worth setting when they have tests.
+        minimumLineCoverage.set(BigDecimal.ZERO)
+        // A floor, NOT a ratchet: it catches a collapse, it does not notice a small slide. Set
+        // just under the measured 6.4% so ordinary line-count drift does not trip it. Raise it
+        // when coverage grows.
+        overallMinimum.set(BigDecimal("0.06"))
     }
 }
 
@@ -118,19 +151,24 @@ val centralPublishedProjects = setOf(
     ":test-client-commons",
 )
 
+// `allprojects`, not `subprojects`: the aggregate JaCoCo tasks run on the root project and need to
+// resolve org.jacoco:org.jacoco.ant there too.
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+}
+
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "idea")
     apply(plugin = "java")
     apply(plugin = "signing")
+    apply(plugin = "jacoco")
     apply(plugin = "maven-publish")
     // Kotlin static analysis — configured by the octopus-quality convention plugin
     apply(plugin = "io.gitlab.arturbosch.detekt")
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
-
-    repositories {
-        mavenCentral()
-    }
 
     val gitUrl = "https://github.com/octopusden/octopus-external-systems-client.git"
 
@@ -226,5 +264,90 @@ subprojects {
 
     dependencies {
         implementation("org.jetbrains.kotlin:kotlin-stdlib")
+    }
+
+}
+
+// The test tasks the quality job actually runs, which is what the vacuity guard below waits for.
+val measuredTestTasks = subprojects.map { "${it.path}:test" } - dockerBoundTestTasks.toSet() +
+    ":teamcity-client:unitTest"
+
+fun jacocoExecutionData(): FileCollection {
+    val dockerBoundExec = dockerBoundTestTasks
+        .map { it.removeSuffix(":test").removePrefix(":") to "test.exec" }
+        .toSet()
+    return files(
+        subprojects.map { module ->
+            module.fileTree(module.layout.buildDirectory) {
+                include("jacoco/*.exec")
+                // A leftover test.exec from an earlier full local run would otherwise merge
+                // silently into the delta gate's view.
+                exclude { (module.name to it.name) in dockerBoundExec }
+            }
+        },
+    )
+}
+
+// A gate that can skip itself is not a gate. With no execution data JaCoCo skips its own tasks and
+// `deltaCoverage` reports NaN%, so losing the last test that runs here - renaming LocatorTest out
+// of `unitTest`'s filter is enough - would turn the whole check green and empty.
+tasks.register("coverageDataCheck") {
+    group = "verification"
+    description = "Fails when no test produced coverage data, which would make the gate vacuous"
+    dependsOn(measuredTestTasks)
+    val executionData = jacocoExecutionData()
+    doLast {
+        check(!executionData.isEmpty) {
+            "No JaCoCo execution data: no test ran in this build, so the coverage gate would pass " +
+                "vacuously. Check that :teamcity-client:unitTest still matches at least one test."
+        }
+    }
+}
+
+// New code must arrive with tests. The plugin's aggregate floor only catches a collapse, so this is
+// the gate that looks at the change itself. The base ref has to exist locally - the quality workflow
+// fetches it (see quality.yml); -PdeltaCoverage.baseRef=<ref> and -PdeltaCoverage.minLineRatio=<0..1>
+// override both defaults, so unblocking a change is a reviewable argument rather than a code edit.
+configure<DeltaCoverageConfiguration> {
+    diffSource.byGit {
+        compareWith(providers.gradleProperty("deltaCoverage.baseRef").getOrElse("origin/main"))
+        useNativeGit.set(true)
+    }
+    coverageBinaryFiles = jacocoExecutionData()
+    classesDirs = files(subprojects.map { it.the<SourceSetContainer>()["main"].output })
+    srcDirs = files(subprojects.map { it.the<SourceSetContainer>()["main"].allSource.srcDirs })
+    violationRules {
+        failOnViolation.set(true)
+        // LINE only. `failIfCoverageLessThan` would set the same ratio for BRANCH and INSTRUCTION
+        // too, and every other number in this build is a line count.
+        rule(CoverageEntity.LINE) {
+            minCoverageRatio.set(
+                providers.gradleProperty("deltaCoverage.minLineRatio").getOrElse("0.5").toDouble(),
+            )
+        }
+    }
+}
+
+tasks.named("deltaCoverage") {
+    dependsOn(measuredTestTasks)
+}
+
+// delta-coverage 2.5.0 leaves `gitDiff` UP-TO-DATE when HEAD moves, so an incremental local run
+// checks the previous diff and passes on code that fails after `clean`. Regenerating it is cheap.
+tasks.named("gitDiff") {
+    outputs.upToDateWhen { false }
+}
+
+// `qualityCoverage` is registered by the convention plugin in `projectsEvaluated`; matching by name
+// avoids depending on listener ordering. Matching by name also fails OPEN, so assert the task is
+// really there: a rename upstream would otherwise detach every gate and leave CI green and empty.
+tasks.matching { it.name == "qualityCoverage" }.configureEach {
+    dependsOn("coverageDataCheck", "deltaCoverage")
+}
+
+gradle.projectsEvaluated {
+    check("qualityCoverage" in tasks.names) {
+        "octopus-quality no longer registers a 'qualityCoverage' task. The coverage gates are wired " +
+            "to it by name and would silently stop running - rewire them before bumping the plugin."
     }
 }
