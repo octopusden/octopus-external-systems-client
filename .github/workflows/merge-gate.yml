@@ -20,7 +20,7 @@ jobs:
     uses: ./.github/workflows/security.yml
 
   workflow-lint:
-    uses: ./.github/workflows/workflow-lint.yml
+    uses: octopusden/octopus-base/.github/workflows/common-workflow-lint.yml@v3.1.0
 
   gate-merge:
     name: gate/merge
@@ -28,6 +28,6 @@ jobs:
     needs: [build, quality, security, workflow-lint]
     runs-on: ubuntu-latest
     steps:
-      - uses: octopusden/octopus-base/.github/actions/merge-gate@v3.1.0
+      - uses: octopusden/octopus-base/.github/actions/merge-gate@v3.0.0
         with:
           needs: ${{ toJson(needs) }}

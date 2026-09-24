@@ -1,27 +1,15 @@
 # Quality checks
 
-GitHub PRs run through `Merge Gate`. Its `gate/merge` job requires all four
-dependencies to succeed:
+GitHub pull requests run through `Merge Gate`. Its `gate/merge` job fails unless
+every job in its `needs:` list succeeds; `.github/workflows/merge-gate.yml` is the
+list. The shared workflows behind those jobs come from `octopus-base`.
 
-| Job | Checks | Policy |
-| --- | --- | --- |
-| `build` | Compile/package on JDK 21; publication metadata validation | Blocking |
-| `quality` | Gradle wrapper validation, detekt, ktlint, configured unit/coverage tasks | Blocking |
-| `workflow-lint` | actionlint and syntax checks for `.github/**/*.sh` | Blocking |
-| `security` | CodeQL (`java-kotlin`, `actions`) and Trivy filesystem scan | Findings are report-only; scanner job failures fail the gate |
+Two policies are not obvious from the workflow files:
 
-The shared workflows come from `octopus-base`. Published workflows and the
-`octopus-quality` Gradle plugin use 3.1.0, and every shared workflow and action
-is pinned to the same `v3.1.0` tag.
-The wrapper also verifies the Gradle 8.6 distribution ZIP against its
-[published SHA-256](https://gradle.org/release-checksums/#8.6).
-
-Coverage policy and test selection come from
-[PR #160](https://github.com/octopusden/octopus-external-systems-client/pull/160),
-which is merged. This change touches neither tests nor coverage thresholds.
-The Docker-backed functional tests are excluded from the `qualityCoverage`
-task graph. `build` also excludes tests; it must not be treated as evidence that
-functional tests ran. Full functional tests use the existing TeamCity setup.
+- **Security findings are report-only.** CodeQL and Trivy findings do not fail the
+  gate. A failure of the scanner job itself does.
+- **Neither `build` nor `quality` runs the Docker-backed functional tests.** A green
+  gate is not evidence that they passed. They run on TeamCity.
 
 ## Local validation and reports
 
@@ -36,24 +24,17 @@ Coverage requires no `-x` flags: test selection is configured in the build.
 Keep existing detekt/ktlint baselines: increasing a
 baseline requires reviewing the newly suppressed findings.
 
-The shared quality workflow uploads `static-analysis-reports` and
-`coverage-reports` when matching files exist. Static reports include `**/build/reports/detekt/**` and
-`**/build/reports/ktlint/**`; coverage includes test results and JaCoCo/Kover
-reports. CodeQL and Trivy results appear in GitHub code scanning. Artifact paths
-do not by themselves enable additional analyzers.
+Reports are uploaded as run artifacts by the shared quality workflow; CodeQL and
+Trivy results appear in GitHub code scanning.
 
 ## Dependency inventory
 
-`Dependency Submission` resolves the Gradle dependency graph on pushes to `main`
-and manual runs on `main`, validates Gradle wrappers, submits the graph to GitHub
-and uploads a graph artifact. It does not execute tests. It uses `contents: write`
-in a separate workflow and is not a PR gate.
+`Dependency Submission` feeds GitHub's dependency graph from `main`. See
+[octopus-base: consumer quality workflows](https://github.com/octopusden/octopus-base/blob/main/docs/consumer-quality-workflows.md)
+for what it does and why it is not a pull-request gate.
 
-After its first successful run, verify that GitHub's dependency graph contains
-the JVM libraries and enable Dependabot alerts if necessary. This supplies
-dependency inventory for alerts; it is not a vulnerability threshold. Dependency-
-Check remains disabled until its data-feed/runtime behavior is stable enough for
-an explicit rollout.
+It supplies inventory for Dependabot alerts; it is not a vulnerability threshold.
+Dependency-Check stays disabled until its data feed is stable enough to roll out.
 
 ## Enforcing merge protection
 
