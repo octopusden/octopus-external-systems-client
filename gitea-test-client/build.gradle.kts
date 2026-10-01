@@ -16,6 +16,8 @@ java {
 configure<ComposeExtension> {
     useComposeFiles.add("${projectDir}${File.separator}docker${File.separator}docker-compose.yml")
     waitForTcpPorts.set(true)
+    // The standalone docker-compose binary, as plugin 0.16 used; 0.17 defaults to `docker compose`.
+    useDockerComposeV2.set(false)
     captureContainersOutputToFiles.set(
         layout.buildDirectory
             .file("docker_logs")
