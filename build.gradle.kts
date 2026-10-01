@@ -161,12 +161,6 @@ allprojects {
     }
 }
 
-// The root project applies the Kotlin plugin as well: keep its kotlin-stdlib on the runtime version
-// too, as the modules below do, so the dependency graph this build submits does not list 2.x.
-kotlin {
-    coreLibrariesVersion = project.property("kotlin.version") as String
-}
-
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "idea")
@@ -256,6 +250,9 @@ subprojects {
         compilerOptions {
             languageVersion.set(KotlinVersion.KOTLIN_1_9)
             apiVersion.set(KotlinVersion.KOTLIN_1_9)
+            // Compile against the Java 8 class library, not the build JDK's: jvmTarget alone lets a
+            // call bind to a newer JDK method, which then fails with NoSuchMethodError on Java 8.
+            freeCompilerArgs.add("-Xjdk-release=1.8")
         }
     }
 

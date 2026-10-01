@@ -119,6 +119,5 @@ dependencies {
     api(project(":test-client-commons"))
     implementation(project(":gitea-client"))
     testImplementation(project(":test-client-test-commons"))
-    // Gradle 9 no longer adds the launcher itself; the junit-bom from Jupiter's metadata versions it.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

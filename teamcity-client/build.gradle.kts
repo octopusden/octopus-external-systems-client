@@ -23,7 +23,6 @@ dependencies {
     testImplementation("junit:junit:4.13.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
     testImplementation("it.skrape:skrapeit:1.2.2")
-    // Gradle 9 no longer adds the launcher itself; the junit-bom from Jupiter's metadata versions it.
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
