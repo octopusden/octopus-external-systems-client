@@ -1,7 +1,7 @@
 import com.avast.gradle.dockercompose.ComposeExtension
 
 plugins {
-    id("com.avast.gradle.docker-compose") version "0.16.9"
+    id("com.avast.gradle.docker-compose")
     id("org.octopusden.octopus.oc-template")
 }
 
@@ -23,6 +23,8 @@ dependencies {
     testImplementation("junit:junit:4.13.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
     testImplementation("it.skrape:skrapeit:1.2.2")
+    // Gradle 9 no longer adds the launcher itself; the junit-bom from Jupiter's metadata versions it.
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 configure<ComposeExtension> {
@@ -35,9 +37,9 @@ configure<ComposeExtension> {
     captureContainersOutputToFiles.set(layout.buildDirectory.dir("docker-logs"))
     environment.putAll(
         mapOf(
-            "DOCKER_REGISTRY" to project.properties["docker.registry"],
-            "TEAMCITY_2022_IMAGE_TAG" to project.properties["teamcity-2022.image-tag"],
-            "TEAMCITY_2026_IMAGE_TAG" to project.properties["teamcity-2026.image-tag"],
+            "DOCKER_REGISTRY" to project.property("docker.registry") as String,
+            "TEAMCITY_2022_IMAGE_TAG" to project.property("teamcity-2022.image-tag") as String,
+            "TEAMCITY_2026_IMAGE_TAG" to project.property("teamcity-2026.image-tag") as String,
         ),
     )
 }

@@ -2,7 +2,7 @@ import com.avast.gradle.dockercompose.ComposeExtension
 import java.util.Base64
 
 plugins {
-    id("com.avast.gradle.docker-compose") version "0.16.9"
+    id("com.avast.gradle.docker-compose")
     id("org.octopusden.octopus.oc-template")
 }
 
@@ -24,10 +24,10 @@ configure<ComposeExtension> {
     captureContainersOutputToFiles.set(layout.buildDirectory.dir("docker-logs"))
     environment.putAll(
         mapOf(
-            "BITBUCKET_LICENSE" to project.properties["bitbucket.license"],
-            "BITBUCKET_IMAGE_TAG" to project.properties["bitbucket.image-tag"],
-            "POSTGRES_IMAGE_TAG" to project.properties["postgres.image-tag"],
-            "DOCKER_REGISTRY" to project.properties["docker.registry"],
+            "BITBUCKET_LICENSE" to project.property("bitbucket.license") as String,
+            "BITBUCKET_IMAGE_TAG" to project.property("bitbucket.image-tag") as String,
+            "POSTGRES_IMAGE_TAG" to project.property("postgres.image-tag") as String,
+            "DOCKER_REGISTRY" to project.property("docker.registry") as String,
         ),
     )
 }
@@ -95,4 +95,6 @@ dependencies {
     api(project(":test-client-commons"))
     implementation(project(":bitbucket-client"))
     testImplementation(project(":test-client-test-commons"))
+    // Gradle 9 no longer adds the launcher itself; the junit-bom from Jupiter's metadata versions it.
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }

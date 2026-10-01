@@ -1,11 +1,12 @@
 pluginManagement {
-    val kotlinVersion: String = extra["kotlin.version"] as String
+    val kotlinPluginVersion: String = extra["kotlin-plugin.version"] as String
     val ocTemplateVersion = extra["octopus-oc-template.version"] as String
 
     plugins {
         id("org.octopusden.octopus.oc-template") version (ocTemplateVersion)
-        id("org.jetbrains.kotlin.jvm") version (kotlinVersion)
-        id("io.github.gradle-nexus.publish-plugin") version("1.1.0") apply(false)
+        id("org.jetbrains.kotlin.jvm") version (kotlinPluginVersion)
+        id("com.avast.gradle.docker-compose") version (extra["docker-compose-plugin.version"] as String)
+        id("io.github.gradle-nexus.publish-plugin") version("2.0.0") apply(false)
         id("io.gitlab.arturbosch.detekt") version (extra["detekt.version"] as String)
         id("org.jlleitschuh.gradle.ktlint") version (extra["ktlint-gradle.version"] as String)
         id("org.octopusden.octopus-quality") version (extra["octopus-quality.version"] as String)

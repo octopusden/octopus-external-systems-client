@@ -1,5 +1,7 @@
 import io.github.surpsg.deltacoverage.gradle.CoverageEntity
 import io.github.surpsg.deltacoverage.gradle.DeltaCoverageConfiguration
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.octopusden.octopus.quality.CoverageExtension
 import java.math.BigDecimal
@@ -159,6 +161,12 @@ allprojects {
     }
 }
 
+// The root project applies the Kotlin plugin as well: keep its kotlin-stdlib on the runtime version
+// too, as the modules below do, so the dependency graph this build submits does not list 2.x.
+kotlin {
+    coreLibrariesVersion = project.property("kotlin.version") as String
+}
+
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
     apply(plugin = "idea")
@@ -237,6 +245,20 @@ subprojects {
         }
     }
 
+    // The Kotlin Gradle plugin (kotlin-plugin.version) is newer than the Kotlin runtime these modules
+    // ship with (kotlin.version). Hold the compiler to the runtime's level so the bytecode and metadata
+    // stay what consumers of the published modules can read, and no call can reach a stdlib API newer
+    // than the stdlib on their classpath.
+    extensions.configure<KotlinJvmProjectExtension> {
+        // The version the plugin gives kotlin-stdlib and its own constraints on it; it defaults to the
+        // plugin's version, which would leak into the published POMs and module metadata.
+        coreLibrariesVersion = project.property("kotlin.version") as String
+        compilerOptions {
+            languageVersion.set(KotlinVersion.KOTLIN_1_9)
+            apiVersion.set(KotlinVersion.KOTLIN_1_9)
+        }
+    }
+
     ext {
         System.getenv().let {
             set("signingRequired", it.containsKey("ORG_GRADLE_PROJECT_signingKey") && it.containsKey("ORG_GRADLE_PROJECT_signingPassword"))
@@ -263,7 +285,9 @@ subprojects {
     }
 
     dependencies {
-        implementation("org.jetbrains.kotlin:kotlin-stdlib")
+        // Versioned explicitly so the published POMs keep an inline version: the Kotlin 2 plugin
+        // otherwise leaves it blank and pins it only through a dependencyManagement entry.
+        implementation("org.jetbrains.kotlin:kotlin-stdlib:${project.property("kotlin.version")}")
     }
 
 }

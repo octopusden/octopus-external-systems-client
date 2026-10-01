@@ -1,8 +1,10 @@
 import com.avast.gradle.dockercompose.ComposeExtension
+import org.gradle.process.ExecOperations
+import javax.inject.Inject
 
 plugins {
     java
-    id("com.avast.gradle.docker-compose") version "0.16.9"
+    id("com.avast.gradle.docker-compose")
     id("org.octopusden.octopus.oc-template")
 }
 
@@ -22,8 +24,8 @@ configure<ComposeExtension> {
     )
     environment.putAll(
         mapOf(
-            "DOCKER_REGISTRY" to project.properties["docker.registry"],
-            "GITEA_IMAGE_TAG" to properties["gitea.image-tag"],
+            "DOCKER_REGISTRY" to project.property("docker.registry") as String,
+            "GITEA_IMAGE_TAG" to project.property("gitea.image-tag") as String,
         ),
     )
 }
@@ -93,17 +95,28 @@ tasks.withType<Test> {
     }
 }
 
+// Gradle 9 removed Project.exec; a build script reaches process execution through ExecOperations.
+interface ExecOperationsHolder {
+    @get:Inject
+    val execOperations: ExecOperations
+}
+
+val execOperations = objects.newInstance<ExecOperationsHolder>().execOperations
+
+// exec fails on a non-zero exit value by default.
 tasks["composeUp"].doLast {
-    exec {
+    execOperations.exec {
         setCommandLine("docker", "exec", "gitea-1-test-client-ft-gitea", "/script/add_admin.sh")
-    }.assertNormalExitValue()
-    exec {
+    }
+    execOperations.exec {
         setCommandLine("docker", "exec", "gitea-2-test-client-ft-gitea", "/script/add_admin.sh")
-    }.assertNormalExitValue()
+    }
 }
 
 dependencies {
     api(project(":test-client-commons"))
     implementation(project(":gitea-client"))
     testImplementation(project(":test-client-test-commons"))
+    // Gradle 9 no longer adds the launcher itself; the junit-bom from Jupiter's metadata versions it.
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
