@@ -250,10 +250,14 @@ subprojects {
         compilerOptions {
             languageVersion.set(KotlinVersion.KOTLIN_1_9)
             apiVersion.set(KotlinVersion.KOTLIN_1_9)
-            // Compile against the Java 8 class library, not the build JDK's: jvmTarget alone lets a
-            // call bind to a newer JDK method, which then fails with NoSuchMethodError on Java 8.
-            freeCompilerArgs.add("-Xjdk-release=1.8")
         }
+    }
+
+    // Compile the published (main) code against the Java 8 class library, not the build JDK's:
+    // jvmTarget alone lets a call bind to a newer JDK method, which then fails with NoSuchMethodError
+    // on Java 8. Tests are not published and use JDK 11 APIs (java.net.http, Files.readString).
+    tasks.named<KotlinCompile>("compileKotlin") {
+        compilerOptions.freeCompilerArgs.add("-Xjdk-release=1.8")
     }
 
     ext {
