@@ -2,7 +2,7 @@ import com.avast.gradle.dockercompose.ComposeExtension
 import java.util.Base64
 
 plugins {
-    id("com.avast.gradle.docker-compose") version "0.16.9"
+    id("com.avast.gradle.docker-compose")
     id("org.octopusden.octopus.oc-template")
 }
 
@@ -21,13 +21,15 @@ val commonOkdParameters = mapOf(
 configure<ComposeExtension> {
     useComposeFiles.add("${projectDir}${File.separator}docker${File.separator}docker-compose.yml")
     waitForTcpPorts.set(true)
+    // The standalone docker-compose binary, as plugin 0.16 used; 0.17 defaults to `docker compose`.
+    useDockerComposeV2.set(false)
     captureContainersOutputToFiles.set(layout.buildDirectory.dir("docker-logs"))
     environment.putAll(
         mapOf(
-            "BITBUCKET_LICENSE" to project.properties["bitbucket.license"],
-            "BITBUCKET_IMAGE_TAG" to project.properties["bitbucket.image-tag"],
-            "POSTGRES_IMAGE_TAG" to project.properties["postgres.image-tag"],
-            "DOCKER_REGISTRY" to project.properties["docker.registry"],
+            "BITBUCKET_LICENSE" to project.property("bitbucket.license") as String,
+            "BITBUCKET_IMAGE_TAG" to project.property("bitbucket.image-tag") as String,
+            "POSTGRES_IMAGE_TAG" to project.property("postgres.image-tag") as String,
+            "DOCKER_REGISTRY" to project.property("docker.registry") as String,
         ),
     )
 }
@@ -95,4 +97,5 @@ dependencies {
     api(project(":test-client-commons"))
     implementation(project(":bitbucket-client"))
     testImplementation(project(":test-client-test-commons"))
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
