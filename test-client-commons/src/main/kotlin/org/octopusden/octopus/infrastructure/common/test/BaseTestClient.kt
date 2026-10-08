@@ -4,6 +4,9 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.errors.RefNotFoundException
 import org.eclipse.jgit.api.errors.TransportException
 import org.eclipse.jgit.lib.ConfigConstants.CONFIG_BRANCH_SECTION
+import org.eclipse.jgit.lib.ObjectId
+import org.eclipse.jgit.transport.RefSpec
+import org.eclipse.jgit.transport.RemoteRefUpdate
 import org.eclipse.jgit.transport.URIish
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
 import org.octopusden.octopus.infrastructure.common.test.dto.ChangeSet
@@ -92,8 +95,11 @@ abstract class BaseTestClient(
         val commit = retryableExecution {
             git.commit().setMessage(newChangeSet.message).call()
         }
-        retryableExecution {
-            git.push().setCredentialsProvider(jgitCredentialsProvider).call()
+        val branchRef = "refs/heads/${newChangeSet.branch}"
+        val remoteBefore = git.repository.exactRef("refs/remotes/origin/${newChangeSet.branch}")?.objectId
+        val (status, retried) = push(git, branchRef)
+        if (retried && status == RemoteRefUpdate.Status.UP_TO_DATE) {
+            redoPush(git, repository, branchRef, remoteBefore, commit.id.name)
         }
         wait(
             waitMessage = "[$vcsUrlHost] wait commit '${commit.id.name}' is accessible in repository '$repository'",
@@ -338,6 +344,56 @@ abstract class BaseTestClient(
         }
         gitCheckout(git, branch)
         return git
+    }
+
+    /** Pushes and returns the resulting status of [branchRef], and whether the push needed a retry. */
+    private fun push(
+        git: Git,
+        branchRef: String,
+        refSpec: RefSpec? = null,
+    ): Pair<RemoteRefUpdate.Status?, Boolean> {
+        var attempts = 0
+        val results = retryableExecution {
+            attempts++
+            git
+                .push()
+                .setCredentialsProvider(jgitCredentialsProvider)
+                .apply { refSpec?.let { setRefSpecs(it) } }
+                .call()
+        }
+        return results.firstNotNullOfOrNull { it.getRemoteUpdate(branchRef) }?.status to (attempts > 1)
+    }
+
+    /**
+     * The push failed after the server had already updated [branchRef], so the retry was a no-op and
+     * the server may have skipped its post-push processing (Bitbucket then never adds the commit to
+     * its issue-commit index). Move the branch back to [previous], or delete it if the push created
+     * it, and push [commitId] again so the server sees a real update.
+     *
+     * If the server refuses to move the branch back (a default or protected branch), nothing has
+     * changed and the commit stays pushed as before. If the second push does not go through cleanly,
+     * the redo has failed and so does the commit.
+     */
+    private fun redoPush(
+        git: Git,
+        repository: Repository,
+        branchRef: String,
+        previous: ObjectId?,
+        commitId: String,
+    ) {
+        getLog().warn(
+            "[$vcsUrlHost] push of '$commitId' to '$repository' failed, and its retry found '$branchRef' " +
+                "already updated: the server may not have processed the push. Pushing it again",
+        )
+        val (rewound, _) = push(git, branchRef, RefSpec(previous?.let { "+${it.name}:$branchRef" } ?: ":$branchRef"))
+        if (rewound != RemoteRefUpdate.Status.OK && rewound != RemoteRefUpdate.Status.UP_TO_DATE) {
+            getLog().warn("[$vcsUrlHost] '$repository' refused to move '$branchRef' back ($rewound); '$commitId' stays pushed as it was")
+            return
+        }
+        val (pushed, _) = push(git, branchRef, RefSpec("$commitId:$branchRef"))
+        check(pushed == RemoteRefUpdate.Status.OK) {
+            "[$vcsUrlHost] pushing '$commitId' to '$repository' again failed: $pushed"
+        }
     }
 
     private fun gitCheckout(
