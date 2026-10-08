@@ -350,7 +350,7 @@ abstract class BaseTestClient(
     private fun push(
         git: Git,
         branchRef: String,
-        vararg refSpecs: RefSpec,
+        refSpec: RefSpec? = null,
     ): Pair<RemoteRefUpdate.Status?, Boolean> {
         var attempts = 0
         val results = retryableExecution {
@@ -358,7 +358,7 @@ abstract class BaseTestClient(
             git
                 .push()
                 .setCredentialsProvider(jgitCredentialsProvider)
-                .apply { if (refSpecs.isNotEmpty()) setRefSpecs(*refSpecs) }
+                .apply { refSpec?.let { setRefSpecs(it) } }
                 .call()
         }
         return results.firstNotNullOfOrNull { it.getRemoteUpdate(branchRef) }?.status to (attempts > 1)
@@ -369,6 +369,10 @@ abstract class BaseTestClient(
      * the server may have skipped its post-push processing (Bitbucket then never adds the commit to
      * its issue-commit index). Move the branch back to [previous], or delete it if the push created
      * it, and push [commitId] again so the server sees a real update.
+     *
+     * If the server refuses to move the branch back (a default or protected branch), nothing has
+     * changed and the commit stays pushed as before. If the second push does not go through cleanly,
+     * the redo has failed and so does the commit.
      */
     private fun redoPush(
         git: Git,
@@ -382,9 +386,13 @@ abstract class BaseTestClient(
                 "already updated: the server may not have processed the push. Pushing it again",
         )
         val (rewound, _) = push(git, branchRef, RefSpec(previous?.let { "+${it.name}:$branchRef" } ?: ":$branchRef"))
+        if (rewound != RemoteRefUpdate.Status.OK && rewound != RemoteRefUpdate.Status.UP_TO_DATE) {
+            getLog().warn("[$vcsUrlHost] '$repository' refused to move '$branchRef' back ($rewound); '$commitId' stays pushed as it was")
+            return
+        }
         val (pushed, _) = push(git, branchRef, RefSpec("$commitId:$branchRef"))
-        check(rewound in setOf(RemoteRefUpdate.Status.OK, RemoteRefUpdate.Status.UP_TO_DATE) && pushed == RemoteRefUpdate.Status.OK) {
-            "[$vcsUrlHost] pushing '$commitId' to '$repository' again failed (rewind: $rewound, push: $pushed)"
+        check(pushed == RemoteRefUpdate.Status.OK) {
+            "[$vcsUrlHost] pushing '$commitId' to '$repository' again failed: $pushed"
         }
     }
 

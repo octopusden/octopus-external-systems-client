@@ -4,6 +4,7 @@ import org.eclipse.jgit.internal.storage.dfs.DfsRepositoryDescription
 import org.eclipse.jgit.internal.storage.dfs.InMemoryRepository
 import org.eclipse.jgit.lib.ObjectId
 import org.eclipse.jgit.transport.PreReceiveHook
+import org.eclipse.jgit.transport.ReceiveCommand
 import org.eclipse.jgit.transport.ReceivePack
 import org.eclipse.jgit.transport.TestProtocol
 import org.eclipse.jgit.transport.Transport
@@ -42,7 +43,7 @@ class BaseTestClientPushTest {
     @Test
     fun `a push that failed after updating the branch is pushed again`() {
         val first = client.commit(NewChangeSet("first", REPOSITORY, "master"))
-        server.failNextPushAfterUpdate = true
+        server.failedForwardPushes = 1
         val second = client.commit(NewChangeSet("second", REPOSITORY, "master"))
 
         assertEquals(second.id, server.head("master"))
@@ -53,7 +54,7 @@ class BaseTestClientPushTest {
     @Test
     fun `a branch created by the failed push is deleted and pushed again`() {
         val base = client.commit(NewChangeSet("base", REPOSITORY, "master"))
-        server.failNextPushAfterUpdate = true
+        server.failedForwardPushes = 1
         val feature = client.commit(NewChangeSet("feature", REPOSITORY, "feature"), base.id)
 
         assertEquals(feature.id, server.head("feature"))
@@ -61,21 +62,35 @@ class BaseTestClientPushTest {
     }
 
     @Test
-    fun `a redo the server rejects fails the commit`() {
-        client.commit(NewChangeSet("first", REPOSITORY, "master"))
-        server.failNextPushAfterUpdate = true
+    fun `a branch the server refuses to move back keeps the commit`() {
+        val first = client.commit(NewChangeSet("first", REPOSITORY, "master"))
+        server.failedForwardPushes = 1
         server.allowNonFastForwards = false
+        val second = client.commit(NewChangeSet("second", REPOSITORY, "master"))
+
+        assertEquals(second.id, server.head("master"))
+        assertEquals(listOf(null to first.id), server.updates)
+    }
+
+    @Test
+    fun `a redo that fails the same way fails the commit`() {
+        val first = client.commit(NewChangeSet("first", REPOSITORY, "master"))
+        server.failedForwardPushes = 2
 
         val e = assertThrows(IllegalStateException::class.java) {
             client.commit(NewChangeSet("second", REPOSITORY, "master"))
         }
-        assertTrue(e.message!!.contains("again failed (rewind: REJECTED_OTHER_REASON"), e.message)
+        assertTrue(e.message!!.endsWith("again failed: UP_TO_DATE"), e.message)
+        // Moved back once; the second push updated the branch again but was never processed.
+        assertEquals(listOf(null to first.id, server.head("master") to first.id), server.updates)
     }
 
     /** One in-memory bare repository served over jgit's in-process [TestProtocol]. */
     class FakeServer : AutoCloseable {
         val repository: JGitRepository = InMemoryRepository(DfsRepositoryDescription("fake"))
-        var failNextPushAfterUpdate = false
+
+        /** How many of the next forward pushes (not a rewind or delete) update the branch and then break. */
+        var failedForwardPushes = 0
         var allowNonFastForwards = true
 
         /** (old, new) of every branch update the server processed; null for a missing side. */
@@ -97,18 +112,15 @@ class BaseTestClientPushTest {
         private fun receivePack(db: JGitRepository) =
             ReceivePack(db).apply {
                 isAllowNonFastForwards = allowNonFastForwards
-                preReceiveHook = if (failNextPushAfterUpdate) {
-                    failNextPushAfterUpdate = false
-                    // Update the refs, then break the session: the server never processes this push.
-                    PreReceiveHook { pack, commands ->
+                // Only commands that passed validation get here, so a rejected update is not recorded.
+                preReceiveHook = PreReceiveHook { pack, commands ->
+                    if (failedForwardPushes > 0 && commands.none { it.type in REWINDS }) {
+                        failedForwardPushes--
+                        // Update the refs, then break the session: the server never processes this push.
                         commands.forEach { it.execute(pack) }
                         error("simulated server failure after the ref update")
                     }
-                } else {
-                    // Only commands that passed validation get here, so a rejected update is not recorded.
-                    PreReceiveHook { _, commands ->
-                        commands.forEach { updates += it.oldId.nameOrNull() to it.newId.nameOrNull() }
-                    }
+                    commands.forEach { updates += it.oldId.nameOrNull() to it.newId.nameOrNull() }
                 }
             }
 
@@ -141,11 +153,12 @@ class BaseTestClientPushTest {
             repository: Repository,
             sha: String,
         ) {
-            checkNotNull(server.repository.parseCommit(ObjectId.fromString(sha)))
+            server.repository.parseCommit(ObjectId.fromString(sha))
         }
     }
 
     companion object {
         private const val REPOSITORY = "ssh://git@fake/group/repo.git"
+        private val REWINDS = setOf(ReceiveCommand.Type.UPDATE_NONFASTFORWARD, ReceiveCommand.Type.DELETE)
     }
 }
