@@ -16,6 +16,7 @@ import feign.httpclient.ApacheHttpClient
 import feign.jackson.JacksonDecoder
 import feign.jackson.JacksonEncoder
 import feign.slf4j.Slf4jLogger
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlBuildSearchResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlSearchResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfoResponse
@@ -64,6 +65,12 @@ class ArtifactoryClassicClient(
         buildNumber: String,
     ): BuildInfoResponse = client.getBuildInfo(buildName, buildNumber)
 
+    override fun getBuildInfo(
+        buildName: String,
+        buildNumber: String,
+        buildRepo: String,
+    ): BuildInfoResponse = client.getBuildInfo(buildName, buildNumber, buildRepo)
+
     override fun uploadBuildInfo(request: BuildInfo) = client.uploadBuildInfo(request)
 
     override fun deleteBuild(request: DeleteBuildRequest) = client.deleteBuild(request)
@@ -80,6 +87,8 @@ class ArtifactoryClassicClient(
     ) = client.promoteDockerImage(repoKey, request)
 
     override fun searchByAQL(query: String): AqlSearchResponse = client.searchByAQL(query)
+
+    override fun searchBuildsByAQL(query: String): AqlBuildSearchResponse = client.searchBuildsByAQL(query)
 
     override fun downloadArtifact(artifactPath: String): Response {
         val response = downloadClient.downloadArtifact(artifactPath)

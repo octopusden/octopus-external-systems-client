@@ -18,4 +18,7 @@ data class AqlItem(
     val createdBy: String? = null,
     @field:JsonProperty("modified_by")
     val modifiedBy: String? = null,
+    @field:JsonProperty("actual_sha1")
+    val actualSha1: String? = null,
+    val sha256: String? = null,
 )

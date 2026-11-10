@@ -10,4 +10,6 @@ data class Artifact(
     val sha1: String?,
     val sha256: String?,
     val md5: String?,
+    /** The file's folder in the repository; build-info records it for docker image layers and manifests. */
+    val path: String? = null,
 )

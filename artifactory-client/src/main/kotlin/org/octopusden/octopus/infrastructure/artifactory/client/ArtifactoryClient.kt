@@ -4,6 +4,7 @@ import feign.Headers
 import feign.Param
 import feign.RequestLine
 import feign.Response
+import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlBuildSearchResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.AqlSearchResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.ArtifactoryResponse
 import org.octopusden.octopus.infrastructure.artifactory.client.dto.BuildInfo
@@ -39,6 +40,15 @@ interface ArtifactoryClient {
         @Param("buildNumber") buildNumber: String,
     ): BuildInfoResponse
 
+    /** As [getBuildInfo], from the build-info repository [buildRepo] instead of the default one. */
+    @RequestLine("GET $BUILD_PATH/{buildName}/{buildNumber}?buildRepo={buildRepo}")
+    @Headers("Accept: application/json")
+    fun getBuildInfo(
+        @Param("buildName") buildName: String,
+        @Param("buildNumber") buildNumber: String,
+        @Param("buildRepo") buildRepo: String,
+    ): BuildInfoResponse
+
     @RequestLine("PUT $BUILD_PATH")
     @Headers("Content-Type: application/json", "Accept: application/json")
     fun uploadBuildInfo(request: BuildInfo)
@@ -65,6 +75,11 @@ interface ArtifactoryClient {
     @RequestLine("POST $ARTIFACTORY_PATH/search/aql")
     @Headers("Content-Type: text/plain", "Accept: application/json")
     fun searchByAQL(query: String): AqlSearchResponse
+
+    /** An AQL `builds.find(...)` query; [searchByAQL] reads only `items.find(...)` rows. */
+    @RequestLine("POST $ARTIFACTORY_PATH/search/aql")
+    @Headers("Content-Type: text/plain", "Accept: application/json")
+    fun searchBuildsByAQL(query: String): AqlBuildSearchResponse
 
     /**
      * Downloads the artifact at the given path as a raw streaming response.
