@@ -76,6 +76,8 @@ octopusQuality {
                     "[jar, jar:javadoc, jar:sources]",
                 ":test-client-commons|maven|${group}:test-client-commons|" +
                     "[jar, jar:javadoc, jar:sources]",
+                ":xray-client|maven|${group}:xray-client|" +
+                    "[jar, jar:javadoc, jar:sources]",
             ),
         )
     }
@@ -151,6 +153,7 @@ val centralPublishedProjects = setOf(
     ":sonarqube-client",
     ":teamcity-client",
     ":test-client-commons",
+    ":xray-client",
 )
 
 // `allprojects`, not `subprojects`: the aggregate JaCoCo tasks run on the root project and need to
