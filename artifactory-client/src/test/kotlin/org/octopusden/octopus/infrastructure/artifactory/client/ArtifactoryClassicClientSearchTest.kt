@@ -64,11 +64,11 @@ class ArtifactoryClassicClientSearchTest {
         val buildInfo =
             client(
                 """{"buildInfo":{"name":"app_ee_docker","number":"2.4.0","modules":[{"id":"sample/app:2.4.0","type":"docker",
-                   "artifacts":[{"name":"manifest.json","sha1":"aa","path":"sample/app/2.4.0"}]}]}}""",
+                   "artifacts":[{"name":"manifest.json","sha1":"aa","path":"sample/app/2.4.0/manifest.json"}]}]}}""",
             ).getBuildInfo("app_ee_docker", "2.4.0", "artifactory-build-info").buildInfo
 
         assertEquals(
-            "sample/app/2.4.0",
+            "sample/app/2.4.0/manifest.json",
             buildInfo.modules!!
                 .single()
                 .artifacts!!
