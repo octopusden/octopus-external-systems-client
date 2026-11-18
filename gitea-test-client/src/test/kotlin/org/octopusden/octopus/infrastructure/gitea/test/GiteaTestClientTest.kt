@@ -34,6 +34,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.text.format
 
@@ -149,6 +150,32 @@ class GiteaTestClientTest :
         client.createRepository(organizationName, GiteaCreateRepository(repositoryName))
         client.updateRepositoryConfiguration(organizationName, repositoryName, GiteaEditRepoOption(name = newRepositoryName))
         assertEquals(client.getRepository(organizationName, newRepositoryName).name, newRepositoryName)
+    }
+
+    @Test
+    fun testCreateRepositoryWithDescriptionAndVisibility() {
+        val organizationName = "test-create-described-org-${UUID.randomUUID().toString().take(8)}"
+        val repositoryName = "test-create-described-repo"
+        val description = "provisioning marker: created by test"
+        client.createOrganization(GiteaCreateOrganization(organizationName))
+        client.createRepository(
+            organizationName,
+            GiteaCreateRepository(repositoryName, description = description, `private` = true, defaultBranch = "develop"),
+        )
+        val repository = client.getRepository(organizationName, repositoryName)
+        assertEquals(description, repository.description)
+        assertEquals(true, repository.`private`)
+        assertEquals("develop", repository.defaultBranch)
+    }
+
+    @Test
+    fun testCreateRepositoryWithoutDescriptionKeepsDefaults() {
+        val organizationName = "test-create-plain-org-${UUID.randomUUID().toString().take(8)}"
+        val repositoryName = "test-create-plain-repo"
+        client.createOrganization(GiteaCreateOrganization(organizationName))
+        client.createRepository(organizationName, GiteaCreateRepository(repositoryName))
+        val repository = client.getRepository(organizationName, repositoryName)
+        assertEquals(false, repository.`private`)
     }
 
     @Test

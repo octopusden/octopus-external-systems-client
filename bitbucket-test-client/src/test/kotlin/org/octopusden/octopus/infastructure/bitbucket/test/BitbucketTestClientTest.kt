@@ -10,6 +10,7 @@ import org.octopusden.octopus.infrastructure.bitbucket.client.createPullRequestW
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommit
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCommitChange
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateBuildStatus
+import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateRepository
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketCreateTag
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeleteBranch
 import org.octopusden.octopus.infrastructure.bitbucket.client.dto.BitbucketDeletePullRequest
@@ -102,6 +103,46 @@ class BitbucketTestClientTest :
         val repository = client.getRepository(PROJECT, REPOSITORY)
         Assertions.assertEquals(REPOSITORY, repository.slug)
         Assertions.assertEquals(false, repository.archived)
+    }
+
+    @Test
+    fun testCreateRepositoryWithDescriptionAndVisibility() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
+        )
+        val repositoryName = "test-create-with-description"
+        val description = "provisioning marker: created by test"
+        try {
+            client.createRepository(PROJECT, BitbucketCreateRepository(repositoryName, description = description, public = true))
+            val repository = client.getRepository(PROJECT, repositoryName)
+            Assertions.assertEquals(description, repository.description)
+            Assertions.assertEquals(true, repository.public)
+        } finally {
+            client.deleteRepository(PROJECT, repositoryName)
+        }
+    }
+
+    @Test
+    fun testCreateRepositoryWithoutDescriptionKeepsDefaults() {
+        testClient.commit(
+            NewChangeSet(
+                "${BaseTestClient.DEFAULT_BRANCH} commit",
+                vcsUrl,
+                BaseTestClient.DEFAULT_BRANCH,
+            ),
+        )
+        val repositoryName = "test-create-without-description"
+        try {
+            client.createRepository(PROJECT, BitbucketCreateRepository(repositoryName))
+            val repository = client.getRepository(PROJECT, repositoryName)
+            Assertions.assertEquals(false, repository.public)
+        } finally {
+            client.deleteRepository(PROJECT, repositoryName)
+        }
     }
 
     @Test
