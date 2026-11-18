@@ -34,6 +34,7 @@ import org.octopusden.octopus.infrastructure.gitea.client.toGiteaEditRepoOption
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import kotlin.text.format
 
@@ -153,7 +154,7 @@ class GiteaTestClientTest :
 
     @Test
     fun testCreateRepositoryWithDescriptionAndVisibility() {
-        val organizationName = "test-create-described-org"
+        val organizationName = "test-create-described-org-${UUID.randomUUID().toString().take(8)}"
         val repositoryName = "test-create-described-repo"
         val description = "provisioning marker: created by test"
         client.createOrganization(GiteaCreateOrganization(organizationName))
@@ -169,7 +170,7 @@ class GiteaTestClientTest :
 
     @Test
     fun testCreateRepositoryWithoutDescriptionKeepsDefaults() {
-        val organizationName = "test-create-plain-org"
+        val organizationName = "test-create-plain-org-${UUID.randomUUID().toString().take(8)}"
         val repositoryName = "test-create-plain-repo"
         client.createOrganization(GiteaCreateOrganization(organizationName))
         client.createRepository(organizationName, GiteaCreateRepository(repositoryName))

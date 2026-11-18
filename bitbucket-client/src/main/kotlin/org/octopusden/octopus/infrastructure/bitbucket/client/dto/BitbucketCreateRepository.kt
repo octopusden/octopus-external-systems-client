@@ -11,9 +11,25 @@ class BitbucketCreateRepository(
     val forkable: Boolean = false,
     val scmId: ScmType = ScmType.GIT,
     val defaultBranch: String = "master",
-    val description: String? = null,
-    val public: Boolean? = null,
 ) {
+    var description: String? = null
+        private set
+    var public: Boolean? = null
+        private set
+
+    // description is required here so that BitbucketCreateRepository(name) keeps resolving to the primary constructor
+    constructor(
+        name: String,
+        forkable: Boolean = false,
+        scmId: ScmType = ScmType.GIT,
+        defaultBranch: String = "master",
+        description: String?,
+        public: Boolean? = null,
+    ) : this(name, forkable, scmId, defaultBranch) {
+        this.description = description
+        this.public = public
+    }
+
     enum class ScmType(
         val scmId: String,
     ) {

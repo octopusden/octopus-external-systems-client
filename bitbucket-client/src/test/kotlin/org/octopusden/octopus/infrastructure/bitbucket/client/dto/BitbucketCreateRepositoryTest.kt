@@ -30,7 +30,7 @@ class BitbucketCreateRepositoryTest {
 
     @Test
     fun testPrivateRepositoryIsSerialized() {
-        val node = json(BitbucketCreateRepository("repo", public = false))
+        val node = json(BitbucketCreateRepository("repo", description = null, public = false))
         assertEquals(false, node["public"].asBoolean())
         assertEquals(false, node.has("description"))
     }
