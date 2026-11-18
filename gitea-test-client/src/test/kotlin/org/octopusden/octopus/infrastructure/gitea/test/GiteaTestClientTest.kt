@@ -152,6 +152,32 @@ class GiteaTestClientTest :
     }
 
     @Test
+    fun testCreateRepositoryWithDescriptionAndVisibility() {
+        val organizationName = "test-create-described-org"
+        val repositoryName = "test-create-described-repo"
+        val description = "provisioning marker: created by test"
+        client.createOrganization(GiteaCreateOrganization(organizationName))
+        client.createRepository(
+            organizationName,
+            GiteaCreateRepository(repositoryName, description = description, `private` = true, defaultBranch = "develop"),
+        )
+        val repository = client.getRepository(organizationName, repositoryName)
+        assertEquals(description, repository.description)
+        assertEquals(true, repository.`private`)
+        assertEquals("develop", repository.defaultBranch)
+    }
+
+    @Test
+    fun testCreateRepositoryWithoutDescriptionKeepsDefaults() {
+        val organizationName = "test-create-plain-org"
+        val repositoryName = "test-create-plain-repo"
+        client.createOrganization(GiteaCreateOrganization(organizationName))
+        client.createRepository(organizationName, GiteaCreateRepository(repositoryName))
+        val repository = client.getRepository(organizationName, repositoryName)
+        assertEquals(false, repository.`private`)
+    }
+
+    @Test
     fun testGetRepository() {
         val organizationName = "test-get-org"
         val repositoryName = "test-get-repo"

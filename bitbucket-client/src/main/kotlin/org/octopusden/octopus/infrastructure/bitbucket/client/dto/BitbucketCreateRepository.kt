@@ -1,14 +1,18 @@
 package org.octopusden.octopus.infrastructure.bitbucket.client.dto
 
 import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonValue
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 class BitbucketCreateRepository(
     val name: String,
     val forkable: Boolean = false,
     val scmId: ScmType = ScmType.GIT,
     val defaultBranch: String = "master",
+    val description: String? = null,
+    val public: Boolean? = null,
 ) {
     enum class ScmType(
         val scmId: String,

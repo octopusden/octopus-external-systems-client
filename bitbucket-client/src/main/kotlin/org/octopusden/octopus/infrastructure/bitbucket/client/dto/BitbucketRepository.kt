@@ -13,4 +13,6 @@ class BitbucketRepository
         val links: BitbucketLinks,
         val project: BitbucketProject,
         val archived: Boolean? = null,
+        val description: String? = null,
+        val public: Boolean? = null,
     )
