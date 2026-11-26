@@ -71,7 +71,7 @@ class TeamcityClassicClientTest {
                 TeamcityTestConfiguration(
                     name = "v26",
                     host = hostTeamcity2026,
-                    version = "2026.1 (build 222521)",
+                    version = "2026.2 (build 238924)",
                 ),
             )
 
